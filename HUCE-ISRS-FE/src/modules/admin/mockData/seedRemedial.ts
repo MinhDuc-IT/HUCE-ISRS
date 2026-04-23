@@ -1,0 +1,125 @@
+import type { RemedialDemoState } from '@/shared/types/remedial'
+
+/** Dữ liệu mẫu — reset khi xóa sessionStorage `huce-isrs-demo-remedial`. */
+export const SEED_REMEDIAL_STATE: RemedialDemoState = {
+  cohorts: [
+    {
+      id: 'cohort-1',
+      name: 'Đợt phụ đạo HK2 2025–2026',
+      startDate: '2026-02-01',
+      endDate: '2026-08-31',
+      status: 'open',
+    },
+    {
+      id: 'cohort-2',
+      name: 'Đợt phụ đạo bổ sung',
+      startDate: '2026-09-01',
+      endDate: '2026-12-15',
+      status: 'draft',
+    },
+  ],
+  departments: [
+    {
+      id: 'dept-1',
+      code: 'TOAN',
+      name: 'Bộ môn Toán – Tin học',
+      headEmail: 'bm-toantin@huce.edu.vn',
+      headPhone: '0234-123456',
+    },
+    {
+      id: 'dept-2',
+      code: 'LY',
+      name: 'Bộ môn Vật lý',
+      headEmail: 'bm-vatly@huce.edu.vn',
+      headPhone: '0234-234567',
+    },
+    {
+      id: 'dept-3',
+      code: 'NN',
+      name: 'Bộ môn Ngoại ngữ',
+      headEmail: 'bm-ngoaingu@huce.edu.vn',
+      headPhone: '0234-345678',
+    },
+  ],
+  systemUsers: [
+    {
+      id: 'u-admin',
+      username: 'admin',
+      displayName: 'Quản trị viên',
+      role: 'admin',
+      email: 'admin@huce.edu.vn',
+      password: 'admin',
+    },
+    {
+      id: 'u-dept',
+      username: 'bomon',
+      displayName: 'Trưởng bộ môn Toán – Tin',
+      role: 'department',
+      email: 'bm-toantin@huce.edu.vn',
+      password: 'bomon',
+      departmentId: 'dept-1',
+    },
+    {
+      id: 'u-student',
+      username: 'sinhvien',
+      displayName: 'Sinh viên demo',
+      role: 'student',
+      email: 'sv.demo@student.huce.edu.vn',
+      password: 'sinhvien',
+    },
+    {
+      id: 'u-student-2',
+      username: 'sv002',
+      displayName: 'Sinh viên quốc tế 002',
+      role: 'student',
+      email: 'sv002@student.huce.edu.vn',
+      password: 'sv002',
+    },
+  ],
+  courses: [
+    {
+      id: 'course-1-a',
+      cohortId: 'cohort-1',
+      departmentId: 'dept-1',
+      code: 'PD001',
+      name: 'Toán cao cấp A1',
+    },
+    {
+      id: 'course-1-b',
+      cohortId: 'cohort-1',
+      departmentId: 'dept-2',
+      code: 'PD002',
+      name: 'Vật lý đại cương',
+    },
+    {
+      id: 'course-1-c',
+      cohortId: 'cohort-1',
+      departmentId: 'dept-3',
+      code: 'PD003',
+      name: 'Tiếng Việt B1',
+    },
+    {
+      id: 'course-1-d',
+      cohortId: 'cohort-1',
+      departmentId: 'dept-1',
+      code: 'PD004',
+      name: 'Lập trình hướng đối tượng',
+    },
+    {
+      id: 'course-2-a',
+      cohortId: 'cohort-2',
+      departmentId: 'dept-1',
+      code: 'PD101',
+      name: 'Môn demo đợt nháp',
+    },
+  ],
+  registrations: [],
+  lecturerAssignments: [],
+  emailLogs: [],
+  settings: {
+    schoolName: 'Đại học Xây dựng Huế — HUCE',
+    supportEmail: 'isrs-support@huce.edu.vn',
+    feePerRegistration: 450_000,
+    vatPercent: 10,
+  },
+}
