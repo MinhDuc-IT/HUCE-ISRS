@@ -3,14 +3,14 @@
 namespace App\Domain\Entities;
 
 /**
- * Domain Entity – Cấu hình hệ thống
+ * Domain Entity – Cấu hình hệ thống (Dạng Key-Value)
  */
 class SystemConfig
 {
     public function __construct(
         public readonly ?int    $id,
-        public readonly ?int    $minStudentsPerClass = null,
-        public readonly ?int    $maxStudentsPerClass = null,
-        public readonly ?int    $defaultPeriods = null,
+        public readonly string  $key,
+        public string           $value,
+        public readonly ?string $description = null,
     ) {}
 }
