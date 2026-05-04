@@ -4,11 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\BaseController;
 use App\Http\Requests\UpdateSettingsRequest;
-use App\Models\SystemConfig;
+use App\Domain\Repositories\SystemConfigRepositoryPort;
+use App\Domain\Enums\SystemConfigKey;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-
 use OpenApi\Attributes as OA;
 
 #[OA\Tag(
@@ -17,9 +17,12 @@ use OpenApi\Attributes as OA;
 )]
 class SettingController extends BaseController
 {
+    public function __construct(
+        private readonly SystemConfigRepositoryPort $configRepository
+    ) {}
+
     /**
      * GET /api/admin/settings
-     * Danh sách cấu hình (Admin xem)
      */
     #[OA\Get(
         path: "/api/admin/settings",
@@ -36,31 +39,19 @@ class SettingController extends BaseController
             return $this->error('Không có quyền truy cập.', null, 403);
         }
 
-        $config = SystemConfig::first() ?? new SystemConfig();
+        $allConfigs = $this->configRepository->all();
 
         return $this->success(
-            data: [
-                ['key' => 'min_students_per_class', 'value' => (string)$config->MinStudentsPerClass, 'description' => 'Sĩ số tối thiểu mỗi lớp'],
-                ['key' => 'max_students_per_class', 'value' => (string)$config->MaxStudentsPerClass, 'description' => 'Sĩ số tối đa mỗi lớp'],
-                ['key' => 'default_periods', 'value' => (string)$config->DefaultPeriods, 'description' => 'Số tiết mặc định'],
-            ]
+            data: array_map(fn($c) => [
+                'key'         => $c->key,
+                'value'       => $c->value,
+                'description' => $c->description
+            ], $allConfigs)
         );
     }
 
     /**
      * POST /api/admin/settings
-     *
-     * Use case : Cài đặt hệ thống
-     * Actor    : Admin
-     *
-     * Normal Flow:
-     *   1. Admin gọi API cập nhật cấu hình                      ← bước 1+2
-     *   2. UpdateSettingsRequest kiểm tra tính hợp lệ            ← bước 3
-     *   3. Hệ thống lưu lại cấu hình vào CSDL                    ← bước 4
-     *   4. Trả về cấu hình mới
-     *
-     * Alternative Flow:
-     *   AF-1: Lưu thất bại         → 500
      */
     #[OA\Post(
         path: "/api/admin/settings",
@@ -80,8 +71,8 @@ class SettingController extends BaseController
                     type: "array",
                     items: new OA\Items(
                         properties: [
-                            new OA\Property(property: "key", type: "string", example: "teacher_rate_per_credit"),
-                            new OA\Property(property: "value", type: "string", example: "150000"),
+                            new OA\Property(property: "key", type: "string", example: "mail_summary_subject"),
+                            new OA\Property(property: "value", type: "string", example: "Thông báo học phụ đạo"),
                         ]
                     )
                 )
@@ -91,34 +82,28 @@ class SettingController extends BaseController
     #[OA\Response(response: 200, description: "Cập nhật thành công")]
     #[OA\Response(response: 403, description: "Không có quyền – chỉ Admin")]
     #[OA\Response(response: 422, description: "Thông tin không hợp lệ")]
-    #[OA\Response(response: 500, description: "AF-1: Thất bại")]
+    #[OA\Response(response: 500, description: "Cập nhật thất bại")]
     public function update(UpdateSettingsRequest $request): JsonResponse
     {
-        // ── Bước 3: Đã được xử lý bởi UpdateSettingsRequest
-
-        // ── Bước 4: Lưu vào CSDL
         try {
             $settingsData = $request->input('settings', []);
 
-            $config = SystemConfig::first() ?? new SystemConfig();
-
             foreach ($settingsData as $item) {
-                switch ($item['key']) {
-                    case 'min_students_per_class':
-                        $config->MinStudentsPerClass = (int)$item['value'];
-                        break;
-                    case 'max_students_per_class':
-                        $config->MaxStudentsPerClass = (int)$item['value'];
-                        break;
-                    case 'default_periods':
-                        $config->DefaultPeriods = (int)$item['value'];
-                        break;
-                }
+                $this->configRepository->set($item['key'], $item['value'] ?? '');
             }
-            $config->save();
+
+            $updatedConfigs = $this->configRepository->all();
+
+            return $this->success(
+                data: array_map(fn($c) => [
+                    'key'         => $c->key,
+                    'value'       => $c->value,
+                    'description' => $c->description
+                ], $updatedConfigs),
+                message: 'Cập nhật cấu hình hệ thống thành công.',
+            );
 
         } catch (\Throwable $e) {
-            // Alternative Flow 1: Lưu thất bại
             Log::error('[SettingController] Cập nhật cấu hình thất bại', [
                 'error' => $e->getMessage(),
             ]);
@@ -128,14 +113,5 @@ class SettingController extends BaseController
                 status: 500
             );
         }
-
-        return $this->success(
-            data: [
-                ['key' => 'min_students_per_class', 'value' => (string)$config->MinStudentsPerClass, 'description' => 'Sĩ số tối thiểu mỗi lớp'],
-                ['key' => 'max_students_per_class', 'value' => (string)$config->MaxStudentsPerClass, 'description' => 'Sĩ số tối đa mỗi lớp'],
-                ['key' => 'default_periods', 'value' => (string)$config->DefaultPeriods, 'description' => 'Số tiết mặc định'],
-            ],
-            message: 'Cập nhật cấu hình hệ thống thành công.',
-        );
     }
 }

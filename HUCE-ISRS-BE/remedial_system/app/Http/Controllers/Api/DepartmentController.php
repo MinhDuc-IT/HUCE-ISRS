@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\BaseController;
+use App\Application\Services\DepartmentService;
 use App\Models\Department;
 use App\Models\TutoringClass;
 use App\Mail\DepartmentRemedialSummary;
@@ -15,6 +16,10 @@ use OpenApi\Attributes as OA;
 #[OA\Tag(name: "Bộ môn", description: "Quản lý thông tin Bộ môn và liên lạc")]
 class DepartmentController extends BaseController
 {
+    public function __construct(
+        private readonly DepartmentService $departmentService
+    ) {}
+
     /**
      * GET /api/admin/departments
      */
@@ -28,7 +33,7 @@ class DepartmentController extends BaseController
     #[OA\Response(response: 200, description: "Thành công")]
     public function index(): JsonResponse
     {
-        $departments = Department::orderBy('Name')->get();
+        $departments = $this->departmentService->getAllDepartments();
         return $this->success($departments);
     }
 
@@ -47,7 +52,7 @@ class DepartmentController extends BaseController
     #[OA\Response(response: 404, description: "Không tìm thấy")]
     public function show(int $id): JsonResponse
     {
-        $dept = Department::find($id);
+        $dept = $this->departmentService->getDepartmentDetail($id);
         if (!$dept) return $this->error('Bộ môn không tồn tại', null, 404);
         return $this->success($dept);
     }
@@ -65,19 +70,12 @@ class DepartmentController extends BaseController
         tags: ["Bộ môn"],
     )]
     #[OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))]
-    #[OA\RequestBody(
-        required: true,
-        content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: "email", type: "string", format: "email", example: "khcntt@vlu.edu.vn"),
-                new OA\Property(property: "phone", type: "string", example: "0909123456"),
-            ]
-        )
-    )]
-    #[OA\Response(response: 200, description: "Cập nhật thành công")]
+    #[OA\Response(response: 200, description: "Thành công")]
+    #[OA\Response(response: 400, description: "Dữ liệu không hợp lệ")]
     #[OA\Response(response: 404, description: "Không tìm thấy")]
     public function update(Request $request, int $id): JsonResponse
     {
+        // Tạm thời giữ Eloquent để tránh refactor quá sâu vào repository/service nếu chưa cần thiết ngay.
         $dept = Department::find($id);
         if (!$dept) return $this->error('Bộ môn không tồn tại', null, 404);
 
@@ -96,7 +94,6 @@ class DepartmentController extends BaseController
 
     /**
      * POST /api/admin/departments/{id}/send-email
-     * Gửi email danh sách môn và sinh viên về bộ môn.
      */
     #[OA\Post(
         path: "/api/admin/departments/{id}/send-email",
@@ -105,21 +102,12 @@ class DepartmentController extends BaseController
         security: [["sanctum" => []]],
         tags: ["Bộ môn"],
     )]
-    #[OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))]
-    #[OA\RequestBody(
-        required: false,
-        content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: "subject", type: "string", example: "Danh sách sinh viên học phụ đạo đợt 1"),
-                new OA\Property(property: "body",    type: "string", example: "Gửi Bộ môn danh sách chi tiết các môn học và sinh viên đăng ký phụ đạo."),
-            ]
-        )
-    )]
-    #[OA\Response(response: 200, description: "Gửi email thành công")]
-    #[OA\Response(response: 400, description: "Email bộ môn chưa được cấu hình")]
-    #[OA\Response(response: 500, description: "Gửi email thất bại")]
+    #[OA\Response(response: 200, description: "Gửi thành công")]
+    #[OA\Response(response: 400, description: "Chưa cấu hình email")]
+    #[OA\Response(response: 404, description: "Không có dữ liệu")]
     public function sendSummaryEmail(Request $request, int $id): JsonResponse
     {
+        // Tạm thời giữ logic cũ nhưng có thể chuyển dần sang service.
         $dept = Department::find($id);
         if (!$dept) return $this->error('Bộ môn không tồn tại', null, 404);
 
@@ -127,8 +115,6 @@ class DepartmentController extends BaseController
             return $this->error('Bộ môn chưa được cấu hình địa chỉ Email.', null, 400);
         }
 
-        // Lấy danh sách các lớp phụ đạo thuộc các môn của bộ môn này
-        // Kèm theo Course và Enrollment (kèm Student)
         $tutoringClasses = TutoringClass::whereHas('course', function($q) use ($id) {
                 $q->where('DepartmentId', $id);
             })

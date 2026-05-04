@@ -28,7 +28,7 @@ use Illuminate\Support\Facades\Route;
 
 // ── Public: Đăng nhập ────────────────────────────────────────────────────────
 Route::prefix('auth')->group(function () {
-    Route::post('login', [AuthController::class, 'login']);
+    Route::post('login', [AuthController::class, 'login'])->name('login');
 });
 
 // ── Protected: yêu cầu Bearer token ─────────────────────────────────────────

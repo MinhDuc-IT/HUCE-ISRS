@@ -2,6 +2,8 @@
 
 namespace App\Domain\Entities;
 
+use Carbon\Carbon;
+
 /**
  * Domain Entity – Khoa / Bộ môn
  *
