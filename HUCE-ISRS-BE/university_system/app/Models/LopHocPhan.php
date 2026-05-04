@@ -1,0 +1,44 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+
+/**
+ * Model read-only – ánh xạ bảng TKB_LopHocPhan (đã có sẵn trong DB trường)
+ *
+ * KHÔNG ghi dữ liệu. Chỉ dùng để đọc thông tin lớp học phần.
+ *
+ * @property int    $Id           Khóa chính
+ * @property int    $IDDot        Khóa ngoại tới DM_Dot (học kỳ)
+ * @property string $MaLopHocPhan Mã lớp học phần
+ * @property string $LopDuKien    Lớp dự kiến đăng ký
+ */
+class LopHocPhan extends Model
+{
+    protected $connection = 'sqlsrv';
+    protected $table      = 'TKB_LopHocPhan';
+    protected $primaryKey = 'Id';
+    public    $timestamps = false;
+
+    // Read-only: không cho phép mass assignment
+    protected $guarded = ['*'];
+
+    /**
+     * Môn học thuộc lớp học phần này.
+     */
+    public function monHoc(): HasOne
+    {
+        return $this->hasOne(MonHoc::class, 'IDLopHoc', 'Id');
+    }
+
+    /**
+     * Học kỳ của lớp học phần.
+     */
+    public function dot(): BelongsTo
+    {
+        return $this->belongsTo(Dot::class, 'IDDot', 'Id');
+    }
+}

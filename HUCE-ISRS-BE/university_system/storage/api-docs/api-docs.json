@@ -1,0 +1,599 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "University System API",
+        "description": "API hệ thống quản lý trường đại học – dùng để tích hợp với hệ thống đăng ký học phần bổ sung",
+        "contact": {
+            "email": "admin@university.edu.vn"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8001",
+            "description": "University System Server"
+        }
+    ],
+    "paths": {
+        "/api/token": {
+            "post": {
+                "tags": [
+                    "Xác thực"
+                ],
+                "summary": "Lấy access token",
+                "description": "Xác thực hệ thống client bằng client_id và client_secret. Trả về access_token để sử dụng cho các API tiếp theo (machine-to-machine authentication).",
+                "operationId": "getToken",
+                "requestBody": {
+                    "description": "Thông tin xác thực client",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "client_id",
+                                    "client_secret"
+                                ],
+                                "properties": {
+                                    "client_id": {
+                                        "description": "Mã định danh của hệ thống client",
+                                        "type": "string",
+                                        "example": "remedial_system"
+                                    },
+                                    "client_secret": {
+                                        "description": "Mật khẩu bí mật của client",
+                                        "type": "string",
+                                        "example": "secret_key_here"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Lấy token thành công",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Xác thực thành công"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "access_token": {
+                                                    "type": "string",
+                                                    "example": "abc123..."
+                                                },
+                                                "token_type": {
+                                                    "type": "string",
+                                                    "example": "Bearer"
+                                                },
+                                                "expires_in": {
+                                                    "type": "integer",
+                                                    "example": 3600
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "errors": {
+                                            "type": "null"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Xác thực thất bại – client_id hoặc client_secret không hợp lệ",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Xác thực thất bại"
+                                        },
+                                        "data": {
+                                            "type": "null"
+                                        },
+                                        "errors": {
+                                            "type": "null"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu đầu vào không hợp lệ",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Dữ liệu không hợp lệ"
+                                        },
+                                        "data": {
+                                            "type": "null"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/student/login": {
+            "post": {
+                "tags": [
+                    "Xác thực"
+                ],
+                "summary": "Đăng nhập sinh viên (Backdoor)",
+                "description": "Đăng nhập dành cho sinh viên sử dụng mã sinh viên và mật khẩu backdoor hệ thống.",
+                "operationId": "studentLogin",
+                "requestBody": {
+                    "description": "Thông tin đăng nhập sinh viên",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "student_id",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "student_id": {
+                                        "description": "Mã sinh viên",
+                                        "type": "string",
+                                        "example": "SV001"
+                                    },
+                                    "password": {
+                                        "description": "Mật khẩu backdoor",
+                                        "type": "string",
+                                        "example": "nuce_backdoor_2026"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Đăng nhập thành công",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Đăng nhập thành công"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "access_token": {
+                                                    "type": "string",
+                                                    "example": "abc123..."
+                                                },
+                                                "token_type": {
+                                                    "type": "string",
+                                                    "example": "Bearer"
+                                                },
+                                                "expires_in": {
+                                                    "type": "integer",
+                                                    "example": 3600
+                                                },
+                                                "student": {
+                                                    "$ref": "#/components/schemas/StudentDto"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "errors": {
+                                            "type": "null"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Sai mã sinh viên hoặc mật khẩu backdoor"
+                    }
+                }
+            }
+        },
+        "/api/students/{id}": {
+            "get": {
+                "tags": [
+                    "Sinh viên"
+                ],
+                "summary": "Lấy thông tin sinh viên",
+                "description": "Trả về thông tin chi tiết của một sinh viên bao gồm họ tên, ngày sinh, email trường và điểm tổng kết tích lũy.",
+                "operationId": "getStudent",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Mã sinh viên (MaSinhVien, VD: SV001)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "SV001"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thông tin sinh viên",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Thành công"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/StudentDto"
+                                        },
+                                        "errors": {
+                                            "type": "null"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực – thiếu hoặc sai token"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy sinh viên"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/students/{id}/courses": {
+            "get": {
+                "tags": [
+                    "Sinh viên"
+                ],
+                "summary": "Lấy danh sách môn học của sinh viên",
+                "description": "Trả về danh sách tất cả các môn học mà sinh viên đã học kèm kết quả điểm số, mã học phần, tên môn và học kỳ.",
+                "operationId": "getStudentCourses",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Mã sinh viên (MaSinhVien)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "SV001"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Danh sách môn học",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Thành công"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/CourseDto"
+                                            }
+                                        },
+                                        "errors": {
+                                            "type": "null"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy sinh viên"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/students/{id}/courses/semester/{semester_key}": {
+            "get": {
+                "tags": [
+                    "Sinh viên"
+                ],
+                "summary": "Lấy danh sách môn học của sinh viên theo học kỳ (ID hoặc Mã)",
+                "description": "Trả về danh sách các môn học theo ID học kỳ (số nguyên) hoặc Mã học kỳ (định dạng YYYYS, ví dụ: 20241 cho HK1 năm 2024).",
+                "operationId": "getStudentCoursesBySemester",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Mã sinh viên",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "SV001"
+                        }
+                    },
+                    {
+                        "name": "semester_key",
+                        "in": "path",
+                        "description": "ID học kỳ (VD: 10) hoặc Mã học kỳ (VD: 20241)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "20241"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Danh sách môn học theo kỳ",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Thành công"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/CourseDto"
+                                            }
+                                        },
+                                        "errors": {
+                                            "type": "null"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "CourseDto": {
+                "description": "Thông tin môn học kèm kết quả của sinh viên",
+                "properties": {
+                    "courseCode": {
+                        "description": "Mã học phần",
+                        "type": "string",
+                        "example": "CS101-01"
+                    },
+                    "subjectCode": {
+                        "description": "Mã môn học",
+                        "type": "string",
+                        "example": "CS101"
+                    },
+                    "subjectName": {
+                        "description": "Tên môn học",
+                        "type": "string",
+                        "example": "Lập trình hướng đối tượng"
+                    },
+                    "credits": {
+                        "description": "Số tín chỉ",
+                        "type": "integer",
+                        "example": 3
+                    },
+                    "classSectionCode": {
+                        "description": "Mã lớp học phần",
+                        "type": "string",
+                        "example": "CNTT01"
+                    },
+                    "semesterOrder": {
+                        "description": "Thứ tự học kỳ trong năm",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "academicYear": {
+                        "description": "Năm học",
+                        "type": "integer",
+                        "example": 2024
+                    },
+                    "processScore": {
+                        "description": "Điểm quá trình",
+                        "type": "number",
+                        "format": "float",
+                        "example": 8.5,
+                        "nullable": true
+                    },
+                    "examScore": {
+                        "description": "Điểm thi",
+                        "type": "number",
+                        "format": "float",
+                        "example": 5,
+                        "nullable": true
+                    },
+                    "finalScore": {
+                        "description": "Điểm tổng kết hệ 10",
+                        "type": "number",
+                        "format": "float",
+                        "example": 6.3,
+                        "nullable": true
+                    },
+                    "gpaScore": {
+                        "description": "Điểm tổng kết hệ 4",
+                        "type": "number",
+                        "format": "float",
+                        "example": 2,
+                        "nullable": true
+                    },
+                    "letterGrade": {
+                        "description": "Điểm chữ",
+                        "type": "string",
+                        "example": "C+",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "StudentDto": {
+                "description": "Thông tin sinh viên",
+                "properties": {
+                    "id": {
+                        "description": "Mã sinh viên",
+                        "type": "string",
+                        "example": "SV001"
+                    },
+                    "fullName": {
+                        "description": "Họ và tên đầy đủ",
+                        "type": "string",
+                        "example": "Nguyễn Văn An"
+                    },
+                    "gender": {
+                        "description": "Giới tính",
+                        "type": "string",
+                        "example": "Nam"
+                    },
+                    "dateOfBirth": {
+                        "description": "Ngày sinh",
+                        "type": "string",
+                        "example": "2002-05-15"
+                    },
+                    "placeOfBirth": {
+                        "description": "Nơi sinh",
+                        "type": "string",
+                        "example": "Hà Nội"
+                    },
+                    "personalEmail": {
+                        "description": "Email cá nhân",
+                        "type": "string",
+                        "example": "an@gmail.com"
+                    },
+                    "universityEmail": {
+                        "description": "Email trường",
+                        "type": "string",
+                        "example": "sv001@university.edu.vn",
+                        "nullable": true
+                    },
+                    "gpaScale10": {
+                        "description": "Điểm TB tích lũy hệ 10",
+                        "type": "number",
+                        "format": "float",
+                        "example": 7.5,
+                        "nullable": true
+                    },
+                    "gpaScale4": {
+                        "description": "Điểm TB tích lũy hệ 4",
+                        "type": "number",
+                        "format": "float",
+                        "example": 2.8,
+                        "nullable": true
+                    },
+                    "gradeClassification": {
+                        "description": "Xếp loại học lực",
+                        "type": "string",
+                        "example": "Khá",
+                        "nullable": true
+                    },
+                    "totalCredits": {
+                        "description": "Tổng tín chỉ tích lũy",
+                        "type": "integer",
+                        "example": 90,
+                        "nullable": true
+                    },
+                    "failedCredits": {
+                        "description": "Số tín chỉ chưa đạt",
+                        "type": "integer",
+                        "example": 3,
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "description": "Nhập access_token nhận được từ POST /api/token",
+                "bearerFormat": "token",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Xác thực",
+            "description": "Quản lý token xác thực theo luồng Client Credentials"
+        },
+        {
+            "name": "Sinh viên",
+            "description": "Tra cứu thông tin sinh viên và môn học"
+        }
+    ]
+}
