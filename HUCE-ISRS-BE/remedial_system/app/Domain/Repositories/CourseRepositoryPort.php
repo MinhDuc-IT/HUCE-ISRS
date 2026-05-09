@@ -17,4 +17,11 @@ interface CourseRepositoryPort
      * @return Course[]
      */
     public function findAll(): array;
+
+    /**
+     * Helper methods for synchronization
+     */
+    public function updateOrCreateCourse(string $courseCode, array $data): \App\Models\Course;
+
+    public function firstOrCreateDepartment(string $deptCode, array $data): \App\Models\Department;
 }
