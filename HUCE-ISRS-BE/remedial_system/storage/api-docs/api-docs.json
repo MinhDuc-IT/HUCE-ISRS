@@ -137,6 +137,24 @@
                         "sanctum": []
                     }
                 ]
+            },
+            "post": {
+                "tags": [
+                    "Bộ môn"
+                ],
+                "summary": "Thêm bộ môn mới",
+                "description": "POST /api/admin/departments",
+                "operationId": "storeDepartment",
+                "responses": {
+                    "201": {
+                        "description": "Thành công"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
             }
         },
         "/api/admin/departments/{id}": {
@@ -163,6 +181,34 @@
                     },
                     "404": {
                         "description": "Không tìm thấy"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Bộ môn"
+                ],
+                "summary": "Xóa bộ môn",
+                "description": "DELETE /api/admin/departments/{id}",
+                "operationId": "destroyDepartment",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Xóa thành công"
                     }
                 },
                 "security": [
@@ -223,6 +269,44 @@
                     },
                     "404": {
                         "description": "Không có dữ liệu"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/semesters": {
+            "get": {
+                "tags": [
+                    "Học kỳ"
+                ],
+                "summary": "Danh sách học kỳ",
+                "description": "GET /api/admin/semesters — Danh sách học kỳ",
+                "operationId": "listSemesters",
+                "responses": {
+                    "200": {
+                        "description": "Thành công"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Học kỳ"
+                ],
+                "summary": "Tạo học kỳ mới",
+                "description": "POST /api/admin/semesters — Tạo học kỳ mới",
+                "operationId": "storeSemester",
+                "responses": {
+                    "201": {
+                        "description": "Tạo thành công"
                     }
                 },
                 "security": [
@@ -727,6 +811,133 @@
                 ]
             }
         },
+        "/api/admin/tutoring-terms": {
+            "get": {
+                "tags": [
+                    "Đợt phụ đạo"
+                ],
+                "summary": "Danh sách đợt phụ đạo",
+                "description": "GET /api/admin/tutoring-terms",
+                "operationId": "listTutoringTerms",
+                "responses": {
+                    "200": {
+                        "description": "Thành công"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Đợt phụ đạo"
+                ],
+                "summary": "Thêm mới đợt phụ đạo",
+                "description": "POST /api/admin/tutoring-terms",
+                "operationId": "storeTutoringTerm",
+                "responses": {
+                    "201": {
+                        "description": "Thêm thành công"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/tutoring-terms/{id}": {
+            "get": {
+                "tags": [
+                    "Đợt phụ đạo"
+                ],
+                "summary": "Chi tiết đợt phụ đạo",
+                "description": "GET /api/admin/tutoring-terms/{id}",
+                "operationId": "showTutoringTerm",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Đợt phụ đạo"
+                ],
+                "summary": "Xóa đợt phụ đạo",
+                "description": "DELETE /api/admin/tutoring-terms/{id}",
+                "operationId": "destroyTutoringTerm",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Xóa thành công"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Đợt phụ đạo"
+                ],
+                "summary": "Cập nhật đợt phụ đạo",
+                "description": "PATCH /api/admin/tutoring-terms/{id}",
+                "operationId": "updateTutoringTerm",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Cập nhật thành công"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/admin/users": {
             "get": {
                 "tags": [
@@ -1059,6 +1270,10 @@
             "description": "Quản lý thông tin Bộ môn và liên lạc"
         },
         {
+            "name": "Học kỳ",
+            "description": "Quản lý Học kỳ (Semester)"
+        },
+        {
             "name": "Cài đặt hệ thống",
             "description": "Quản lý các cấu hình hệ thống – chỉ Admin"
         },
@@ -1072,7 +1287,7 @@
         },
         {
             "name": "Đợt phụ đạo",
-            "description": "Quản lý đợt phụ đạo – chỉ Admin"
+            "description": "Quản lý Đợt phụ đạo (Cohorts)"
         },
         {
             "name": "Người dùng",

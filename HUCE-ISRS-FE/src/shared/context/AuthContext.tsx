@@ -45,12 +45,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('token', response.data.token)
         
         // Map backend user to frontend AuthUser
+        let mappedRole: UserRole = 'student'
+        if (response.data.user.role === 'admin') mappedRole = 'admin'
+        else if (response.data.user.role === 'bo_mon') mappedRole = 'department'
+        else if (response.data.user.role === 'sinh_vien') mappedRole = 'student'
+        else mappedRole = response.data.user.role as UserRole
+
         const authUser: AuthUser = {
           id: response.data.user.id.toString(),
           username: response.data.user.student_code || response.data.user.email,
           displayName: response.data.user.name,
-          role: response.data.user.role as UserRole,
-          departmentId: response.data.user.department_id?.toString()
+          role: mappedRole,
+          departmentId: response.data.user.department_id?.toString(),
+          homeUrl: response.data.user.home_url
         }
         
         localStorage.setItem('user', JSON.stringify(authUser))

@@ -14,7 +14,12 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false)
 
   if (user) {
-    return <Navigate to={getHomePathForRole(user.role)} replace />
+      let redirectPath = '/'
+      if (user.role === 'admin') redirectPath = '/admin/statistics'
+      else if (user.role === 'department') redirectPath = '/admin/departments'
+      else if (user.role === 'student') redirectPath = '/student/register'
+
+    return <Navigate to={redirectPath} replace />
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -24,11 +29,12 @@ export function LoginPage() {
     
     try {
       const ok = await login(username, password)
-      if (!ok) {
-        setError('Sai tên đăng nhập hoặc mật khẩu.')
-        return
-      }
-      navigate(getHomePathForRole(ok.role), { replace: true })
+      let redirectPath = '/'
+      if (ok.role === 'admin') redirectPath = '/admin/statistics'
+      else if (ok.role === 'department') redirectPath = '/admin/departments' // Trưởng bộ môn vào trang bộ môn
+      else if (ok.role === 'student') redirectPath = '/student/register'
+      
+      navigate(redirectPath, { replace: true })
     } catch (err: any) {
       setError(err.message || 'Đăng nhập thất bại. Vui lòng thử lại.')
     } finally {

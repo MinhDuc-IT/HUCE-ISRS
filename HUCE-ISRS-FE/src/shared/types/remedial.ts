@@ -39,11 +39,11 @@ export type MockSystemUser = {
 }
 
 export type Department = {
-  id: string
-  code: string
-  name: string
-  headEmail: string
-  headPhone: string
+  id: number
+  departmentCode: string
+  departmentName: string
+  email?: string | null
+  phone?: string | null
 }
 
 export type LecturerAssignment = {
