@@ -11,6 +11,7 @@ use App\Domain\Exceptions\ExternalSystemException;
 use App\Domain\Exceptions\StudentNotFoundException;
 use App\Domain\Ports\StudentInfoPort;
 use App\Domain\Repositories\TutoringRequestRepositoryPort;
+use App\Domain\Enums\TutoringRequestStatus;
 
 /**
  * RemedialRegistrationService – Use case đăng ký học phần bổ sung.
@@ -97,7 +98,7 @@ class RemedialRegistrationService
             courseId:         $localCourse->Id,
             tutoringTermId:   $currentTerm->Id,
             requestedPeriods: null,
-            status:           TutoringRequest::STATUS_PENDING,
+            status:           TutoringRequestStatus::PENDING,
             createdAt:        Carbon::now(),
         );
 
@@ -173,11 +174,11 @@ class RemedialRegistrationService
         }
 
         // Entity không có hàm cancel(), cần tự đổi trạng thái
-        if (in_array($request->status, [TutoringRequest::STATUS_APPROVED, TutoringRequest::STATUS_REJECTED])) {
+        if (in_array($request->status, [TutoringRequestStatus::APPROVED, TutoringRequestStatus::REJECTED])) {
             throw new \DomainException('Không thể hủy đơn đã được xử lý.');
         }
 
-        $request->status = TutoringRequest::STATUS_CANCELLED;
+        $request->status = TutoringRequestStatus::CANCELLED;
         $this->requestRepository->update($request);
     }
 }

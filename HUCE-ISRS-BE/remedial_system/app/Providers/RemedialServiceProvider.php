@@ -46,10 +46,15 @@ class RemedialServiceProvider extends ServiceProvider
 
         // ─── Bind Port → Adapter (Hexagonal Architecture binding) ─────────
         $this->app->bind(StudentInfoPort::class, function ($app) {
-            return new StudentInfoApiAdapter(
+            $baseAdapter = new StudentInfoApiAdapter(
                 authClient:     $app->make(UniversityAuthClient::class),
                 baseUrl:        config('remedial.university_base_url'),
                 timeoutSeconds: (int) config('remedial.http_timeout', 15),
+            );
+
+            return new \App\Infrastructure\Adapters\CachedStudentInfoAdapter(
+                innerAdapter: $baseAdapter,
+                ttlSeconds:   (int) config('remedial.cache_ttl', 3600)
             );
         });
 

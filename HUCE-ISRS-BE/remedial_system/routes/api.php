@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\TutoringClassController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\TeacherPaymentController;
+use App\Http\Controllers\Api\StatisticController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -50,6 +51,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('admin/payments/teachers')->group(function () {
         Route::get('/',        [TeacherPaymentController::class, 'index']);  // Tổng hợp và xem (JSON)
         Route::get('/export',  [TeacherPaymentController::class, 'export']); // Xuất file Excel (.xlsx)
+    });
+
+    // ── Admin: Thống kê đợt phụ đạo ──────────────────────────────────────────
+    Route::prefix('admin/statistics/terms')->group(function () {
+        Route::get('/',        [StatisticController::class, 'getTerms']);
+        Route::get('/{id}',    [StatisticController::class, 'getTermStatistics']);
     });
 
     // ── Admin: Quản lý người dùng (Use case: Thêm, Sửa, Xóa người dùng) ──────────

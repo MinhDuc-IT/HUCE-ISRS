@@ -10,6 +10,7 @@ use App\Domain\Exceptions\ExternalSystemException;
 use App\Domain\Exceptions\StudentNotFoundException;
 use App\Domain\Ports\StudentInfoPort;
 use App\Infrastructure\Auth\UniversityAuthClient;
+use App\Infrastructure\Common\CircuitBreaker;
 
 /**
  * StudentInfoApiAdapter – Adapter triển khai StudentInfoPort.
@@ -23,11 +24,15 @@ use App\Infrastructure\Auth\UniversityAuthClient;
  */
 class StudentInfoApiAdapter implements StudentInfoPort
 {
+    private readonly CircuitBreaker $circuitBreaker;
+
     public function __construct(
         private readonly UniversityAuthClient $authClient,
         private readonly string              $baseUrl,
         private readonly int                 $timeoutSeconds = 15,
-    ) {}
+    ) {
+        $this->circuitBreaker = new CircuitBreaker('university_api', 5, 60);
+    }
 
     /**
      * {@inheritdoc}
@@ -115,48 +120,50 @@ class StudentInfoApiAdapter implements StudentInfoPort
      */
     private function callApi(string $method, string $endpoint): array
     {
-        try {
-            $token = $this->authClient->getToken();
+        return $this->circuitBreaker->execute(function () use ($method, $endpoint) {
+            try {
+                $token = $this->authClient->getToken();
 
-            $response = Http::timeout($this->timeoutSeconds)
-                ->retry(2, 300)
-                ->withToken($token)
-                ->send($method, "{$this->baseUrl}{$endpoint}");
-
-            // Nếu token hết hạn – làm mới và thử lại một lần
-            if ($response->status() === 401) {
-                Log::warning("[StudentInfoApiAdapter] Token hết hạn, đang làm mới...");
-                $this->authClient->invalidateToken();
-                $token    = $this->authClient->getToken();
                 $response = Http::timeout($this->timeoutSeconds)
+                    ->retry(2, 300)
                     ->withToken($token)
                     ->send($method, "{$this->baseUrl}{$endpoint}");
+
+                // Nếu token hết hạn – làm mới và thử lại một lần
+                if ($response->status() === 401) {
+                    Log::warning("[StudentInfoApiAdapter] Token hết hạn, đang làm mới...");
+                    $this->authClient->invalidateToken();
+                    $token    = $this->authClient->getToken();
+                    $response = Http::timeout($this->timeoutSeconds)
+                        ->withToken($token)
+                        ->send($method, "{$this->baseUrl}{$endpoint}");
+                }
+
+                if ($response->status() === 404) {
+                    // Trích mã sinh viên từ URL (endpoint dạng /api/students/{id})
+                    preg_match('/students\/([^\/]+)/', $endpoint, $matches);
+                    throw new StudentNotFoundException($matches[1] ?? 'unknown');
+                }
+
+                if (! $response->successful()) {
+                    Log::error("[StudentInfoApiAdapter] Lỗi từ University System", [
+                        'endpoint' => $endpoint,
+                        'status'   => $response->status(),
+                        'body'     => $response->body(),
+                    ]);
+                    throw new ExternalSystemException(
+                        'University System trả về lỗi: ' . $response->json('message', 'Unknown')
+                    );
+                }
+
+                return $response->json();
+
+            } catch (StudentNotFoundException | ExternalSystemException $e) {
+                throw $e;
+            } catch (\Exception $e) {
+                Log::error("[StudentInfoApiAdapter] Lỗi kết nối", ['error' => $e->getMessage()]);
+                throw new ExternalSystemException('Không thể kết nối đến University System: ' . $e->getMessage());
             }
-
-            if ($response->status() === 404) {
-                // Trích mã sinh viên từ URL (endpoint dạng /api/students/{id})
-                preg_match('/students\/([^\/]+)/', $endpoint, $matches);
-                throw new StudentNotFoundException($matches[1] ?? 'unknown');
-            }
-
-            if (! $response->successful()) {
-                Log::error("[StudentInfoApiAdapter] Lỗi từ University System", [
-                    'endpoint' => $endpoint,
-                    'status'   => $response->status(),
-                    'body'     => $response->body(),
-                ]);
-                throw new ExternalSystemException(
-                    'University System trả về lỗi: ' . $response->json('message', 'Unknown')
-                );
-            }
-
-            return $response->json();
-
-        } catch (StudentNotFoundException | ExternalSystemException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            Log::error("[StudentInfoApiAdapter] Lỗi kết nối", ['error' => $e->getMessage()]);
-            throw new ExternalSystemException('Không thể kết nối đến University System: ' . $e->getMessage());
-        }
+        });
     }
 }

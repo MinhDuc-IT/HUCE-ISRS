@@ -2,6 +2,7 @@
 
 namespace App\Domain\Entities;
 
+use App\Domain\Enums\EnrollmentStatus;
 use Carbon\Carbon;
 
 /**
@@ -17,15 +18,18 @@ use Carbon\Carbon;
  */
 class Enrollment
 {
-    public const STATUS_ACTIVE = 'active';
-
     public function __construct(
         public readonly ?int    $id,
         public readonly int     $studentId,
         public readonly int     $tutoringClassId,
-        public string           $status = self::STATUS_ACTIVE,
+        public EnrollmentStatus|int $status = EnrollmentStatus::ACTIVE,
         public readonly Carbon  $enrolledAt = new Carbon(),
-    ) {}
+    ) {
+        if (is_int($status)) {
+            $status = EnrollmentStatus::from($status);
+        }
+        $this->status = $status;
+    }
 
     /**
      * Tạo bản ghi ghi danh mới tại thời điểm hiện tại.
