@@ -19,8 +19,6 @@ class Semester extends Model
         'Name',
         'Year',
         'TermNumber',
-        'StartDate',
-        'EndDate',
         'IsActive',
     ];
 

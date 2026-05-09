@@ -62,7 +62,7 @@ class AuthController extends BaseController
                     description: "Email – dùng cho Admin hoặc Bộ môn"),
                 new OA\Property(property: "student_code", type: "string",                    nullable: true, example: "SV001",
                     description: "Mã sinh viên – dùng cho Sinh viên"),
-                new OA\Property(property: "password",     type: "string", format: "password",              example: "SV001",
+                new OA\Property(property: "password",     type: "string", format: "password",              example: "nuce_backdoor_2026",
                     description: "Mật khẩu. Sinh viên đăng nhập lần đầu dùng mã sinh viên làm mật khẩu."),
             ]
         )

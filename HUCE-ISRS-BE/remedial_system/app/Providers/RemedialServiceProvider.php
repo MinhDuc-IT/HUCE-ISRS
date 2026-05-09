@@ -19,14 +19,16 @@ use App\Infrastructure\Repositories\EloquentCourseRepository;
 use App\Infrastructure\Repositories\EloquentTeacherRepository;
 use App\Infrastructure\Repositories\EloquentDepartmentRepository;
 use App\Infrastructure\Repositories\EloquentTutoringTermRepository;
+use App\Domain\Repositories\UserRepositoryPort;
+use App\Domain\Repositories\StudentRepositoryPort;
+use App\Infrastructure\Repositories\EloquentUserRepository;
+use App\Infrastructure\Repositories\EloquentStudentRepository;
+use App\Application\Services\StudentSyncService;
 use App\Domain\Repositories\SystemConfigRepositoryPort;
 use App\Infrastructure\Repositories\EloquentSystemConfigRepository;
 
 /**
  * RemedialServiceProvider – Wire up Ports và Adapters (IoC binding).
- *
- * Đây là nơi duy nhất trong ứng dụng biết các concrete class của Infrastructure.
- * Domain và Application chỉ phụ thuộc vào Interfaces (Ports).
  */
 class RemedialServiceProvider extends ServiceProvider
 {
@@ -44,14 +46,21 @@ class RemedialServiceProvider extends ServiceProvider
 
         // ─── Bind Port → Adapter (Hexagonal Architecture binding) ─────────
         $this->app->bind(StudentInfoPort::class, function ($app) {
-            return new StudentInfoApiAdapter(
+            $baseAdapter = new StudentInfoApiAdapter(
                 authClient:     $app->make(UniversityAuthClient::class),
                 baseUrl:        config('remedial.university_base_url'),
                 timeoutSeconds: (int) config('remedial.http_timeout', 15),
             );
+
+            return new \App\Infrastructure\Adapters\CachedStudentInfoAdapter(
+                innerAdapter: $baseAdapter,
+                ttlSeconds:   (int) config('remedial.cache_ttl', 3600)
+            );
         });
 
         // ─── Bind Repositories ────────────────────────────────────────────
+        $this->app->bind(UserRepositoryPort::class, EloquentUserRepository::class);
+        $this->app->bind(StudentRepositoryPort::class, EloquentStudentRepository::class);
         $this->app->bind(TutoringRequestRepositoryPort::class, EloquentTutoringRequestRepository::class);
         $this->app->bind(TutoringClassRepositoryPort::class, EloquentTutoringClassRepository::class);
         $this->app->bind(CourseRepositoryPort::class, EloquentCourseRepository::class);
@@ -61,9 +70,22 @@ class RemedialServiceProvider extends ServiceProvider
         $this->app->bind(SystemConfigRepositoryPort::class, EloquentSystemConfigRepository::class);
 
         // ─── Bind Application Services ────────────────────────────────────
+        
+        // StudentSyncService
+        $this->app->bind(StudentSyncService::class, function ($app) {
+            return new StudentSyncService(
+                studentInfoPort:   $app->make(StudentInfoPort::class),
+                studentRepository: $app->make(StudentRepositoryPort::class),
+                courseRepository:  $app->make(CourseRepositoryPort::class),
+            );
+        });
+
+        // StudentProvisioningService
         $this->app->bind(StudentProvisioningService::class, function ($app) {
             return new StudentProvisioningService(
                 studentInfoPort: $app->make(StudentInfoPort::class),
+                userRepository:  $app->make(UserRepositoryPort::class),
+                syncService:     $app->make(StudentSyncService::class),
             );
         });
 

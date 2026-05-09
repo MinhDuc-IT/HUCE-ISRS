@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\TutoringClassController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\TeacherPaymentController;
+use App\Http\Controllers\Api\StatisticController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -52,6 +53,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/export',  [TeacherPaymentController::class, 'export']); // Xuất file Excel (.xlsx)
     });
 
+    // ── Admin: Thống kê đợt phụ đạo ──────────────────────────────────────────
+    Route::prefix('admin/statistics/terms')->group(function () {
+        Route::get('/',        [StatisticController::class, 'getTerms']);
+        Route::get('/{id}',    [StatisticController::class, 'getTermStatistics']);
+    });
+
     // ── Admin: Quản lý người dùng (Use case: Thêm, Sửa, Xóa người dùng) ──────────
     Route::prefix('admin/users')->group(function () {
 
@@ -62,7 +69,22 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{user}',[UserController::class, 'destroy']);// Xóa ← UC chính
     });
 
+    // ── Admin: Quản lý Học kỳ ──────────────────────────────────────────────────
+    Route::prefix('admin/semesters')->group(function () {
+        Route::get('/',   [\App\Http\Controllers\Api\SemesterController::class, 'index']);
+        Route::post('/',  [\App\Http\Controllers\Api\SemesterController::class, 'store']);
+    });
+
     // ── Admin: Quản lý đợt phụ đạo ───────────────────────────────────────────────
+    Route::prefix('admin/tutoring-terms')->group(function () {
+        Route::get('/',                    [\App\Http\Controllers\Api\TutoringTermController::class, 'index']);
+        Route::post('/',                   [\App\Http\Controllers\Api\TutoringTermController::class, 'store']);
+        Route::get('/{id}',               [\App\Http\Controllers\Api\TutoringTermController::class, 'show']);
+        Route::patch('/{id}',             [\App\Http\Controllers\Api\TutoringTermController::class, 'update']);
+        Route::delete('/{id}',            [\App\Http\Controllers\Api\TutoringTermController::class, 'destroy']);
+    });
+
+    // ── Admin: Quản lý Lớp phụ đạo ───────────────────────────────────────────────
     Route::prefix('admin/tutoring-classes')->group(function () {
         Route::get('/',                    [TutoringClassController::class, 'index']);    // Danh sách
         Route::post('/',                   [TutoringClassController::class, 'store']);    // Thêm mới
@@ -75,8 +97,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // ── Admin: Quản lý Bộ môn ──────────────────────────────────────────────────
     Route::prefix('admin/departments')->group(function () {
         Route::get('/',                    [\App\Http\Controllers\Api\DepartmentController::class, 'index']);
+        Route::post('/',                   [\App\Http\Controllers\Api\DepartmentController::class, 'store']);
         Route::get('/{id}',               [\App\Http\Controllers\Api\DepartmentController::class, 'show']);
         Route::patch('/{id}',             [\App\Http\Controllers\Api\DepartmentController::class, 'update']);
+        Route::delete('/{id}',            [\App\Http\Controllers\Api\DepartmentController::class, 'destroy']);
         Route::post('/{id}/send-email',    [\App\Http\Controllers\Api\DepartmentController::class, 'sendSummaryEmail']);
     });
 

@@ -2,6 +2,7 @@
 
 namespace App\Domain\Entities;
 
+use App\Domain\Enums\PaymentStatus;
 use Carbon\Carbon;
 
 /**
@@ -20,9 +21,6 @@ use Carbon\Carbon;
  */
 class Payment
 {
-    public const STATUS_PENDING   = 'pending';
-    public const STATUS_PAID      = 'paid';
-    public const STATUS_CANCELLED = 'cancelled';
 
     public function __construct(
         public readonly ?int    $id,
@@ -32,9 +30,14 @@ class Payment
         public readonly ?float  $unitPrice = null,
         public readonly ?float  $coefficient = null,
         public readonly ?float  $amount = null,
-        public string           $status = self::STATUS_PENDING,
+        public PaymentStatus|string $status = PaymentStatus::PENDING,
         public readonly Carbon  $createdAt = new Carbon(),
-    ) {}
+    ) {
+        if (is_string($status)) {
+            $status = PaymentStatus::from($status);
+        }
+        $this->status = $status;
+    }
 
     /**
      * Đánh dấu đã thanh toán.
@@ -43,11 +46,11 @@ class Payment
      */
     public function markAsPaid(): void
     {
-        if ($this->status !== self::STATUS_PENDING) {
+        if ($this->status !== PaymentStatus::PENDING) {
             throw new \DomainException('Chỉ có thể xác nhận thanh toán cho khoản ở trạng thái chờ.');
         }
 
-        $this->status = self::STATUS_PAID;
+        $this->status = PaymentStatus::PAID;
     }
 
     /**
@@ -57,11 +60,11 @@ class Payment
      */
     public function cancel(): void
     {
-        if ($this->status === self::STATUS_PAID) {
+        if ($this->status === PaymentStatus::PAID) {
             throw new \DomainException('Không thể hủy khoản thanh toán đã hoàn thành.');
         }
 
-        $this->status = self::STATUS_CANCELLED;
+        $this->status = PaymentStatus::CANCELLED;
     }
 
     /**

@@ -26,6 +26,22 @@ class EloquentCourseRepository implements CourseRepositoryPort
         return EloquentCourse::all()->map(fn($model) => $this->toDomainEntity($model))->toArray();
     }
 
+    public function updateOrCreateCourse(string $courseCode, array $data): EloquentCourse
+    {
+        return EloquentCourse::updateOrCreate(
+            ['CourseCode' => $courseCode],
+            $data
+        );
+    }
+
+    public function firstOrCreateDepartment(string $deptCode, array $data): \App\Models\Department
+    {
+        return \App\Models\Department::firstOrCreate(
+            ['DepartmentCode' => $deptCode],
+            $data
+        );
+    }
+
     private function toDomainEntity(EloquentCourse $model): Course
     {
         return new Course(
@@ -33,7 +49,9 @@ class EloquentCourseRepository implements CourseRepositoryPort
             courseCode:   $model->CourseCode,
             courseName:   $model->CourseName,
             credits:      $model->Credits,
-            departmentId: $model->DepartmentId
+            totalPeriods: $model->TotalPeriods ?? null,
+            departmentId: $model->DepartmentId,
+            isActive:     (bool) ($model->IsActive ?? true),
         );
     }
 }

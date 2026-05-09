@@ -1,16 +1,38 @@
-﻿import { Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
+import { apiFetch } from '@/shared/utils/apiClient'
 import { useAuth } from '@/shared/context/AuthContext'
-import { useDemoData } from '@/shared/context/DemoDataContext'
 
 export function StudentDashboardPage() {
   const { user } = useAuth()
-  const { getRegistrationsForStudent, getOpenCohortsForRegistration } =
-    useDemoData()
+  const [regCount, setRegCount] = useState<number | null>(null)
+  const [openTermCount, setOpenTermCount] = useState<number | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!user) return
+    fetchData()
+  }, [user])
+
+  async function fetchData() {
+    try {
+      setLoading(true)
+      // Fetch registrations for this student
+      const [regsRes, termsRes] = await Promise.all([
+        apiFetch<{ data: any[] }>(`/students/${user!.id}/registrations`),
+        apiFetch<{ data: any[] }>('/admin/statistics/terms'),
+      ])
+      setRegCount(regsRes.data?.length ?? 0)
+      setOpenTermCount(termsRes.data?.length ?? 0)
+    } catch {
+      setRegCount(0)
+      setOpenTermCount(0)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   if (!user) return null
-
-  const myCount = getRegistrationsForStudent(user.id).length
-  const openCount = getOpenCohortsForRegistration().length
 
   return (
     <div className="space-y-4">
@@ -43,15 +65,19 @@ export function StudentDashboardPage() {
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-theme-sm">
           <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-            Đợt đang mở đăng ký
+            Đợt hiện có trong hệ thống
           </p>
-          <p className="mt-1 text-2xl font-semibold text-gray-800">{openCount}</p>
+          <p className="mt-1 text-2xl font-semibold text-gray-800">
+            {loading ? '—' : openTermCount}
+          </p>
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-theme-sm">
           <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
             Môn bạn đã đăng ký
           </p>
-          <p className="mt-1 text-2xl font-semibold text-gray-800">{myCount}</p>
+          <p className="mt-1 text-2xl font-semibold text-gray-800">
+            {loading ? '—' : regCount}
+          </p>
         </div>
       </div>
     </div>
