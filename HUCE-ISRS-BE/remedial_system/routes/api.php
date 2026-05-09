@@ -69,7 +69,22 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{user}',[UserController::class, 'destroy']);// Xóa ← UC chính
     });
 
+    // ── Admin: Quản lý Học kỳ ──────────────────────────────────────────────────
+    Route::prefix('admin/semesters')->group(function () {
+        Route::get('/',   [\App\Http\Controllers\Api\SemesterController::class, 'index']);
+        Route::post('/',  [\App\Http\Controllers\Api\SemesterController::class, 'store']);
+    });
+
     // ── Admin: Quản lý đợt phụ đạo ───────────────────────────────────────────────
+    Route::prefix('admin/tutoring-terms')->group(function () {
+        Route::get('/',                    [\App\Http\Controllers\Api\TutoringTermController::class, 'index']);
+        Route::post('/',                   [\App\Http\Controllers\Api\TutoringTermController::class, 'store']);
+        Route::get('/{id}',               [\App\Http\Controllers\Api\TutoringTermController::class, 'show']);
+        Route::patch('/{id}',             [\App\Http\Controllers\Api\TutoringTermController::class, 'update']);
+        Route::delete('/{id}',            [\App\Http\Controllers\Api\TutoringTermController::class, 'destroy']);
+    });
+
+    // ── Admin: Quản lý Lớp phụ đạo ───────────────────────────────────────────────
     Route::prefix('admin/tutoring-classes')->group(function () {
         Route::get('/',                    [TutoringClassController::class, 'index']);    // Danh sách
         Route::post('/',                   [TutoringClassController::class, 'store']);    // Thêm mới
@@ -82,8 +97,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // ── Admin: Quản lý Bộ môn ──────────────────────────────────────────────────
     Route::prefix('admin/departments')->group(function () {
         Route::get('/',                    [\App\Http\Controllers\Api\DepartmentController::class, 'index']);
+        Route::post('/',                   [\App\Http\Controllers\Api\DepartmentController::class, 'store']);
         Route::get('/{id}',               [\App\Http\Controllers\Api\DepartmentController::class, 'show']);
         Route::patch('/{id}',             [\App\Http\Controllers\Api\DepartmentController::class, 'update']);
+        Route::delete('/{id}',            [\App\Http\Controllers\Api\DepartmentController::class, 'destroy']);
         Route::post('/{id}/send-email',    [\App\Http\Controllers\Api\DepartmentController::class, 'sendSummaryEmail']);
     });
 

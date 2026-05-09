@@ -58,6 +58,36 @@ class DepartmentController extends BaseController
     }
 
     /**
+     * POST /api/admin/departments
+     */
+    #[OA\Post(
+        path: "/api/admin/departments",
+        operationId: "storeDepartment",
+        summary: "Thêm bộ môn mới",
+        security: [["sanctum" => []]],
+        tags: ["Bộ môn"],
+    )]
+    #[OA\Response(response: 201, description: "Thành công")]
+    public function store(Request $request): JsonResponse
+    {
+        $request->validate([
+            'DepartmentCode' => 'required|string|max:50|unique:Department,DepartmentCode',
+            'Name'           => 'required|string|max:255',
+            'Email'          => 'nullable|email|max:255',
+            'Phone'          => 'nullable|string|max:50',
+        ]);
+
+        $dept = Department::create([
+            'DepartmentCode' => $request->DepartmentCode,
+            'Name'           => $request->Name,
+            'Email'          => $request->Email,
+            'Phone'          => $request->Phone,
+        ]);
+
+        return $this->success($dept, 'Thêm bộ môn thành công', 201);
+    }
+
+    /**
      * PATCH /api/admin/departments/{id}
      * Sửa thông tin email và số điện thoại bộ môn.
      */
@@ -90,6 +120,27 @@ class DepartmentController extends BaseController
         ]);
 
         return $this->success($dept, 'Cập nhật thông tin bộ môn thành công');
+    }
+
+    /**
+     * DELETE /api/admin/departments/{id}
+     */
+    #[OA\Delete(
+        path: "/api/admin/departments/{id}",
+        operationId: "destroyDepartment",
+        summary: "Xóa bộ môn",
+        security: [["sanctum" => []]],
+        tags: ["Bộ môn"],
+    )]
+    #[OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))]
+    #[OA\Response(response: 200, description: "Xóa thành công")]
+    public function destroy(int $id): JsonResponse
+    {
+        $dept = Department::find($id);
+        if (!$dept) return $this->error('Bộ môn không tồn tại', null, 404);
+
+        $dept->delete();
+        return $this->success(null, 'Xóa bộ môn thành công');
     }
 
     /**
