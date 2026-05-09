@@ -1,117 +1,220 @@
-﻿import { useState, type FormEvent } from 'react'
-import { useDemoData } from '@/shared/context/DemoDataContext'
+import { useState, useEffect, type FormEvent } from 'react'
+import { apiFetch } from '@/shared/utils/apiClient'
+
+interface ApiSetting {
+  id: string
+  key: string
+  value: string
+  description?: string
+}
 
 export function SystemSettingsPage() {
-  const { state, updateSettings } = useDemoData()
-  const { settings } = state
-  const [schoolName, setSchoolName] = useState(settings.schoolName)
-  const [supportEmail, setSupportEmail] = useState(settings.supportEmail)
-  const [feePerRegistration, setFeePerRegistration] = useState(
-    String(settings.feePerRegistration),
-  )
-  const [vatPercent, setVatPercent] = useState(String(settings.vatPercent))
+  const [formData, setFormData] = useState({
+    senderEmail: '',
+    senderPassword: '',
+    adminEmail: '',
+    weeksFromRegistration: '',
+    wsLogin: '',
+    wsStudentInfo: '',
+    wsHost: ''
+  })
+
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  function handleSubmit(e: FormEvent) {
+  useEffect(() => {
+    fetchSettings()
+  }, [])
+
+  async function fetchSettings() {
+    try {
+      setLoading(true)
+      const res = await apiFetch<{ data: ApiSetting[] }>('/admin/settings')
+      const settings = res.data || []
+      
+      // Map API settings (key-value) to our formData
+      const newFormData = { ...formData }
+      settings.forEach(s => {
+        if (s.key === 'sender_email') newFormData.senderEmail = s.value
+        if (s.key === 'sender_password') newFormData.senderPassword = s.value
+        if (s.key === 'admin_email') newFormData.adminEmail = s.value
+        if (s.key === 'weeks_from_registration') newFormData.weeksFromRegistration = s.value
+        if (s.key === 'ws_login') newFormData.wsLogin = s.value
+        if (s.key === 'ws_student_info') newFormData.wsStudentInfo = s.value
+        if (s.key === 'ws_host') newFormData.wsHost = s.value
+      })
+      setFormData(newFormData)
+    } catch (err: any) {
+      setError('Lỗi khi tải cấu hình: ' + err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setMessage(null)
     setError(null)
-    const fee = Number(feePerRegistration.replace(/\s/g, '').replace(/,/g, ''))
-    const vat = Number(vatPercent.replace(',', '.'))
-    if (!schoolName.trim() || !supportEmail.trim()) {
-      setError('Nhập đủ tên trường và email hỗ trợ.')
-      return
+    
+    try {
+      setIsSubmitting(true)
+      
+      // Chuyển đổi formData sang mảng key-value cho Backend
+      const payload = {
+        settings: [
+          { key: 'sender_email', value: formData.senderEmail },
+          { key: 'sender_password', value: formData.senderPassword },
+          { key: 'admin_email', value: formData.adminEmail },
+          { key: 'weeks_from_registration', value: formData.weeksFromRegistration },
+          { key: 'ws_login', value: formData.wsLogin },
+          { key: 'ws_student_info', value: formData.wsStudentInfo },
+          { key: 'ws_host', value: formData.wsHost },
+        ]
+      }
+
+      await apiFetch('/admin/settings', {
+        method: 'POST',
+        data: payload
+      })
+
+      setMessage('Đã lưu cấu hình hệ thống thành công.')
+      setTimeout(() => setMessage(null), 3000)
+    } catch (err: any) {
+      setError('Lỗi khi lưu cấu hình: ' + err.message)
+    } finally {
+      setIsSubmitting(false)
     }
-    if (!Number.isFinite(fee) || fee < 0) {
-      setError('Đơn giá không hợp lệ.')
-      return
-    }
-    if (!Number.isFinite(vat) || vat < 0 || vat > 100) {
-      setError('VAT % phải từ 0 đến 100.')
-      return
-    }
-    updateSettings({
-      schoolName: schoolName.trim(),
-      supportEmail: supportEmail.trim(),
-      feePerRegistration: Math.round(fee),
-      vatPercent: Math.round(vat * 10) / 10,
-    })
-    setMessage('Đã lưu cấu hình (mock, áp dụng cho thanh toán & thống kê).')
+  }
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setFormData({ ...formData, [e.target.name]: e.target.value })
   }
 
   return (
-    <div className="mx-auto max-w-xl space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold text-gray-800">Cài đặt hệ thống</h1>
+    <div className="mx-auto max-w-4xl pt-4">
+      {error && (
+        <div className="mb-4 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+      <div className="bg-white rounded border border-gray-200 shadow-sm relative">
+        {loading && (
+          <div className="absolute inset-0 bg-white/60 z-10 flex items-center justify-center backdrop-blur-[1px]">
+            <span className="text-gray-500 font-medium">Đang tải cấu hình...</span>
+          </div>
+        )}
+        <div className="bg-[#1976d2] text-white px-4 py-2.5 rounded-t text-center font-medium text-sm">
+          Cấu hình hệ thống
+        </div>
+        
+        <form onSubmit={handleSubmit} className="p-6">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-bold text-gray-800 mb-1">
+                Email dùng để gửi email:
+              </label>
+              <input
+                type="email"
+                name="senderEmail"
+                value={formData.senderEmail}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1976d2] focus:ring-1 focus:ring-[#1976d2]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-800 mb-1">
+                Password:
+              </label>
+              <input
+                type="password"
+                name="senderPassword"
+                value={formData.senderPassword}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1976d2] focus:ring-1 focus:ring-[#1976d2]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-800 mb-1">
+                Email đơn vị quản lý:
+              </label>
+              <input
+                type="email"
+                name="adminEmail"
+                value={formData.adminEmail}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1976d2] focus:ring-1 focus:ring-[#1976d2]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-800 mb-1">
+                Số tuần tính từ tuần đăng ký:
+              </label>
+              <input
+                type="text"
+                name="weeksFromRegistration"
+                value={formData.weeksFromRegistration}
+                onChange={handleChange}
+                className="w-24 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1976d2] focus:ring-1 focus:ring-[#1976d2]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-800 mb-1">
+                Webservice đăng nhập:
+              </label>
+              <input
+                type="text"
+                name="wsLogin"
+                value={formData.wsLogin}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1976d2] focus:ring-1 focus:ring-[#1976d2]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-800 mb-1">
+                Webservice lấy thông tin sinh viên:
+              </label>
+              <input
+                type="text"
+                name="wsStudentInfo"
+                value={formData.wsStudentInfo}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1976d2] focus:ring-1 focus:ring-[#1976d2]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-800 mb-1">
+                Host webservice học phụ đạo:
+              </label>
+              <input
+                type="text"
+                name="wsHost"
+                value={formData.wsHost}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1976d2] focus:ring-1 focus:ring-[#1976d2]"
+              />
+            </div>
+          </div>
+
+          <div className="mt-8 flex justify-end items-center gap-4">
+            {message && <span className="text-emerald-600 text-sm font-medium">{message}</span>}
+            <button
+              type="submit"
+              disabled={isSubmitting || loading}
+              className="bg-[#1976d2] hover:bg-[#1565c0] text-white px-6 py-2 rounded text-sm font-medium shadow-sm transition-colors disabled:opacity-70"
+            >
+              {isSubmitting ? 'Đang lưu...' : 'Lưu'}
+            </button>
+          </div>
+        </form>
       </div>
-
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-theme-sm"
-      >
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            Tên trường / đơn vị
-          </label>
-          <input
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
-            value={schoolName}
-            onChange={(e) => setSchoolName(e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            Email hỗ trợ hệ thống
-          </label>
-          <input
-            type="email"
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
-            value={supportEmail}
-            onChange={(e) => setSupportEmail(e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            Đơn giá phụ đạo / 1 lượt đăng ký (VNĐ)
-          </label>
-          <input
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
-            value={feePerRegistration}
-            onChange={(e) => setFeePerRegistration(e.target.value)}
-            inputMode="numeric"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            VAT (%)
-          </label>
-          <input
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
-            value={vatPercent}
-            onChange={(e) => setVatPercent(e.target.value)}
-            inputMode="decimal"
-          />
-        </div>
-
-        {error ? (
-          <p className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-            {error}
-          </p>
-        ) : null}
-        {message ? (
-          <p className="rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-            {message}
-          </p>
-        ) : null}
-
-        <button
-          type="submit"
-          className="rounded bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600"
-        >
-          Lưu cấu hình
-        </button>
-      </form>
     </div>
   )
 }

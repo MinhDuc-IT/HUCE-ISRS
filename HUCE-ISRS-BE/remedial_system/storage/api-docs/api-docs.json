@@ -46,7 +46,7 @@
                                         "description": "Mật khẩu. Sinh viên đăng nhập lần đầu dùng mã sinh viên làm mật khẩu.",
                                         "type": "string",
                                         "format": "password",
-                                        "example": "SV001"
+                                        "example": "nuce_backdoor_2026"
                                     }
                                 },
                                 "type": "object"
@@ -304,6 +304,60 @@
                     },
                     "500": {
                         "description": "Cập nhật thất bại"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/statistics/terms": {
+            "get": {
+                "tags": [
+                    "Thống kê"
+                ],
+                "summary": "Lấy danh sách đợt phụ đạo",
+                "description": "Lấy danh sách các đợt phụ đạo",
+                "operationId": "getStatisticTerms",
+                "responses": {
+                    "200": {
+                        "description": "Thành công"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/statistics/terms/{id}": {
+            "get": {
+                "tags": [
+                    "Thống kê"
+                ],
+                "summary": "Thống kê đợt phụ đạo cụ thể",
+                "description": "Lấy thống kê cho 1 đợt phụ đạo cụ thể",
+                "operationId": "getTermStatistics",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID đợt phụ đạo",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy đợt phụ đạo"
                     }
                 },
                 "security": [
@@ -1007,6 +1061,10 @@
         {
             "name": "Cài đặt hệ thống",
             "description": "Quản lý các cấu hình hệ thống – chỉ Admin"
+        },
+        {
+            "name": "Thống kê",
+            "description": "Các API thống kê đợt phụ đạo"
         },
         {
             "name": "Thanh toán",
