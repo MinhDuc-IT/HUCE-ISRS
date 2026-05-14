@@ -1,0 +1,561 @@
+classDiagram
+direction LR
+
+class RegistrationController {
+  -RemedialRegistrationFacade facade
+  +eligibleCourses(studentCode)
+  +register(request)
+  +bulkRegister(request)
+  +cancel(requestId, studentCode)
+}
+
+class AdminTutoringController {
+  -TutoringClassService classService
+  -TutoringTermService termService
+  +createTerm()
+  +createClass()
+  +assignTeacher()
+  +approveRequest()
+}
+
+class AuthController {
+  -AuthService authService
+  +login()
+  +logout()
+  +me()
+}
+
+class RemedialRegistrationFacade {
+  -RegistrationValidator validator
+  -RegistrationFactory factory
+  -TutoringRequestRepository requestRepo
+  -StudentInfoPort studentInfoPort
+  -EventBus eventBus
+  -UnitOfWork unitOfWork
+  +getEligibleCourses(studentCode)
+  +register(studentCode, courseCode)
+  +bulkRegister(studentCode, courseCodes)
+  +cancel(requestId, studentCode)
+}
+
+note for RemedialRegistrationFacade "Facade điều phối toàn bộ use case đăng ký phụ đạo.\nController mỏng, dễ test, dễ bảo trì."
+
+class RegistrationValidator {
+  -StudentInfoPort studentInfoPort
+  -TutoringRequestRepository requestRepo
+  -TutoringTermRepository termRepo
+  +validateStudent(studentCode)
+  +validateCourse(studentCode, courseCode)
+  +validateNoDuplicate(studentId, courseId, termId)
+  +validateCancelable(request)
+}
+
+class RegistrationFactory {
+  +createPending(studentId, courseId, termId) TutoringRequest
+}
+
+note for RegistrationFactory "Factory Method tạo đơn đăng ký ban đầu.\nNếu sau này thêm học phí, nguồn đăng ký, ghi chú... chỉ sửa tại Factory."
+
+class TutoringClassService {
+  -TutoringClassRepository classRepo
+  -CourseRepository courseRepo
+  -TeacherRepository teacherRepo
+  +createClass()
+  +assignTeacher()
+  +closeClass()
+}
+
+class TutoringTermService {
+  -TutoringTermRepository termRepo
+  +createTerm()
+  +setDefaultTerm()
+  +closeTerm()
+}
+
+class PaymentService {
+  -PricingService pricingService
+  -PaymentRepository paymentRepo
+  +calculateTeacherPayments(termId)
+  +exportTeacherPayment(termId)
+}
+
+class PricingService {
+  -PricingStrategyFactory strategyFactory
+  +calculateClassFee(class, term) Money
+  +calculateTeacherPayment(class, term) Money
+}
+
+class PricingStrategyFactory {
+  +make(term) PricingStrategy
+}
+
+class PricingStrategy {
+  <<interface>>
+  +calculate(input) Money
+}
+
+class DefaultRemedialPricingStrategy {
+  +calculate(input) Money
+}
+
+class ProgressivePricingStrategy {
+  +calculate(input) Money
+}
+
+class DiscountPricingStrategy {
+  +calculate(input) Money
+}
+
+class PricingInput {
+  +heSoPD
+  +donGia1Tiet
+  +heSoDonGia
+  +totalPeriods
+  +studentCount
+}
+
+note for PricingStrategy "Strategy Pattern giúp đổi công thức tính tiền mà không sửa PaymentService.\nVí dụ: công thức thường, công thức ưu đãi, công thức theo quy định mới."
+note for PricingStrategyFactory "Factory chọn công thức tính tiền phù hợp theo đợt phụ đạo."
+
+class StudentInfoPort {
+  <<interface>>
+  +getStudent(studentCode) StudentInfo
+  +getCourses(studentCode) CourseResult[]
+  +verifyCredentials(studentCode, password) bool
+}
+
+class StudentInfoApiAdapter {
+  -HttpClient client
+  +getStudent(studentCode)
+  +getCourses(studentCode)
+  +verifyCredentials(studentCode, password)
+}
+
+class CachedStudentInfoAdapter {
+  -StudentInfoPort inner
+  -Cache cache
+  +getStudent(studentCode)
+  +getCourses(studentCode)
+  +verifyCredentials(studentCode, password)
+}
+
+class CircuitBreakerStudentInfoProxy {
+  -StudentInfoPort inner
+  -CircuitBreaker breaker
+  +getStudent(studentCode)
+  +getCourses(studentCode)
+  +verifyCredentials(studentCode, password)
+}
+
+note for StudentInfoPort "Adapter tách hệ thống phụ đạo khỏi hệ thống đào tạo.\nCó thể đổi API hệ thống đào tạo mà không sửa nghiệp vụ đăng ký."
+
+class TutoringRequestRepository {
+  <<interface>>
+  +save(request)
+  +update(request)
+  +findById(id)
+  +findByStudent(studentId)
+  +existsActiveRequest(studentId, courseId, termId)
+}
+
+class EloquentTutoringRequestRepository {
+  +save(request)
+  +update(request)
+  +findById(id)
+  +findByStudent(studentId)
+  +existsActiveRequest(studentId, courseId, termId)
+}
+
+class StudentRepository {
+  <<interface>>
+  +findByCode(code)
+  +save(student)
+}
+
+class EloquentStudentRepository {
+  +findByCode(code)
+  +save(student)
+}
+
+class CourseRepository {
+  <<interface>>
+  +findByCode(code)
+  +findByDepartment(departmentId)
+}
+
+class EloquentCourseRepository {
+  +findByCode(code)
+  +findByDepartment(departmentId)
+}
+
+class TutoringTermRepository {
+  <<interface>>
+  +findDefault()
+  +save(term)
+  +setDefault(termId)
+}
+
+class EloquentTutoringTermRepository {
+  +findDefault()
+  +save(term)
+  +setDefault(termId)
+}
+
+class TutoringClassRepository {
+  <<interface>>
+  +save(class)
+  +findByTerm(termId)
+  +assignTeacher(classId, teacherId)
+}
+
+class EloquentTutoringClassRepository {
+  +save(class)
+  +findByTerm(termId)
+  +assignTeacher(classId, teacherId)
+}
+
+class NotificationRepository {
+  <<interface>>
+  +save(notification)
+  +findByReceiver(receiverId)
+  +markAsRead(id)
+}
+
+class EloquentNotificationRepository {
+  +save(notification)
+  +findByReceiver(receiverId)
+  +markAsRead(id)
+}
+
+class PaymentRepository {
+  <<interface>>
+  +save(payment)
+  +findByTerm(termId)
+}
+
+class EloquentPaymentRepository {
+  +save(payment)
+  +findByTerm(termId)
+}
+
+class UnitOfWork {
+  <<interface>>
+  +transaction(callback)
+}
+
+class LaravelUnitOfWork {
+  +transaction(callback)
+}
+
+class TutoringRequest {
+  -RequestState state
+  +id
+  +studentId
+  +courseId
+  +tutoringTermId
+  +requestedPeriods
+  +status
+  +note
+  +createdAt
+  +approve()
+  +reject(reason)
+  +cancel()
+  +markPaid()
+}
+
+class RequestState {
+  <<interface>>
+  +approve(request)
+  +reject(request, reason)
+  +cancel(request)
+  +markPaid(request)
+}
+
+class PendingState {
+  +approve(request)
+  +reject(request, reason)
+  +cancel(request)
+  +markPaid(request)
+}
+
+class ApprovedState {
+  +approve(request)
+  +reject(request, reason)
+  +cancel(request)
+  +markPaid(request)
+}
+
+class RejectedState {
+  +approve(request)
+  +reject(request, reason)
+  +cancel(request)
+  +markPaid(request)
+}
+
+class CancelledState {
+  +approve(request)
+  +reject(request, reason)
+  +cancel(request)
+  +markPaid(request)
+}
+
+class PaidState {
+  +approve(request)
+  +reject(request, reason)
+  +cancel(request)
+  +markPaid(request)
+}
+
+note for RequestState "State Pattern kiểm soát chuyển trạng thái đơn.\nVí dụ: đơn đã thanh toán không được hủy tùy tiện."
+
+class Student {
+  +id
+  +studentCode
+  +fullName
+  +departmentId
+}
+
+class Course {
+  +id
+  +courseCode
+  +name
+  +credits
+  +departmentId
+}
+
+class TutoringTerm {
+  +id
+  +name
+  +startDate
+  +endDate
+  +isDefault
+  +heSoPD: int
+  +donGia1Tiet: int
+  +heSoDonGia: float
+  +isOpen()
+}
+
+note for TutoringTerm "TutoringTerm chứa tham số tính tiền của từng đợt phụ đạo:\nheSoPD, donGia1Tiet, heSoDonGia.\nKhông hard-code công thức trong entity."
+
+class TutoringClass {
+  +id
+  +courseId
+  +termId
+  +teacherId
+  +totalPeriods
+  +studentCount
+  +maxStudents
+  +status
+  +canAcceptRegistration()
+}
+
+class Teacher {
+  +id
+  +name
+  +departmentId
+}
+
+class Payment {
+  +id
+  +teacherId
+  +termId
+  +amount
+  +status
+  +createdAt
+}
+
+class Notification {
+  +id
+  +receiverId
+  +type
+  +title
+  +content
+  +status
+  +createdAt
+}
+
+class NotificationFactory {
+  +registrationCreated(request) Notification
+  +registrationApproved(request) Notification
+  +registrationRejected(request) Notification
+  +registrationCancelled(request) Notification
+  +paymentCreated(payment) Notification
+}
+
+note for NotificationFactory "Factory tạo nội dung thông báo theo từng nghiệp vụ.\nTránh rải text thông báo trong nhiều service."
+
+class NotificationService {
+  -NotificationRepository notificationRepo
+  -NotificationChannel[] channels
+  +notify(notification)
+}
+
+class NotificationChannel {
+  <<interface>>
+  +send(notification)
+}
+
+class DatabaseNotificationChannel {
+  +send(notification)
+}
+
+class EmailNotificationChannel {
+  +send(notification)
+}
+
+class SmsNotificationChannel {
+  +send(notification)
+}
+
+note for NotificationChannel "Có thể mở rộng kênh gửi: database, email, SMS, push notification\nmà không sửa NotificationService."
+
+class EventBus {
+  <<interface>>
+  +publish(event)
+  +subscribe(eventName, listener)
+}
+
+class LaravelEventBus {
+  +publish(event)
+  +subscribe(eventName, listener)
+}
+
+class DomainEvent {
+  <<interface>>
+  +occurredAt
+}
+
+class RegistrationCreatedEvent {
+  +requestId
+  +studentId
+  +courseId
+}
+
+class RegistrationApprovedEvent {
+  +requestId
+  +studentId
+}
+
+class RegistrationRejectedEvent {
+  +requestId
+  +studentId
+  +reason
+}
+
+class RegistrationCancelledEvent {
+  +requestId
+  +studentId
+}
+
+class PaymentCreatedEvent {
+  +paymentId
+  +teacherId
+}
+
+class NotificationListener {
+  -NotificationFactory factory
+  -NotificationService notificationService
+  +handle(event)
+}
+
+note for EventBus "Pub-Sub / Observer Pattern.\nUse case chỉ phát sự kiện, listener tự xử lý thông báo.\nDễ mở rộng email, log, audit, thống kê."
+
+class ServiceProvider {
+  <<Singleton>>
+  +bindInterfaces()
+}
+
+RegistrationController --> RemedialRegistrationFacade
+AdminTutoringController --> TutoringClassService
+AdminTutoringController --> TutoringTermService
+AuthController --> StudentInfoPort
+
+RemedialRegistrationFacade --> RegistrationValidator
+RemedialRegistrationFacade --> RegistrationFactory
+RemedialRegistrationFacade --> TutoringRequestRepository
+RemedialRegistrationFacade --> StudentInfoPort
+RemedialRegistrationFacade --> EventBus
+RemedialRegistrationFacade --> UnitOfWork
+RemedialRegistrationFacade ..> RegistrationCreatedEvent
+RemedialRegistrationFacade ..> RegistrationCancelledEvent
+
+RegistrationValidator --> StudentInfoPort
+RegistrationValidator --> TutoringRequestRepository
+RegistrationValidator --> TutoringTermRepository
+RegistrationFactory --> TutoringRequest
+
+TutoringClassService --> TutoringClassRepository
+TutoringClassService --> CourseRepository
+TutoringClassService --> TeacherRepository
+TutoringTermService --> TutoringTermRepository
+
+PaymentService --> PricingService
+PaymentService --> PaymentRepository
+PaymentService ..> PaymentCreatedEvent
+PricingService --> PricingStrategyFactory
+PricingService --> PricingStrategy
+PricingStrategyFactory --> PricingStrategy
+PricingStrategy <|.. DefaultRemedialPricingStrategy
+PricingStrategy <|.. ProgressivePricingStrategy
+PricingStrategy <|.. DiscountPricingStrategy
+PricingStrategy ..> PricingInput
+PricingInput ..> TutoringTerm
+PricingInput ..> TutoringClass
+
+StudentInfoPort <|.. StudentInfoApiAdapter
+StudentInfoPort <|.. CachedStudentInfoAdapter
+StudentInfoPort <|.. CircuitBreakerStudentInfoProxy
+CachedStudentInfoAdapter o-- StudentInfoPort
+CircuitBreakerStudentInfoProxy o-- StudentInfoPort
+
+TutoringRequestRepository <|.. EloquentTutoringRequestRepository
+StudentRepository <|.. EloquentStudentRepository
+CourseRepository <|.. EloquentCourseRepository
+TutoringTermRepository <|.. EloquentTutoringTermRepository
+TutoringClassRepository <|.. EloquentTutoringClassRepository
+NotificationRepository <|.. EloquentNotificationRepository
+PaymentRepository <|.. EloquentPaymentRepository
+UnitOfWork <|.. LaravelUnitOfWork
+
+TutoringRequest --> RequestState
+RequestState <|.. PendingState
+RequestState <|.. ApprovedState
+RequestState <|.. RejectedState
+RequestState <|.. CancelledState
+RequestState <|.. PaidState
+
+TutoringRequest --> Student
+TutoringRequest --> Course
+TutoringRequest --> TutoringTerm
+TutoringClass --> Course
+TutoringClass --> TutoringTerm
+TutoringClass --> Teacher
+Payment --> Teacher
+Payment --> TutoringTerm
+
+NotificationFactory --> Notification
+NotificationService --> NotificationRepository
+NotificationService --> NotificationChannel
+NotificationChannel <|.. DatabaseNotificationChannel
+NotificationChannel <|.. EmailNotificationChannel
+NotificationChannel <|.. SmsNotificationChannel
+
+EventBus <|.. LaravelEventBus
+DomainEvent <|.. RegistrationCreatedEvent
+DomainEvent <|.. RegistrationApprovedEvent
+DomainEvent <|.. RegistrationRejectedEvent
+DomainEvent <|.. RegistrationCancelledEvent
+DomainEvent <|.. PaymentCreatedEvent
+
+LaravelEventBus --> NotificationListener
+NotificationListener --> NotificationFactory
+NotificationListener --> NotificationService
+NotificationListener ..> DomainEvent
+
+ServiceProvider ..> StudentInfoPort
+ServiceProvider ..> TutoringRequestRepository
+ServiceProvider ..> TutoringTermRepository
+ServiceProvider ..> TutoringClassRepository
+ServiceProvider ..> NotificationRepository
+ServiceProvider ..> PaymentRepository
+ServiceProvider ..> UnitOfWork
