@@ -67,8 +67,8 @@ class CourseDto
         $dto->subjectName      = $monHoc?->TenMonHoc ?? '';
         $dto->credits          = (int) ($monHoc?->SoTinChi ?? 0);
         $dto->classSectionCode = $lopHocPhan?->MaLopHocPhan ?? '';
-        $dto->semesterOrder    = (int) ($dot?->SoThuTU ?? 0);
-        $dto->academicYear     = (int) ($dot?->IdNamHoc ?? 0);
+        $dto->semesterOrder    = (int) ($dot?->SoThuTu ?? 0);
+        $dto->academicYear     = (int) ($dot?->IDNamHoc ?? 0);
         $dto->processScore     = $ketQua->DiemChuyenCan1;
         $dto->examScore        = $ketQua->DiemThi;
         $dto->finalScore       = $ketQua->DiemTongKet;
@@ -85,7 +85,7 @@ class CourseDto
      *   MaHocPhan, MaMonHoc, TenMonHoc, SoTinChi,
      *   MaLopHocPhan, DiemChuyenCan1, DiemThi,
      *   DiemTongKet, DiemTinChi, DiemChu,
-     *   HocKy (alias của dot.SoThuTu), IdNamHoc
+     *   HocKy (alias của dot.SoThuTu), IDNamHoc (alias từ nh.NamHoc khi join DM_NamHoc — năm học hiển thị)
      *
      * @param stdClass $row Một hàng kết quả từ DB::table
      */
@@ -99,7 +99,7 @@ class CourseDto
         $dto->credits          = (int) ($row->SoTinChi ?? 0);
         $dto->classSectionCode = $row->MaLopHocPhan ?? '';
         $dto->semesterOrder    = (int) ($row->HocKy   ?? 0);
-        $dto->academicYear     = (int) ($row->IdNamHoc ?? 0);
+        $dto->academicYear     = (int) ($row->IDNamHoc ?? 0);
         $dto->processScore     = isset($row->DiemChuyenCan1) ? (float) $row->DiemChuyenCan1 : null;
         $dto->examScore        = isset($row->DiemThi)        ? (float) $row->DiemThi        : null;
         $dto->finalScore       = isset($row->DiemTongKet)    ? (float) $row->DiemTongKet    : null;

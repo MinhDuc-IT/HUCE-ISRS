@@ -10,8 +10,8 @@ use Illuminate\Database\Eloquent\Model;
  * KHÔNG ghi dữ liệu. Chỉ dùng để đọc thông tin học kỳ.
  *
  * @property int  $Id        Khóa chính
- * @property int  $SoThuTU   Thứ tự học kỳ trong năm (1 = HK1, 2 = HK2, 3 = hè)
- * @property int  $IdNamHoc  Năm học (VD: 2024)
+ * @property int|null $SoThuTu   Thứ tự học kỳ trong năm (1 = HK1, 2 = HK2, 3 = hè)
+ * @property int|null $IDNamHoc  Năm học (VD: 2024)
  * @property bool $IsActive  Học kỳ hiện tại đang hoạt động
  * @property bool $IsVisible Hiển thị trong giao diện hay không
  */

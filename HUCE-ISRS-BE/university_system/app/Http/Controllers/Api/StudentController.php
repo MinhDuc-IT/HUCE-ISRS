@@ -124,7 +124,7 @@ class StudentController extends BaseController
         name: "semester_key",
         in: "path",
         required: true,
-        description: "ID học kỳ (VD: 10) hoặc Mã học kỳ (VD: 20241)",
+        description: "Số 1–3 chữ số: Id DM_Dot (lhp.IDDot). Từ 4 ký tự: YYYY = DM_NamHoc.NamHoc, tùy chọn thêm 1 chữ số = dot.SoThuTu (VD: 20241 = năm 2024, HK có SoThuTu=1). Không dùng 25 để chỉ năm 2025.",
         schema: new OA\Schema(type: "string", example: "20241")
     )]
     #[OA\Response(
@@ -155,6 +155,7 @@ class StudentController extends BaseController
          *   LEFT JOIN TKB_LopHocPhan        lhp ON kq.IDLopHocPhan = lhp.Id
          *   LEFT JOIN TKB_MonHoc            mh  ON lhp.IDMonHoc    = mh.Id
          *   LEFT JOIN DM_Dot               dot  ON lhp.IDDot       = dot.Id
+         *   LEFT JOIN DM_NamHoc            nh   ON dot.IDNamHoc    = nh.Id   (IDNamHoc là FK; năm hiển thị = nh.NamHoc)
          *   WHERE sv.MaSinhVien = ?
          */
         $query = DB::connection('sqlsrv')
@@ -162,6 +163,7 @@ class StudentController extends BaseController
             ->leftJoin('TKB_LopHocPhan as lhp', 'kq.IDLopHocPhan', '=', 'lhp.Id')
             ->leftJoin('TKB_MonHoc as mh',       'lhp.IDMonHoc',    '=', 'mh.Id')
             ->leftJoin('DM_Dot as dot',           'lhp.IDDot',       '=', 'dot.Id')
+            ->leftJoin('DM_NamHoc as nh',         'dot.IDNamHoc',    '=', 'nh.Id')
             ->where('kq.IDSinhVien', $sinhVien->Id)
             ->select(
                 'mh.MaHocPhan',
@@ -175,21 +177,26 @@ class StudentController extends BaseController
                 'kq.DiemTinChi',
                 'kq.DiemChu',
                 'dot.SoThuTu as HocKy',
-                'dot.IdNamHoc'
+                'nh.NamHoc as IDNamHoc',
             );
 
         // Lọc theo học kỳ
         if (is_numeric($semester_key) && strlen($semester_key) < 4) {
-            // Số ngắn (VD: 10) → ID trực tiếp của DM_Dot
+            // Số ngắn (VD: 10) → ID trực tiếp của DM_Dot (không phải năm 20xx)
             $query->where('lhp.IDDot', $semester_key);
         } else {
-            // Chuỗi dạng YYYYS (VD: 20241) hoặc YYYY (VD: 2024)
+            // Chuỗi dạng YYYYS (VD: 20241) hoặc YYYY (VD: 2024) — YYYY = DM_NamHoc.NamHoc, S = dot.SoThuTu
             $year  = substr($semester_key, 0, 4);
             $order = substr($semester_key, 4);
 
-            $query->where('dot.IdNamHoc', $year);
+            $yearInt = (int) $year;
+            $query->whereIn('dot.IDNamHoc', function ($sub) use ($yearInt) {
+                $sub->select('Id')
+                    ->from('DM_NamHoc')
+                    ->where('NamHoc', $yearInt);
+            });
             if ($order !== '') {
-                $query->where('dot.SoThuTu', $order);
+                $query->where('dot.SoThuTu', (int) $order);
             }
         }
 
