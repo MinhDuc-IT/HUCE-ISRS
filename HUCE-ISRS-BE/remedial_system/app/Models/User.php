@@ -3,12 +3,15 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Scopes\NotDeletedScope;
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
+#[ScopedBy([NotDeletedScope::class])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -31,6 +34,7 @@ class User extends Authenticatable
         'role',
         'student_code',
         'department_id',
+        'is_deleted',
     ];
 
     /**
@@ -54,6 +58,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password'          => 'hashed',
             'department_id'     => 'integer',
+            'is_deleted'        => 'boolean',
         ];
     }
 
@@ -74,5 +79,15 @@ class User extends Authenticatable
     public function isSinhVien(): bool
     {
         return $this->role === self::ROLE_SINH_VIEN;
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class, 'department_id');
+    }
+
+    public function remedialRegistrations()
+    {
+        return $this->hasMany(RemedialRegistration::class, 'student_id');
     }
 }

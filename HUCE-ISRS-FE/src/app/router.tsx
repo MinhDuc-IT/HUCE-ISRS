@@ -1,14 +1,12 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { LoginPage } from '@/modules/auth/pages/LoginPage'
-import { AdminAssignmentsPage } from '@/modules/admin/pages/AdminAssignmentsPage'
 import { AdminDashboardPage } from '@/modules/admin/pages/AdminDashboardPage'
+import { AdminRegistrationsPage } from '@/modules/admin/pages/AdminRegistrationsPage'
 import { AdminSendEmailPage } from '@/modules/admin/pages/AdminSendEmailPage'
-import { PaymentsPage } from '@/modules/admin/pages/PaymentsPage'
 import { StatisticsCohortPage } from '@/modules/admin/pages/StatisticsCohortPage'
 import { SystemSettingsPage } from '@/modules/admin/pages/SystemSettingsPage'
 import { CohortFormPage } from '@/modules/admin/pages/CohortFormPage'
 import { CohortListPage } from '@/modules/admin/pages/CohortListPage'
-import { DepartmentFormPage } from '@/modules/admin/pages/DepartmentFormPage'
 import { DepartmentListPage } from '@/modules/admin/pages/DepartmentListPage'
 import { UserFormPage } from '@/modules/admin/pages/UserFormPage'
 import { UserListPage } from '@/modules/admin/pages/UserListPage'
@@ -39,11 +37,9 @@ export function AppRoutes() {
           <Route path="users/new" element={<UserFormPage />} />
           <Route path="users/:id/edit" element={<UserFormPage />} />
           <Route path="departments" element={<DepartmentListPage />} />
-          <Route path="departments/:id/edit" element={<DepartmentFormPage />} />
-          <Route path="assignments" element={<AdminAssignmentsPage />} />
+          <Route path="registrations" element={<AdminRegistrationsPage />} />
           <Route path="email-department" element={<AdminSendEmailPage />} />
           <Route path="settings" element={<SystemSettingsPage />} />
-          <Route path="payments" element={<PaymentsPage />} />
           <Route path="statistics" element={<StatisticsCohortPage />} />
         </Route>
       </Route>

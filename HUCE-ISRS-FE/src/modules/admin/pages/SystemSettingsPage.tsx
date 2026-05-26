@@ -31,7 +31,7 @@ export function SystemSettingsPage() {
   async function fetchSettings() {
     try {
       setLoading(true)
-      const res = await apiFetch<{ data: ApiSetting[] }>('/admin/settings')
+      const res = await apiFetch<{ data: ApiSetting[] }>('/admin/system-configurations')
       const settings = res.data || []
       
       // Map API settings (key-value) to our formData
@@ -74,7 +74,7 @@ export function SystemSettingsPage() {
         ]
       }
 
-      await apiFetch('/admin/settings', {
+      await apiFetch('/admin/system-configurations', {
         method: 'POST',
         data: payload
       })

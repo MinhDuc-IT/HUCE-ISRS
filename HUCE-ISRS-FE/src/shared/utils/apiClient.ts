@@ -9,18 +9,18 @@ export async function apiFetch<T>(endpoint: string, options: ApiOptions = {}): P
   
   const token = localStorage.getItem('token')
   
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    ...customHeaders,
+    Accept: 'application/json',
+    ...(customHeaders as Record<string, string>),
   }
 
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`
+    headers.Authorization = `Bearer ${token}`
   }
 
   const config: RequestInit = {
-    method: data ? 'POST' : 'GET',
+    method: customConfig.method ?? (data ? 'POST' : 'GET'),
     ...customConfig,
     headers,
   }

@@ -1,4 +1,4 @@
-import type { AuthUser, UserRole } from '@/shared/types/auth'
+import type { AuthUser } from '@/shared/types/auth'
 
 export type DemoCredential = {
   username: string
@@ -51,13 +51,4 @@ export function findDemoUser(
   return row ? row.user : null
 }
 
-export function getHomePathForRole(role: UserRole): string {
-  switch (role) {
-    case 'admin':
-      return '/admin'
-    case 'department':
-      return '/department'
-    case 'student':
-      return '/student'
-  }
-}
+export { getHomePathForRole } from '@/shared/utils/rolePaths'

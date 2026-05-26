@@ -2,18 +2,10 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { apiFetch } from '@/shared/utils/apiClient'
 import { useToast } from '@/shared/context/ToastContext'
-
-interface TutoringTerm {
-  id: number
-  Name: string
-  StartDate: string
-  EndDate: string
-  RegistrationStartDate: string
-  RegistrationEndDate: string
-}
+import type { ApiRemedialTerm } from '@/shared/types/api'
 
 export function CohortListPage() {
-  const [terms, setTerms] = useState<TutoringTerm[]>([])
+  const [terms, setTerms] = useState<ApiRemedialTerm[]>([])
   const [loading, setLoading] = useState(true)
   const { success, error: showError } = useToast()
 
@@ -24,10 +16,11 @@ export function CohortListPage() {
   async function fetchTerms() {
     try {
       setLoading(true)
-      const res = await apiFetch<{ data: TutoringTerm[] }>('/admin/tutoring-terms')
+      const res = await apiFetch<{ data: ApiRemedialTerm[] }>('/admin/remedial-terms')
       setTerms(res.data || [])
-    } catch (err: any) {
-      showError('Lỗi tải danh sách đợt phụ đạo: ' + err.message)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Lỗi không xác định'
+      showError('Lỗi tải danh sách đợt phụ đạo: ' + msg)
     } finally {
       setLoading(false)
     }
@@ -36,15 +29,16 @@ export function CohortListPage() {
   async function handleDelete(id: number, name: string) {
     if (!window.confirm(`Xóa đợt "${name}"? Thao tác không thể hoàn tác.`)) return
     try {
-      await apiFetch(`/admin/tutoring-terms/${id}`, { method: 'DELETE' })
+      await apiFetch(`/admin/remedial-terms/${id}`, { method: 'DELETE' })
       success('Đã xóa đợt phụ đạo.')
       fetchTerms()
-    } catch (err: any) {
-      showError(err.message || 'Không thể xóa đợt phụ đạo.')
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Không thể xóa đợt phụ đạo.'
+      showError(msg)
     }
   }
 
-  function formatDate(d: string) {
+  function formatDate(d: string | null | undefined) {
     if (!d) return '-'
     return new Date(d).toLocaleDateString('vi-VN')
   }
@@ -52,9 +46,7 @@ export function CohortListPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-semibold text-gray-800">Đợt phụ đạo</h1>
-        </div>
+        <h1 className="text-lg font-semibold text-gray-800">Đợt phụ đạo</h1>
         <Link
           to="/admin/cohorts/new"
           className="inline-flex items-center rounded bg-brand-500 px-4 py-2 text-sm font-semibold text-white no-underline hover:bg-brand-600"
@@ -74,7 +66,7 @@ export function CohortListPage() {
                 <th className="px-4 py-3 font-semibold">Ngày kết thúc</th>
                 <th className="px-4 py-3 font-semibold">Đăng ký từ</th>
                 <th className="px-4 py-3 font-semibold">Đăng ký đến</th>
-                <th className="px-4 py-3 font-semibold text-right">Thao tác</th>
+                <th className="px-4 py-3 text-right font-semibold">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -94,11 +86,11 @@ export function CohortListPage() {
                 terms.map((c, i) => (
                   <tr key={c.id} className="hover:bg-gray-50/80">
                     <td className="px-4 py-3 text-gray-500">{i + 1}</td>
-                    <td className="px-4 py-3 font-medium text-gray-800">{c.Name}</td>
-                    <td className="px-4 py-3 text-gray-600">{formatDate(c.StartDate)}</td>
-                    <td className="px-4 py-3 text-gray-600">{formatDate(c.EndDate)}</td>
-                    <td className="px-4 py-3 text-gray-600">{formatDate(c.RegistrationStartDate)}</td>
-                    <td className="px-4 py-3 text-gray-600">{formatDate(c.RegistrationEndDate)}</td>
+                    <td className="px-4 py-3 font-medium text-gray-800">{c.name}</td>
+                    <td className="px-4 py-3 text-gray-600">{formatDate(c.start_date)}</td>
+                    <td className="px-4 py-3 text-gray-600">{formatDate(c.end_date)}</td>
+                    <td className="px-4 py-3 text-gray-600">{formatDate(c.registration_start)}</td>
+                    <td className="px-4 py-3 text-gray-600">{formatDate(c.registration_end)}</td>
                     <td className="px-4 py-3 text-right">
                       <Link
                         to={`/admin/cohorts/${c.id}/edit`}
@@ -109,7 +101,7 @@ export function CohortListPage() {
                       <button
                         type="button"
                         className="text-red-600 hover:underline"
-                        onClick={() => void handleDelete(c.id, c.Name)}
+                        onClick={() => void handleDelete(c.id, c.name)}
                       >
                         Xóa
                       </button>

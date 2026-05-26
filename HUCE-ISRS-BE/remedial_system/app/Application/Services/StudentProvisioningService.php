@@ -4,8 +4,8 @@ namespace App\Application\Services;
 
 use App\Models\User;
 use App\Domain\Entities\StudentInfo;
-use App\Domain\Ports\StudentInfoPort;
-use App\Domain\Repositories\UserRepositoryPort;
+use App\Domain\Ports\External\StudentInfoPort;
+use App\Domain\Ports\Persistence\UserRepositoryPort;
 use App\Domain\Exceptions\StudentNotFoundException;
 use App\Domain\Exceptions\ExternalSystemException;
 use Illuminate\Support\Facades\Hash;

@@ -1,115 +1,118 @@
 <?php
 
+use App\Http\Controllers\Admin\DepartmentController as AdminDepartmentController;
+use App\Http\Controllers\Admin\RemedialRegistrationController as AdminRemedialRegistrationController;
+use App\Http\Controllers\Admin\RemedialTermController;
+use App\Http\Controllers\Admin\StatisticsController;
+use App\Http\Controllers\Admin\SubjectController;
+use App\Http\Controllers\Admin\SystemConfigurationController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Api\AuthController;
-
-use App\Http\Controllers\Api\RegistrationController;
-use App\Http\Controllers\Api\TutoringClassController;
-use App\Http\Controllers\Api\UserController;
-use App\Http\Controllers\Api\SettingController;
-use App\Http\Controllers\Api\TeacherPaymentController;
-use App\Http\Controllers\Api\StatisticController;
+use App\Http\Controllers\Department\ProfileController as DepartmentProfileController;
+use App\Http\Controllers\Department\RemedialRegistrationController as DepartmentRemedialRegistrationController;
+use App\Http\Controllers\Department\SubjectAssignmentController as DepartmentSubjectAssignmentController;
+use App\Http\Controllers\Department\SummaryEmailController;
+use App\Http\Controllers\Student\EligibleSubjectController;
+use App\Http\Controllers\Student\RemedialRegistrationController as StudentRemedialRegistrationController;
+use App\Http\Controllers\Student\RemedialTermController as StudentRemedialTermController;
+use App\Http\Controllers\Student\TermRegisteredSubjectController;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| API Routes – Remedial Registration System
+| 1. Public – Auth (không cần token)
 |--------------------------------------------------------------------------
-| [PUBLIC]
-|   POST   /api/auth/login    -> Đăng nhập (Use case: Đăng nhập)
-|
-| [PROTECTED – Bearer token qua Sanctum]
-|   POST   /api/auth/logout   -> Đăng xuất
-|   GET    /api/auth/me       -> Thông tin người dùng hiện tại
-|
-|   GET    /api/students/{studentId}/eligible-courses -> Môn đủ điều kiện
-|   GET    /api/students/{studentId}/registrations    -> Danh sách đơn đăng ký
-|   POST   /api/registrations                         -> Tạo đăng ký mới
-|   DELETE /api/registrations/{id}                    -> Hủy đăng ký
 */
-
-// ── Public: Đăng nhập ────────────────────────────────────────────────────────
 Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login'])->name('login');
 });
 
-// ── Protected: yêu cầu Bearer token ─────────────────────────────────────────
+/*
+|--------------------------------------------------------------------------
+| 2–4. Protected – Auth session + theo vai trò
+|--------------------------------------------------------------------------
+*/
 Route::middleware('auth:sanctum')->group(function () {
 
-    // Auth
     Route::prefix('auth')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
-        Route::get('me',      [AuthController::class, 'me']);
-    });
-    
-    // ── Admin: Cài đặt hệ thống (Use case: Cài đặt hệ thống) ─────────────────
-    Route::prefix('admin/settings')->group(function () {
-        Route::get('/',        [SettingController::class, 'index']);   // Xem danh sách cấu hình
-        Route::post('/',       [SettingController::class, 'update']);  // Cập nhật cấu hình
+        Route::get('me', [AuthController::class, 'me']);
     });
 
-    // ── Admin: Thanh toán tiền phụ đạo ───────────────────────────────────────
-    Route::prefix('admin/payments/teachers')->group(function () {
-        Route::get('/',        [TeacherPaymentController::class, 'index']);  // Tổng hợp và xem (JSON)
-        Route::get('/export',  [TeacherPaymentController::class, 'export']); // Xuất file Excel (.xlsx)
+    /*
+    | 2. Admin (role:admin)
+    */
+    Route::middleware('role:admin')->group(function () {
+
+        Route::prefix('admin/system-configurations')->group(function () {
+            Route::get('/', [SystemConfigurationController::class, 'index']);
+            Route::post('/', [SystemConfigurationController::class, 'update']);
+        });
+
+        Route::prefix('admin/statistics/terms')->group(function () {
+            Route::get('/', [StatisticsController::class, 'listTerms']);
+            Route::get('/{id}', [StatisticsController::class, 'termStatistics']);
+        });
+
+        Route::prefix('admin/users')->group(function () {
+            Route::get('/', [UserController::class, 'index']);
+            Route::post('/', [UserController::class, 'store']);
+            Route::get('/{id}', [UserController::class, 'show']);
+            Route::patch('/{user}', [UserController::class, 'update']);
+            Route::delete('/{user}', [UserController::class, 'destroy']);
+        });
+
+        Route::prefix('admin/remedial-terms')->group(function () {
+            Route::get('/', [RemedialTermController::class, 'index']);
+            Route::post('/', [RemedialTermController::class, 'store']);
+            Route::get('/{id}/statistics', [StatisticsController::class, 'termStatistics']);
+            Route::get('/{id}', [RemedialTermController::class, 'show']);
+            Route::patch('/{id}', [RemedialTermController::class, 'update']);
+            Route::delete('/{id}', [RemedialTermController::class, 'destroy']);
+        });
+
+        Route::prefix('admin/departments')->group(function () {
+            Route::get('/', [AdminDepartmentController::class, 'index']);
+            Route::post('/', [AdminDepartmentController::class, 'store']);
+            Route::get('/{id}', [AdminDepartmentController::class, 'show']);
+            Route::patch('/{id}', [AdminDepartmentController::class, 'update']);
+            Route::delete('/{id}', [AdminDepartmentController::class, 'destroy']);
+            Route::post('/{id}/send-email', [AdminDepartmentController::class, 'sendSummaryEmail']);
+        });
+
+        Route::prefix('admin/subjects')->group(function () {
+            Route::get('/', [SubjectController::class, 'index']);
+            Route::post('/', [SubjectController::class, 'store']);
+            Route::get('/{id}', [SubjectController::class, 'show']);
+            Route::patch('/{id}', [SubjectController::class, 'update']);
+            Route::delete('/{id}', [SubjectController::class, 'destroy']);
+        });
+
+        Route::get('admin/remedial-registrations', [AdminRemedialRegistrationController::class, 'index']);
     });
 
-    // ── Admin: Thống kê đợt phụ đạo ──────────────────────────────────────────
-    Route::prefix('admin/statistics/terms')->group(function () {
-        Route::get('/',        [StatisticController::class, 'getTerms']);
-        Route::get('/{id}',    [StatisticController::class, 'getTermStatistics']);
+    /*
+    | 3. Department / Bộ môn (role:bo_mon)
+    */
+    Route::middleware('role:bo_mon')->prefix('department')->group(function () {
+        Route::get('me', [DepartmentProfileController::class, 'show']);
+        Route::patch('me', [DepartmentProfileController::class, 'update']);
+        Route::get('remedial-registrations', [DepartmentRemedialRegistrationController::class, 'index']);
+        Route::patch('remedial-registrations/{id}', [DepartmentRemedialRegistrationController::class, 'update']);
+        Route::get('subject-assignments', [DepartmentSubjectAssignmentController::class, 'index']);
+        Route::patch('subjects/{subjectId}/lecturer', [DepartmentSubjectAssignmentController::class, 'update']);
+        Route::post('send-summary-email', [SummaryEmailController::class, 'send']);
     });
 
-    // ── Admin: Quản lý người dùng (Use case: Thêm, Sửa, Xóa người dùng) ──────────
-    Route::prefix('admin/users')->group(function () {
-
-        Route::get('/',        [UserController::class, 'index']);   // Danh sách
-        Route::post('/',       [UserController::class, 'store']);   // Thêm mới
-        Route::get('/{id}',    [UserController::class, 'show']);    // Chi tiết (bước 1 UC Sửa/Xóa)
-        Route::patch('/{user}',[UserController::class, 'update']);  // Sửa
-        Route::delete('/{user}',[UserController::class, 'destroy']);// Xóa ← UC chính
+    /*
+    | 4. Student / Sinh viên (role:sinh_vien)
+    */
+    Route::middleware('role:sinh_vien')->prefix('student')->group(function () {
+        Route::get('me/eligible-subjects', [EligibleSubjectController::class, 'index']);
+        Route::get('me/term-registered-subjects', [TermRegisteredSubjectController::class, 'index']);
+        Route::get('me/remedial-registrations', [StudentRemedialRegistrationController::class, 'index']);
+        Route::post('me/remedial-registrations', [StudentRemedialRegistrationController::class, 'store']);
+        Route::delete('me/remedial-registrations/{id}', [StudentRemedialRegistrationController::class, 'destroy']);
+        Route::get('remedial-terms/current', [StudentRemedialTermController::class, 'current']);
     });
-
-    // ── Admin: Quản lý Học kỳ ──────────────────────────────────────────────────
-    Route::prefix('admin/semesters')->group(function () {
-        Route::get('/',   [\App\Http\Controllers\Api\SemesterController::class, 'index']);
-        Route::post('/',  [\App\Http\Controllers\Api\SemesterController::class, 'store']);
-    });
-
-    // ── Admin: Quản lý đợt phụ đạo ───────────────────────────────────────────────
-    Route::prefix('admin/tutoring-terms')->group(function () {
-        Route::get('/',                    [\App\Http\Controllers\Api\TutoringTermController::class, 'index']);
-        Route::post('/',                   [\App\Http\Controllers\Api\TutoringTermController::class, 'store']);
-        Route::get('/{id}',               [\App\Http\Controllers\Api\TutoringTermController::class, 'show']);
-        Route::patch('/{id}',             [\App\Http\Controllers\Api\TutoringTermController::class, 'update']);
-        Route::delete('/{id}',            [\App\Http\Controllers\Api\TutoringTermController::class, 'destroy']);
-    });
-
-    // ── Admin: Quản lý Lớp phụ đạo ───────────────────────────────────────────────
-    Route::prefix('admin/tutoring-classes')->group(function () {
-        Route::get('/',                    [TutoringClassController::class, 'index']);    // Danh sách
-        Route::post('/',                   [TutoringClassController::class, 'store']);    // Thêm mới
-        Route::get('/{id}',               [TutoringClassController::class, 'show']);     // Chi tiết (bước 1 UC Sửa/Xóa)
-        Route::patch('/{id}',             [TutoringClassController::class, 'update']);
-        Route::delete('/{id}',            [TutoringClassController::class, 'destroy']);
-        Route::patch('/{id}/assign-teacher', [TutoringClassController::class, 'assignTeacher']);
-    });
-
-    // ── Admin: Quản lý Bộ môn ──────────────────────────────────────────────────
-    Route::prefix('admin/departments')->group(function () {
-        Route::get('/',                    [\App\Http\Controllers\Api\DepartmentController::class, 'index']);
-        Route::post('/',                   [\App\Http\Controllers\Api\DepartmentController::class, 'store']);
-        Route::get('/{id}',               [\App\Http\Controllers\Api\DepartmentController::class, 'show']);
-        Route::patch('/{id}',             [\App\Http\Controllers\Api\DepartmentController::class, 'update']);
-        Route::delete('/{id}',            [\App\Http\Controllers\Api\DepartmentController::class, 'destroy']);
-        Route::post('/{id}/send-email',    [\App\Http\Controllers\Api\DepartmentController::class, 'sendSummaryEmail']);
-    });
-
-    // ── Sinh viên: Đăng ký học bổ sung ───────────────────────────────────────
-    Route::prefix('students/{studentId}')->group(function () {
-        Route::get('eligible-courses', [RegistrationController::class, 'eligibleCourses']);
-        Route::get('registrations',    [RegistrationController::class, 'index']);
-    });
-
-    Route::post('/registrations',        [RegistrationController::class, 'store']);
-    Route::delete('/registrations/{id}', [RegistrationController::class, 'cancel']);
 });

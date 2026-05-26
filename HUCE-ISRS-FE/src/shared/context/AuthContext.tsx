@@ -2,17 +2,20 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from 'react'
-import type { AuthUser, UserRole } from '@/shared/types/auth'
+import type { AuthUser } from '@/shared/types/auth'
 import { apiFetch } from '@/shared/utils/apiClient'
+import { mapApiUserToAuthUser } from '@/shared/utils/authUserMapper'
 
 type AuthContextValue = {
   user: AuthUser | null
-  login: (username: string, password: string) => Promise<AuthUser | null>
+  login: (username: string, password: string) => Promise<AuthUser>
   logout: () => void
+  refreshUser: () => Promise<AuthUser | null>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -30,45 +33,54 @@ function readStoredUser(): AuthUser | null {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(() => readStoredUser())
 
-  const login = useCallback(async (username: string, password: string) => {
+  const refreshUser = useCallback(async (): Promise<AuthUser | null> => {
+    const token = localStorage.getItem('token')
+    if (!token) return null
+
     try {
-      const isEmail = username.includes('@')
-      const payload = isEmail 
-        ? { email: username, password } 
-        : { student_code: username, password }
-
-      const response = await apiFetch<{ data: { token: string, user: any } }>('/auth/login', {
-        data: payload
-      })
-
-      if (response.data && response.data.token) {
-        localStorage.setItem('token', response.data.token)
-        
-        // Map backend user to frontend AuthUser
-        let mappedRole: UserRole = 'student'
-        if (response.data.user.role === 'admin') mappedRole = 'admin'
-        else if (response.data.user.role === 'bo_mon') mappedRole = 'department'
-        else if (response.data.user.role === 'sinh_vien') mappedRole = 'student'
-        else mappedRole = response.data.user.role as UserRole
-
-        const authUser: AuthUser = {
-          id: response.data.user.id.toString(),
-          username: response.data.user.student_code || response.data.user.email,
-          displayName: response.data.user.name,
-          role: mappedRole,
-          departmentId: response.data.user.department_id?.toString(),
-          homeUrl: response.data.user.home_url
-        }
-        
-        localStorage.setItem('user', JSON.stringify(authUser))
-        setUser(authUser)
-        return authUser
-      }
-      return null
-    } catch (error) {
-      console.error('Login failed:', error)
+      const response = await apiFetch<{ data: Parameters<typeof mapApiUserToAuthUser>[0] }>(
+        '/auth/me',
+      )
+      const authUser = mapApiUserToAuthUser(response.data)
+      localStorage.setItem('user', JSON.stringify(authUser))
+      setUser(authUser)
+      return authUser
+    } catch {
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      setUser(null)
       return null
     }
+  }, [])
+
+  useEffect(() => {
+    if (localStorage.getItem('token')) {
+      refreshUser()
+    }
+  }, [refreshUser])
+
+  const login = useCallback(async (username: string, password: string) => {
+    const isEmail = username.includes('@')
+    const payload = isEmail
+      ? { email: username, password }
+      : { student_code: username, password }
+
+    const response = await apiFetch<{
+      data: { token: string; user: Parameters<typeof mapApiUserToAuthUser>[0] }
+    }>('/auth/login', {
+      data: payload,
+    })
+
+    if (!response.data?.token) {
+      throw new Error('Đăng nhập thất bại.')
+    }
+
+    localStorage.setItem('token', response.data.token)
+
+    const authUser = mapApiUserToAuthUser(response.data.user)
+    localStorage.setItem('user', JSON.stringify(authUser))
+    setUser(authUser)
+    return authUser
   }, [])
 
   const logout = useCallback(async () => {
@@ -88,8 +100,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       login,
       logout,
+      refreshUser,
     }),
-    [user, login, logout],
+    [user, login, logout, refreshUser],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

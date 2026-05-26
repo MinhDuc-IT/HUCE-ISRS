@@ -1,17 +1,21 @@
-# Thông báo danh sách môn học phụ đạo
+# Thông báo danh sách đăng ký phụ đạo
 
-Kính gửi Bộ môn **{{ $department->DepartmentName }}**,
+Kính gửi Bộ môn **{{ $department->name }}**,
 
-{{ $body ?: 'Dưới đây là danh sách các môn học được mở lớp phụ đạo thuộc sự quản lý của Bộ môn, kèm theo danh sách sinh viên đã đăng ký.' }}
+{{ $body ?: 'Dưới đây là danh sách sinh viên đã đăng ký học phụ đạo thuộc bộ môn.' }}
 
-@foreach($tutoringClasses as $class)
-## Môn học: {{ $class->course->CourseName }} ({{ $class->course->CourseCode }})
-**Giảng viên:** {{ $class->teacher ? $class->teacher->FullName : 'Chưa phân công' }}
+@php
+    $grouped = $registrations->groupBy('subject_id');
+@endphp
 
-| MSSV | Họ và tên | Trạng thái |
-|:--- |:--- |:--- |
-@foreach($class->enrollments as $enrollment)
-| {{ $enrollment->student->StudentCode }} | {{ $enrollment->student->FullName }} | {{ $enrollment->Status }} |
+@foreach($grouped as $subjectRegistrations)
+@php $subject = $subjectRegistrations->first()->subject; @endphp
+## Môn học: {{ $subject->name }} ({{ $subject->subject_code }})
+
+| MSSV | Họ và tên | Số tiết | Ngày đăng ký |
+|:--- |:--- |:---:|:--- |
+@foreach($subjectRegistrations as $registration)
+| {{ $registration->user->student_code ?? '—' }} | {{ $registration->user->name }} | {{ $registration->remedial_periods }} | {{ $registration->registration_date?->format('d/m/Y H:i') }} |
 @endforeach
 
 ---
@@ -19,4 +23,3 @@ Kính gửi Bộ môn **{{ $department->DepartmentName }}**,
 
 Trân trọng,
 Hệ thống quản lý học vụ.
-

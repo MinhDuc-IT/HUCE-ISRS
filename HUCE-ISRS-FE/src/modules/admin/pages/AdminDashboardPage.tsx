@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { apiFetch } from '@/shared/utils/apiClient'
+import type { ApiTermStatistics } from '@/shared/types/api'
 
 interface DashboardStats {
-  termCount: number
-  userCount: number
-  assignedClassCount: number
-  totalEnrollments: number
+  term_count: number
+  user_count: number
+  assigned_class_count: number
+  total_enrollments: number
 }
 
 export function AdminDashboardPage() {
@@ -20,38 +21,37 @@ export function AdminDashboardPage() {
   async function fetchStats() {
     try {
       setLoading(true)
-      // Fetch terms list and users in parallel
       const [termsRes, usersRes] = await Promise.all([
-        apiFetch<{ data: any[] }>('/admin/statistics/terms'),
-        apiFetch<{ data: any[] }>('/admin/users'),
+        apiFetch<{ data: { terms: { id: number; name: string }[] } }>('/admin/statistics/terms'),
+        apiFetch<{ data: unknown[] }>('/admin/users'),
       ])
 
-      const terms = termsRes.data || []
+      const terms = termsRes.data?.terms || []
       const users = usersRes.data || []
 
-      // Get stats for latest term if available
       let assignedClassCount = 0
       let totalEnrollments = 0
       if (terms.length > 0) {
         const latestTerm = terms[0]
         try {
-          const statsRes = await apiFetch<{ data: any }>(`/admin/statistics/terms/${latestTerm.id}`)
-          assignedClassCount = statsRes.data?.assignedClassCount ?? 0
-          totalEnrollments = statsRes.data?.distinctStudentCount ?? 0
+          const statsRes = await apiFetch<{ data: ApiTermStatistics }>(
+            `/admin/statistics/terms/${latestTerm.id}`,
+          )
+          assignedClassCount = statsRes.data?.assigned_class_count ?? 0
+          totalEnrollments = statsRes.data?.distinct_student_count ?? 0
         } catch {
           // silent
         }
       }
 
       setStats({
-        termCount: terms.length,
-        userCount: users.length,
-        assignedClassCount,
-        totalEnrollments,
+        term_count: terms.length,
+        user_count: users.length,
+        assigned_class_count: assignedClassCount,
+        total_enrollments: totalEnrollments,
       })
     } catch {
-      // silent — show 0s
-      setStats({ termCount: 0, userCount: 0, assignedClassCount: 0, totalEnrollments: 0 })
+      setStats({ term_count: 0, user_count: 0, assigned_class_count: 0, total_enrollments: 0 })
     } finally {
       setLoading(false)
     }
@@ -61,10 +61,9 @@ export function AdminDashboardPage() {
     { to: '/admin/cohorts', label: 'Đợt phụ đạo', primary: true },
     { to: '/admin/users', label: 'Người dùng' },
     { to: '/admin/departments', label: 'Bộ môn' },
-    { to: '/admin/assignments', label: 'Phân công GV' },
+    { to: '/admin/registrations', label: 'Tra cứu đăng ký' },
     { to: '/admin/email-department', label: 'Gửi email BM' },
     { to: '/admin/settings', label: 'Cài đặt' },
-    { to: '/admin/payments', label: 'Thanh toán' },
     { to: '/admin/statistics', label: 'Thống kê đợt' },
   ]
 
@@ -91,10 +90,10 @@ export function AdminDashboardPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: 'Đợt phụ đạo', value: stats?.termCount, note: 'Tổng số đợt trong hệ thống' },
-          { label: 'Người dùng', value: stats?.userCount, note: 'Admin, Bộ môn, Sinh viên' },
-          { label: 'Lớp đã phân công GV', value: stats?.assignedClassCount, note: 'Đợt gần nhất' },
-          { label: 'Sinh viên đã đăng ký', value: stats?.totalEnrollments, note: 'Đợt gần nhất (active)' },
+          { label: 'Đợt phụ đạo', value: stats?.term_count, note: 'Tổng số đợt trong hệ thống' },
+          { label: 'Người dùng', value: stats?.user_count, note: 'Admin, Bộ môn, Sinh viên' },
+          { label: 'Đã phân công GV', value: stats?.assigned_class_count, note: 'Đợt gần nhất' },
+          { label: 'Sinh viên đã đăng ký', value: stats?.total_enrollments, note: 'Đợt gần nhất' },
         ].map((card) => (
           <div key={card.label} className="rounded-xl border border-gray-200 bg-white p-4 shadow-theme-sm">
             <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{card.label}</p>

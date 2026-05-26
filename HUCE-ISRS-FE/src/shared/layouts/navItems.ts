@@ -11,10 +11,9 @@ const adminNav: NavItem[] = [
   { to: '/admin/cohorts', label: 'Đợt phụ đạo' },
   { to: '/admin/users', label: 'Người dùng' },
   { to: '/admin/departments', label: 'Bộ môn' },
-  { to: '/admin/assignments', label: 'Phân công GV' },
+  { to: '/admin/registrations', label: 'Tra cứu đăng ký' },
   { to: '/admin/email-department', label: 'Gửi email BM' },
   { to: '/admin/settings', label: 'Cài đặt' },
-  { to: '/admin/payments', label: 'Thanh toán' },
   { to: '/admin/statistics', label: 'Thống kê đợt' },
 ]
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\DTOs\CourseDto;
+use App\DTOs\RegisteredCourseDto;
 use App\DTOs\StudentDto;
 use App\Http\Controllers\BaseController;
 use App\Models\SinhVien;
@@ -203,6 +204,60 @@ class StudentController extends BaseController
         $rows = $query->get();
 
         $courses = $rows->map(fn($row) => CourseDto::fromRow($row));
+
+        return $this->success($courses, 'Thành công');
+    }
+
+    #[OA\Get(
+        path: '/api/students/{id}/registered-courses/{year}/{semester}',
+        operationId: 'getStudentRegisteredCoursesByTerm',
+        summary: 'Môn đã đăng ký học chính quy theo năm học và học kỳ',
+        description: 'Lấy từ DT_DangKyHocPhan — môn SV đã đăng ký lớp học phần trong kỳ (DM_NamHoc.NamHoc + DM_Dot.SoThuTu).',
+        security: [['bearerAuth' => []]],
+        tags: ['Sinh viên'],
+    )]
+    public function registeredCoursesByTerm(string $id, int $year, int $semester): JsonResponse
+    {
+        $sinhVien = SinhVien::where('MaSinhVien', $id)->first();
+
+        if (! $sinhVien) {
+            return $this->error('Không tìm thấy sinh viên với mã: ' . $id, null, 404);
+        }
+
+        $rows = DB::connection('sqlsrv')
+            ->table('DT_SinhVien as sv')
+            ->join('DT_DangKyHocPhan as dk', 'dk.IDSinhVien', '=', 'sv.Id')
+            ->join('TKB_LopHocPhan as lhp', 'lhp.Id', '=', 'dk.IDLopHocPhan')
+            ->join('DM_Dot as dot', 'dot.Id', '=', 'lhp.IDDot')
+            ->join('DM_NamHoc as nh', 'nh.Id', '=', 'dot.IDNamHoc')
+            ->join('TKB_MonHoc as tkb_mh', 'tkb_mh.Id', '=', 'lhp.IDMonHoc')
+            ->leftJoin('DM_MonHoc as mh', 'mh.MaMonHoc', '=', 'tkb_mh.MaMonHoc')
+            ->leftJoin('DM_TrangThaiDangKy as ttdk', 'ttdk.Id', '=', 'dk.IDTrangThaiDangKy')
+            ->where('sv.MaSinhVien', $id)
+            ->where('nh.NamHoc', $year)
+            ->where('dot.SoThuTu', $semester)
+            ->whereIn('dk.IDTrangThaiDangKy', [1, 2, 3, 4])
+            ->selectRaw("
+                sv.Id as IDSinhVien,
+                sv.MaSinhVien,
+                nh.NienHoc,
+                nh.NamHoc,
+                dot.SoThuTu as HocKy,
+                dot.TenDot,
+                COALESCE(mh.MaMonHoc, tkb_mh.MaMonHoc) as MaMonHoc,
+                COALESCE(mh.TenMonHoc, tkb_mh.TenMonHoc) as TenMonHoc,
+                COALESCE(mh.SoTinChi, tkb_mh.SoTinChi, 0) as SoTinChi,
+                lhp.MaLopHocPhan,
+                lhp.LopDuKien,
+                dk.NgayDangKy,
+                dk.Id as IDDangKyHocPhan,
+                dk.IDTrangThaiDangKy,
+                ttdk.TenTrangThai as TrangThaiDangKy
+            ")
+            ->orderByRaw('COALESCE(mh.MaMonHoc, tkb_mh.MaMonHoc)')
+            ->get();
+
+        $courses = $rows->map(fn ($row) => RegisteredCourseDto::fromRow($row));
 
         return $this->success($courses, 'Thành công');
     }

@@ -1,0 +1,106 @@
+/** Payload API — chỉ snake_case (Phase 10). */
+
+export type ApiRemedialTerm = {
+  id: number;
+  name: string;
+  year: number;
+  semester: number;
+  start_date: string | null;
+  end_date: string | null;
+  registration_start: string | null;
+  registration_end: string | null;
+  remedial_coefficient?: number;
+  price_per_period?: number;
+  price_coefficient?: number;
+  is_current_term?: boolean;
+};
+
+export type ApiDepartmentSubjectAssignment = {
+  subject_id: number
+  subject_code: string
+  subject_name: string
+  department_name: string
+  credits: number
+  registration_count: number
+  lecture_name?: string | null
+  lecturer_phone?: string | null
+  lecturer_email?: string | null
+  can_assign_lecturer: boolean
+}
+
+export type ApiTermRegisteredSubject = {
+  course_code: string;
+  subject_name: string;
+  credits: number;
+  class_section_code?: string;
+  lop_du_kien?: string;
+  registration_date?: string | null;
+  registration_status?: string;
+  academic_year_label?: string;
+  academic_year?: number;
+  semester?: number;
+  term_name?: string;
+};
+
+export type ApiEligibleSubject = {
+  course_code: string;
+  subject_name: string;
+  credits: number;
+  final_score?: number | null;
+  letter_grade?: string | null;
+};
+
+export type ApiStudentRegistration = {
+  id: number;
+  student_code?: string;
+  course_code: string;
+  course_name?: string;
+  remedial_term_id?: number;
+  remedial_periods?: number;
+  registration_date: string;
+  lecture_name?: string | null;
+  lecturer_phone?: string | null;
+  lecturer_email?: string | null;
+};
+
+export type ApiAdminRegistration = {
+  id: number;
+  student_code?: string;
+  student_name?: string;
+  subject_code?: string;
+  subject_name?: string;
+  remedial_term_id?: number;
+  remedial_term_name?: string;
+  registration_date?: string;
+  lecture_name?: string | null;
+  lecturer_phone?: string | null;
+  lecturer_email?: string | null;
+};
+
+export type ApiDepartment = {
+  id: number;
+  department_code: string;
+  department_name: string;
+  faculty_code?: string | null;
+  faculty_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  phone_number?: string | null;
+};
+
+export type ApiTermStatistics = {
+  remedial_term_id: number;
+  distinct_student_count: number;
+  catalog_course_count: number;
+  courses_with_registration_count: number;
+  assigned_class_count: number;
+  total_registrations: number;
+  total_revenue: number;
+};
+
+export type ApiSystemSetting = {
+  id: number | string;
+  key: string;
+  value: string;
+  description?: string;
+};

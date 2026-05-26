@@ -2,183 +2,163 @@
 
 namespace App\Application\Services;
 
+use App\Domain\Entities\RemedialRegistration;
+use App\Domain\Ports\External\StudentInfoPort;
+use App\Domain\Ports\Persistence\RemedialRegistrationRepositoryPort;
+use App\Domain\Ports\Persistence\RemedialTermRepositoryPort;
+use App\Domain\Ports\Persistence\SubjectRepositoryPort;
+use App\Domain\Ports\Persistence\SystemConfigurationRepositoryPort;
+use App\Domain\Enums\SystemConfigKey;
+use App\Models\User;
 use Carbon\Carbon;
-use App\Models\Student;
-use App\Models\Course;
-use App\Models\TutoringTerm;
-use App\Domain\Entities\TutoringRequest;
-use App\Domain\Exceptions\ExternalSystemException;
-use App\Domain\Exceptions\StudentNotFoundException;
-use App\Domain\Ports\StudentInfoPort;
-use App\Domain\Repositories\TutoringRequestRepositoryPort;
-use App\Domain\Enums\TutoringRequestStatus;
 
-/**
- * RemedialRegistrationService – Use case đăng ký học phần bổ sung.
- *
- * Đây là Application Service (Use Case) trong DDD.
- * Điều phối Domain Entities, Ports và Repositories.
- * KHÔNG chứa business logic phức tạp – business logic nằm trong Domain Entities.
- */
 class RemedialRegistrationService
 {
     public function __construct(
-        private readonly StudentInfoPort            $studentInfoPort,
-        private readonly TutoringRequestRepositoryPort $requestRepository,
+        private readonly StudentInfoPort $studentInfoPort,
+        private readonly RemedialRegistrationRepositoryPort $registrationRepository,
+        private readonly SystemConfigurationRepositoryPort $configRepository,
+        private readonly RemedialTermRepositoryPort $termRepository,
+        private readonly SubjectRepositoryPort $subjectRepository,
     ) {}
 
-    /**
-     * Use case: Đăng ký học phần bổ sung.
-     *
-     * Luồng:
-     * 1. Lấy thông tin sinh viên từ University System (qua Port)
-     * 2. Kiểm tra sinh viên có tín chỉ nợ không
-     * 3. Lấy danh sách môn học, kiểm tra môn được yêu cầu có bị rớt không
-     * 4. Kiểm tra chưa đăng ký trùng
-     * 5. Tạo Registration entity và lưu
-     *
-     * @param string $studentCode Mã sinh viên
-     * @param string $courseCode  Mã học phần muốn đăng ký bổ sung
-     * @return TutoringRequest    Đơn đăng ký đã được tạo
-     *
-     * @throws StudentNotFoundException  Sinh viên không tồn tại
-     * @throws ExternalSystemException   Lỗi kết nối University System
-     * @throws \DomainException          Vi phạm business rules
-     */
-    public function register(string $studentCode, string $courseCode): TutoringRequest
+    public function registerForUser(User $user, string $courseCode, ?int $remedialPeriods = null): RemedialRegistration
     {
-        // ─── Bước 1: Lấy thông tin sinh viên ────────────────────────────────
-        $localStudent = Student::where('StudentCode', $studentCode)->first();
-        if (! $localStudent) {
-            throw new StudentNotFoundException("Sinh viên {$studentCode} không tồn tại trong hệ thống.");
+        $this->assertSinhVien($user);
+        $studentCode = $this->requireStudentCode($user);
+
+        $currentTerm = $this->termRepository->findCurrent();
+        if ($currentTerm === null) {
+            throw new \DomainException('Hệ thống hiện không có đợt phụ đạo nào đang mở.');
         }
 
-        // Lấy thông tin từ University System để xác thực điều kiện
-        $studentInfo = $this->studentInfoPort->getStudent($studentCode);
+        if (! $currentTerm->isRegistrationOpen()) {
+            throw new \DomainException('Hiện không trong thời gian đăng ký phụ đạo của đợt này.');
+        }
 
-        // ─── Bước 2: Kiểm tra điều kiện ─────────────────────────────────────
-        if (! $studentInfo->isEligibleForRemedial()) {
+        $termCourses = $this->studentInfoPort->getRegisteredCoursesForSemester(
+            $studentCode,
+            $currentTerm->year,
+            $currentTerm->semester
+        );
+
+        $targetCourse = collect($termCourses)->first(
+            fn ($course) => strtoupper($course->code()) === strtoupper(trim($courseCode))
+        );
+
+        if ($targetCourse === null) {
             throw new \DomainException(
-                "Sinh viên {$studentCode} không có môn nợ, không đủ điều kiện đăng ký bổ sung."
+                "Học phần {$courseCode} không thuộc danh sách môn đã đăng ký học chính quy kỳ {$currentTerm->semester}/{$currentTerm->year}."
             );
         }
 
-        // ─── Bước 3: Xác minh môn học ──────────────────────────────────────
-        $courses = $this->studentInfoPort->getCourses($studentCode);
-        $targetCourseInfo = collect($courses)->first(fn($c) => $c->courseCode === $courseCode);
-
-        if (!$targetCourseInfo) {
-            throw new \DomainException("Học phần {$courseCode} không thuộc chương trình học của sinh viên.");
+        $localSubject = $this->subjectRepository->findByCode($courseCode);
+        if ($localSubject === null) {
+            throw new \DomainException("Dữ liệu môn học {$courseCode} chưa được đồng bộ.");
         }
 
-        if (!$targetCourseInfo->isEligibleForRemedial()) {
-            throw new \DomainException("Học phần {$courseCode} đã đạt, không thể đăng ký phụ đạo.");
-        }
-
-        $localCourse = Course::where('CourseCode', $courseCode)->first();
-        if (!$localCourse) {
-             throw new \DomainException("Dữ liệu môn học {$courseCode} chưa được đồng bộ.");
-        }
-
-        // Lấy đợt phụ đạo mặc định
-        $currentTerm = TutoringTerm::where('IsDefault', true)->first();
-        if (!$currentTerm) {
-             throw new \DomainException("Hệ thống hiện không có đợt phụ đạo nào đang mở.");
-        }
-
-        // ─── Bước 4: Kiểm tra đăng ký trùng ─────────────────────────────────
-        if ($this->requestRepository->existsActiveRequest($localStudent->Id, $localCourse->Id, $currentTerm->Id)) {
+        if ($this->registrationRepository->existsRegistration($user->id, $localSubject->id, $currentTerm->id)) {
             throw new \DomainException("Bạn đã đăng ký môn {$courseCode} trong đợt này rồi.");
         }
 
-        // ─── Bước 5: Tạo và lưu ─────────────────────────────────────────────
-        $tutoringRequest = new TutoringRequest(
-            id:               null,
-            studentId:        $localStudent->Id,
-            courseId:         $localCourse->Id,
-            tutoringTermId:   $currentTerm->Id,
-            requestedPeriods: null,
-            status:           TutoringRequestStatus::PENDING,
-            createdAt:        Carbon::now(),
+        $periods = $remedialPeriods ?? (int) $this->configRepository->get(
+            SystemConfigKey::DEFAULT_PERIODS->value,
+            '45'
         );
 
-        return $this->requestRepository->save($tutoringRequest);
+        $registration = new RemedialRegistration(
+            id:               null,
+            studentId:        $user->id,
+            subjectId:        $localSubject->id,
+            remedialTermId:   $currentTerm->id,
+            remedialPeriods:  $periods,
+            registrationDate: Carbon::now(),
+        );
+
+        return $this->registrationRepository->save($registration);
     }
 
-    /**
-     * Use case: Đăng ký nhiều môn cùng lúc.
-     */
-    public function bulkRegister(string $studentCode, array $courseCodes): array
+    public function bulkRegisterForUser(User $user, array $courseCodes): array
     {
-        $results = [];
         foreach ($courseCodes as $code) {
-            try {
-                $results[] = $this->register($studentCode, $code);
-            } catch (\Exception $e) {
-                // Có thể ném lỗi hoặc bỏ qua môn lỗi tùy yêu cầu, 
-                // Ở đây ta ném lỗi để transaction roll back (nếu có)
-                throw $e;
-            }
+            $this->registerForUser($user, $code);
         }
-        return $this->getRegistrations($studentCode);
+
+        return $this->getRegistrationsForUser($user);
     }
 
-    /**
-     * Use case: Lấy danh sách đăng ký của sinh viên.
-     *
-     * @param string $studentCode Mã sinh viên
-     * @return TutoringRequest[]
-     */
-    public function getRegistrations(string $studentCode): array
+    /** @return RemedialRegistration[] */
+    public function getRegistrationsForUser(User $user): array
     {
-        $localStudent = Student::where('StudentCode', $studentCode)->first();
-        if (! $localStudent) return [];
+        $this->assertSinhVien($user);
 
-        return $this->requestRepository->findByStudent($localStudent->Id);
+        return $this->registrationRepository->findByUser($user->id);
     }
 
-    /**
-     * Use case: Lấy danh sách môn đủ điều kiện đăng ký bổ sung của sinh viên.
-     *
-     * @param string $studentId Mã sinh viên
-     * @return array            Mảng CourseResult đủ điều kiện
-     */
-    public function getEligibleCourses(string $studentId): array
+    /** @return \App\Domain\Entities\TermRegisteredCourse[] */
+    public function getTermRegisteredSubjectsForUser(User $user): array
     {
-        $this->studentInfoPort->getStudent($studentId);
+        $this->assertSinhVien($user);
+        $studentCode = $this->requireStudentCode($user);
 
-        $courses = $this->studentInfoPort->getCourses($studentId);
+        $currentTerm = $this->termRepository->findCurrent();
+        if ($currentTerm === null) {
+            throw new \DomainException('Hệ thống hiện không có đợt phụ đạo nào đang mở.');
+        }
+
+        $this->studentInfoPort->getStudent($studentCode);
+
+        return $this->studentInfoPort->getRegisteredCoursesForSemester(
+            $studentCode,
+            $currentTerm->year,
+            $currentTerm->semester
+        );
+    }
+
+    /** @return \App\Domain\Entities\SubjectResult[] */
+    public function getEligibleSubjectsForUser(User $user): array
+    {
+        $this->assertSinhVien($user);
+        $studentCode = $this->requireStudentCode($user);
+
+        $this->studentInfoPort->getStudent($studentCode);
+
+        $courses = $this->studentInfoPort->getCourses($studentCode);
 
         return array_values(array_filter(
             $courses,
-            fn($course) => $course->isEligibleForRemedial()
+            fn ($course) => $course->isEligibleForRemedial()
         ));
     }
 
-    /**
-     * Use case: Hủy đăng ký.
-     *
-     * @param int    $requestId    ID đơn đăng ký
-     * @param string $studentCode  Mã sinh viên (để xác minh ownership)
-     *
-     * @throws \DomainException Nếu không tìm thấy hoặc không thuộc sinh viên này
-     */
-    public function cancelRegistration(int $requestId, string $studentCode): void
+    public function cancelRegistrationForUser(User $user, int $registrationId): void
     {
-        $request = $this->requestRepository->findById($requestId);
-        
-        $localStudent = Student::where('StudentCode', $studentCode)->first();
+        $this->assertSinhVien($user);
 
-        if ($request === null || ! $localStudent || $request->studentId !== $localStudent->Id) {
-            throw new \DomainException("Không tìm thấy đơn đăng ký #{$requestId}.");
+        $registration = $this->registrationRepository->findById($registrationId);
+
+        if ($registration === null || $registration->studentId !== $user->id) {
+            throw new \DomainException("Không tìm thấy đơn đăng ký #{$registrationId}.");
         }
 
-        // Entity không có hàm cancel(), cần tự đổi trạng thái
-        if (in_array($request->status, [TutoringRequestStatus::APPROVED, TutoringRequestStatus::REJECTED])) {
-            throw new \DomainException('Không thể hủy đơn đã được xử lý.');
+        $this->registrationRepository->delete($registrationId);
+    }
+
+    private function assertSinhVien(User $user): void
+    {
+        if (! $user->isSinhVien()) {
+            throw new \DomainException('Chỉ sinh viên mới được thực hiện thao tác này.');
+        }
+    }
+
+    private function requireStudentCode(User $user): string
+    {
+        $code = $user->student_code;
+
+        if ($code === null || trim($code) === '') {
+            throw new \DomainException('Tài khoản chưa có mã sinh viên.');
         }
 
-        $request->status = TutoringRequestStatus::CANCELLED;
-        $this->requestRepository->update($request);
+        return strtoupper(trim($code));
     }
 }

@@ -281,11 +281,9 @@ layer(base);
 }
 
 @layer utilities {
-  /* For Remove Date Icon */
+  /* Chỉ ẩn spinner số — giữ calendar picker để chọn ngày native hoạt động */
   input[type="date"]::-webkit-inner-spin-button,
-  input[type="time"]::-webkit-inner-spin-button,
-  input[type="date"]::-webkit-calendar-picker-indicator,
-  input[type="time"]::-webkit-calendar-picker-indicator {
+  input[type="time"]::-webkit-inner-spin-button {
     display: none;
     -webkit-appearance: none;
   }
