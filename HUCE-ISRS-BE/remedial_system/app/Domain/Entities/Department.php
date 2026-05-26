@@ -8,8 +8,10 @@ use Carbon\Carbon;
  * Domain Entity – Khoa / Bộ môn
  *
  * @property int    $id             ID khoa
- * @property string $departmentCode Mã khoa (VD: CNTT)
- * @property string $departmentName Tên khoa đầy đủ
+ * @property string $departmentCode Mã bộ môn HUCE (IDBoMon)
+ * @property string $departmentName Tên bộ môn
+ * @property string|null $facultyCode IDPhongBan (ID khoa HUCE)
+ * @property string|null $facultyName Tên khoa / đơn vị quản lý (TenPhongBan)
  */
 class Department
 {
@@ -17,7 +19,10 @@ class Department
         public readonly ?int    $id,
         public readonly string  $departmentCode,
         public readonly string  $departmentName,
+        public readonly ?string $facultyCode = null,
+        public readonly ?string $facultyName = null,
         public readonly ?string $email = null,
+        public readonly ?string $phoneNumber = null,
         public readonly Carbon  $createdAt = new Carbon(),
     ) {}
 

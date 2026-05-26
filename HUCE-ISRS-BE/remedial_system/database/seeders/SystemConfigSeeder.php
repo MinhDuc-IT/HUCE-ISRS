@@ -7,54 +7,39 @@ use Illuminate\Support\Facades\DB;
 
 class SystemConfigSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
         $configs = [
             [
-                'Key' => 'min_students_per_class',
-                'Value' => '10',
-                'Description' => 'Sĩ số tối thiểu để mở lớp học bổ sung',
-                'CreatedAt' => now(),
-                'UpdatedAt' => now(),
+                'key'         => 'default_periods',
+                'value'       => '45',
+                'description' => 'Số tiết học mặc định khi đăng ký phụ đạo',
+                'is_deleted'  => false,
             ],
             [
-                'Key' => 'max_students_per_class',
-                'Value' => '30',
-                'Description' => 'Sĩ số tối đa mặc định cho lớp học bổ sung',
-                'CreatedAt' => now(),
-                'UpdatedAt' => now(),
+                'key'         => 'mail_summary_subject',
+                'value'       => 'Danh sách sinh viên đăng ký học phụ đạo',
+                'description' => 'Tiêu đề email gửi tóm tắt cho bộ môn',
+                'is_deleted'  => false,
             ],
             [
-                'Key' => 'default_periods',
-                'Value' => '45',
-                'Description' => 'Số tiết học mặc định',
-                'CreatedAt' => now(),
-                'UpdatedAt' => now(),
-            ],
-            [
-                'Key' => 'mail_summary_subject',
-                'Value' => 'Danh sách sinh viên đăng ký học phụ đạo',
-                'Description' => 'Tiêu đề email gửi tóm tắt cho bộ môn',
-                'CreatedAt' => now(),
-                'UpdatedAt' => now(),
-            ],
-            [
-                'Key' => 'mail_summary_body',
-                'Value' => 'Kính gửi Bộ môn, đây là danh sách chi tiết các môn học và sinh viên đã đăng ký học phụ đạo trong đợt này.',
-                'Description' => 'Nội dung email gửi tóm tắt cho bộ môn',
-                'CreatedAt' => now(),
-                'UpdatedAt' => now(),
+                'key'         => 'mail_summary_body',
+                'value'       => 'Kính gửi Bộ môn, đây là danh sách chi tiết các môn học và sinh viên đã đăng ký học phụ đạo trong đợt này.',
+                'description' => 'Nội dung email gửi tóm tắt cho bộ môn',
+                'is_deleted'  => false,
             ],
         ];
 
         foreach ($configs as $config) {
-            DB::table('SystemConfig')->updateOrInsert(
-                ['Key' => $config['Key']],
-                $config
+            DB::table('system_configurations')->updateOrInsert(
+                ['key' => $config['key']],
+                array_merge($config, [
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ])
             );
         }
+
+        $this->command?->info('✅ SystemConfigSeeder hoàn tất.');
     }
 }

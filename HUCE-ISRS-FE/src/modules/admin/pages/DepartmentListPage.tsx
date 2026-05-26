@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react'
 import { apiFetch } from '@/shared/utils/apiClient'
-import type { Department } from '@/shared/types/remedial'
+import type { ApiDepartment } from '@/shared/types/api'
 
 export function DepartmentListPage() {
-  const [departments, setDepartments] = useState<Department[]>([])
+  const [departments, setDepartments] = useState<ApiDepartment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
 
   // Modal state – shared for Add and Edit
-  const [editingDept, setEditingDept] = useState<Department | null>(null)
+  const [editingDept, setEditingDept] = useState<ApiDepartment | null>(null)
   const [isAdding, setIsAdding] = useState(false)
   const [formData, setFormData] = useState({
     code: '',
@@ -28,7 +28,7 @@ export function DepartmentListPage() {
   async function fetchDepartments() {
     try {
       setLoading(true)
-      const res = await apiFetch<{ data: Department[] }>('/admin/departments')
+      const res = await apiFetch<{ data: ApiDepartment[] }>('/admin/departments')
       setDepartments(res.data || [])
     } catch (err: any) {
       setError('Lỗi tải danh sách bộ môn: ' + err.message)
@@ -37,14 +37,14 @@ export function DepartmentListPage() {
     }
   }
 
-  function handleEdit(dept: Department) {
+  function handleEdit(dept: ApiDepartment) {
     setIsAdding(false)
     setEditingDept(dept)
     setFormData({
-      code: dept.departmentCode,
-      name: dept.departmentName,
+      code: dept.department_code,
+      name: dept.department_name,
       email: dept.email ?? '',
-      phone: dept.phone ?? '',
+      phone: dept.phone_number ?? '',
     })
   }
 
@@ -83,11 +83,11 @@ export function DepartmentListPage() {
         await apiFetch(`/admin/departments`, {
           method: 'POST',
           data: {
-            DepartmentCode: formData.code.trim(),
-            Name: formData.name.trim(),
-            Email: formData.email.trim() || null,
-            Phone: formData.phone.trim() || null,
-          }
+            department_code: formData.code.trim(),
+            name: formData.name.trim(),
+            email: formData.email.trim() || null,
+            phone_number: formData.phone.trim() || null,
+          },
         })
         setMessage('Thêm bộ môn thành công.')
       } else {
@@ -95,9 +95,10 @@ export function DepartmentListPage() {
         await apiFetch(`/admin/departments/${editingDept.id}`, {
           method: 'PATCH',
           data: {
+            name: formData.name.trim(),
             email: formData.email.trim() || null,
-            phone: formData.phone.trim() || null,
-          }
+            phone_number: formData.phone.trim() || null,
+          },
         })
         setMessage('Cập nhật bộ môn thành công.')
       }
@@ -112,9 +113,10 @@ export function DepartmentListPage() {
     }
   }
 
-  const filtered = departments.filter(d =>
-    d.departmentCode.toLowerCase().includes(search.toLowerCase()) ||
-    d.departmentName.toLowerCase().includes(search.toLowerCase())
+  const filtered = departments.filter(
+    (d) =>
+      d.department_code.toLowerCase().includes(search.toLowerCase()) ||
+      d.department_name.toLowerCase().includes(search.toLowerCase()),
   )
 
   return (
@@ -177,8 +179,8 @@ export function DepartmentListPage() {
                 filtered.map((d, index) => (
                   <tr key={d.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-2 text-center border-r border-gray-100">{index + 1}</td>
-                    <td className="px-4 py-2 border-r border-gray-100 font-mono text-xs font-semibold">{d.departmentCode}</td>
-                    <td className="px-4 py-2 border-r border-gray-100">{d.departmentName}</td>
+                    <td className="px-4 py-2 border-r border-gray-100 font-mono text-xs font-semibold">{d.department_code}</td>
+                    <td className="px-4 py-2 border-r border-gray-100">{d.department_name}</td>
                     <td className="px-4 py-2 border-r border-gray-100 text-gray-500">{d.email || '-'}</td>
                     <td className="px-4 py-2 border-r border-gray-100 text-gray-500">{d.phone || '-'}</td>
                     <td className="px-4 py-2 text-center">

@@ -4,33 +4,18 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-/**
- * <summary>
- * Model đại diện cho bảng Student (Sinh viên).
- * Quản lý thông tin sinh viên tham gia hệ thống phụ đạo.
- * </summary>
- */
 class Student extends Model
 {
-    protected $table = 'Student';
-    protected $primaryKey = 'Id';
-    public $timestamps = false; 
+    protected $table = 'students';
 
     protected $fillable = [
-        'StudentCode',
-        'FullName',
-        'Email',
-        'CreatedAt',
-        'UpdatedAt',
+        'student_code',
+        'full_name',
+        'email',
+        'is_deleted',
     ];
 
-    public function tutoringRequests()
-    {
-        return $this->hasMany(TutoringRequest::class, 'StudentId');
-    }
-
-    public function enrollments()
-    {
-        return $this->hasMany(Enrollment::class, 'StudentId');
-    }
+    protected $casts = [
+        'is_deleted' => 'boolean',
+    ];
 }

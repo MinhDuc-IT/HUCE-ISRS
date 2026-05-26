@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { apiFetch } from '@/shared/utils/apiClient'
 import { useToast } from '@/shared/context/ToastContext'
-import type { UserRole } from '@/shared/types/auth'
-
 interface SystemUser {
   id: number
   name: string

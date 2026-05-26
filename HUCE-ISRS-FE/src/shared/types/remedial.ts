@@ -38,12 +38,13 @@ export type MockSystemUser = {
   departmentId?: string
 }
 
+/** @deprecated Mock-only; API dùng {@link ApiDepartment} trong `shared/types/api.ts`. */
 export type Department = {
   id: number
-  departmentCode: string
-  departmentName: string
+  department_code: string
+  department_name: string
   email?: string | null
-  phone?: string | null
+  phone_number?: string | null
 }
 
 export type LecturerAssignment = {

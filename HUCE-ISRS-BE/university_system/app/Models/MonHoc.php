@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
  * KHÔNG ghi dữ liệu. Chỉ dùng để đọc thông tin môn học.
  *
  * @property int    $Id        Khóa chính
- * @property int    $IDLopHoc  Khóa ngoại tới TKB_LopHocPhan
+ * @property int|null $IDLopHoc Tham chiếu TKB_LopHoc (không phải liên kết ngược từ LopHocPhan; lớp–môn qua TKB_LopHocPhan.IDMonHoc)
  * @property string $MaHocPhan Mã học phần
  * @property string $MaMonHoc  Mã môn học
  * @property string $TenMonHoc Tên môn học

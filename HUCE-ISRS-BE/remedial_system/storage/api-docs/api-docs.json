@@ -30,20 +30,17 @@
                             "schema": {
                                 "properties": {
                                     "email": {
-                                        "description": "Email – dùng cho Admin hoặc Bộ môn",
                                         "type": "string",
                                         "format": "email",
                                         "example": "admin@remedial.edu.vn",
                                         "nullable": true
                                     },
                                     "student_code": {
-                                        "description": "Mã sinh viên – dùng cho Sinh viên",
                                         "type": "string",
                                         "example": "SV001",
                                         "nullable": true
                                     },
                                     "password": {
-                                        "description": "Mật khẩu. Sinh viên đăng nhập lần đầu dùng mã sinh viên làm mật khẩu.",
                                         "type": "string",
                                         "format": "password",
                                         "example": "nuce_backdoor_2026"
@@ -59,16 +56,19 @@
                         "description": "Đăng nhập thành công"
                     },
                     "401": {
-                        "description": "AF-2: Sai mật khẩu"
+                        "description": "Sai thông tin đăng nhập"
+                    },
+                    "403": {
+                        "description": "Tài khoản đã bị vô hiệu hóa"
                     },
                     "404": {
-                        "description": "AF-3: Sinh viên không tồn tại trên University System"
+                        "description": "Sinh viên không tồn tại trên University System"
                     },
                     "422": {
-                        "description": "AF-1: Dữ liệu đầu vào không hợp lệ"
+                        "description": "Dữ liệu đầu vào không hợp lệ"
                     },
                     "503": {
-                        "description": "AF-4: University System không khả dụng"
+                        "description": "University System không khả dụng"
                     }
                 }
             }
@@ -79,14 +79,10 @@
                     "Xác thực"
                 ],
                 "summary": "Đăng xuất",
-                "description": "POST /api/auth/logout",
                 "operationId": "logout",
                 "responses": {
                     "200": {
                         "description": "Đăng xuất thành công"
-                    },
-                    "401": {
-                        "description": "Chưa xác thực"
                     }
                 },
                 "security": [
@@ -102,14 +98,10 @@
                     "Xác thực"
                 ],
                 "summary": "Thông tin người dùng đang đăng nhập",
-                "description": "GET /api/auth/me",
                 "operationId": "me",
                 "responses": {
                     "200": {
                         "description": "Thông tin tài khoản"
-                    },
-                    "401": {
-                        "description": "Chưa xác thực"
                     }
                 },
                 "security": [
@@ -119,444 +111,16 @@
                 ]
             }
         },
-        "/api/admin/departments": {
-            "get": {
-                "tags": [
-                    "Bộ môn"
-                ],
-                "summary": "Danh sách bộ môn",
-                "description": "GET /api/admin/departments",
-                "operationId": "listDepartments",
-                "responses": {
-                    "200": {
-                        "description": "Thành công"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Bộ môn"
-                ],
-                "summary": "Thêm bộ môn mới",
-                "description": "POST /api/admin/departments",
-                "operationId": "storeDepartment",
-                "responses": {
-                    "201": {
-                        "description": "Thành công"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            }
-        },
-        "/api/admin/departments/{id}": {
-            "get": {
-                "tags": [
-                    "Bộ môn"
-                ],
-                "summary": "Chi tiết bộ môn",
-                "description": "GET /api/admin/departments/{id}",
-                "operationId": "showDepartment",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Thành công"
-                    },
-                    "404": {
-                        "description": "Không tìm thấy"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            },
-            "delete": {
-                "tags": [
-                    "Bộ môn"
-                ],
-                "summary": "Xóa bộ môn",
-                "description": "DELETE /api/admin/departments/{id}",
-                "operationId": "destroyDepartment",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Xóa thành công"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            },
-            "patch": {
-                "tags": [
-                    "Bộ môn"
-                ],
-                "summary": "Sửa thông tin bộ môn",
-                "description": "Cập nhật email bộ môn và số điện thoại trưởng bộ môn.",
-                "operationId": "updateDepartment",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Thành công"
-                    },
-                    "400": {
-                        "description": "Dữ liệu không hợp lệ"
-                    },
-                    "404": {
-                        "description": "Không tìm thấy"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            }
-        },
-        "/api/admin/departments/{id}/send-email": {
-            "post": {
-                "tags": [
-                    "Bộ môn"
-                ],
-                "summary": "Gửi email danh sách sinh viên về bộ môn",
-                "description": "POST /api/admin/departments/{id}/send-email",
-                "operationId": "sendDepartmentEmail",
-                "responses": {
-                    "200": {
-                        "description": "Gửi thành công"
-                    },
-                    "400": {
-                        "description": "Chưa cấu hình email"
-                    },
-                    "404": {
-                        "description": "Không có dữ liệu"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            }
-        },
-        "/api/admin/semesters": {
-            "get": {
-                "tags": [
-                    "Học kỳ"
-                ],
-                "summary": "Danh sách học kỳ",
-                "description": "GET /api/admin/semesters — Danh sách học kỳ",
-                "operationId": "listSemesters",
-                "responses": {
-                    "200": {
-                        "description": "Thành công"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Học kỳ"
-                ],
-                "summary": "Tạo học kỳ mới",
-                "description": "POST /api/admin/semesters — Tạo học kỳ mới",
-                "operationId": "storeSemester",
-                "responses": {
-                    "201": {
-                        "description": "Tạo thành công"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            }
-        },
-        "/api/admin/settings": {
-            "get": {
-                "tags": [
-                    "Cài đặt hệ thống"
-                ],
-                "summary": "Lấy danh sách cấu hình hệ thống",
-                "description": "GET /api/admin/settings",
-                "operationId": "listSettings",
-                "responses": {
-                    "200": {
-                        "description": "Danh sách cấu hình"
-                    },
-                    "403": {
-                        "description": "Không có quyền"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Cài đặt hệ thống"
-                ],
-                "summary": "Cập nhật cấu hình hệ thống",
-                "description": "Cập nhật nhiều cấu hình cùng lúc truyền lên dạng mảng.",
-                "operationId": "updateSettings",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "settings"
-                                ],
-                                "properties": {
-                                    "settings": {
-                                        "type": "array",
-                                        "items": {
-                                            "properties": {
-                                                "key": {
-                                                    "type": "string",
-                                                    "example": "mail_summary_subject"
-                                                },
-                                                "value": {
-                                                    "type": "string",
-                                                    "example": "Thông báo học phụ đạo"
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Cập nhật thành công"
-                    },
-                    "403": {
-                        "description": "Không có quyền – chỉ Admin"
-                    },
-                    "422": {
-                        "description": "Thông tin không hợp lệ"
-                    },
-                    "500": {
-                        "description": "Cập nhật thất bại"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            }
-        },
-        "/api/admin/statistics/terms": {
-            "get": {
-                "tags": [
-                    "Thống kê"
-                ],
-                "summary": "Lấy danh sách đợt phụ đạo",
-                "description": "Lấy danh sách các đợt phụ đạo",
-                "operationId": "getStatisticTerms",
-                "responses": {
-                    "200": {
-                        "description": "Thành công"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            }
-        },
-        "/api/admin/statistics/terms/{id}": {
-            "get": {
-                "tags": [
-                    "Thống kê"
-                ],
-                "summary": "Thống kê đợt phụ đạo cụ thể",
-                "description": "Lấy thống kê cho 1 đợt phụ đạo cụ thể",
-                "operationId": "getTermStatistics",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "ID đợt phụ đạo",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Thành công"
-                    },
-                    "404": {
-                        "description": "Không tìm thấy đợt phụ đạo"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            }
-        },
-        "/api/admin/payments/teachers": {
-            "get": {
-                "tags": [
-                    "Thanh toán"
-                ],
-                "summary": "Tổng hợp thanh toán tiền phụ đạo cho giảng viên",
-                "description": "GET /api/admin/payments/teachers\n\nUse case : Thanh toán tiền phụ đạo\nActor    : Admin\n\nNormal Flow:\n  1. Admin chọn chức năng thanh toán                         ← bước 1\n  2. Hệ thống tổng hợp, tính tiền và hiển thị danh sách      ← bước 2",
-                "operationId": "listTeacherPayments",
-                "parameters": [
-                    {
-                        "name": "tutoring_term_id",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Danh sách thanh toán"
-                    },
-                    "403": {
-                        "description": "Không có quyền"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            }
-        },
-        "/api/admin/payments/teachers/export": {
-            "get": {
-                "tags": [
-                    "Thanh toán"
-                ],
-                "summary": "Xuất danh sách thanh toán ra Excel (.xlsx)",
-                "description": "GET /api/admin/payments/teachers/export\n\nUse case : Thanh toán tiền phụ đạo (tiếp theo)\nActor    : Admin\n\nNormal Flow:\n  4. Người dùng chọn xuất danh sách ra excel                 ← bước 4\n  5. Hệ thống xuất thông tin thành file excel                ← bước 5",
-                "operationId": "exportTeacherPayments",
-                "parameters": [
-                    {
-                        "name": "tutoring_term_id",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "File Excel (.xlsx)"
-                    },
-                    "403": {
-                        "description": "Không có quyền"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            }
-        },
-        "/api/admin/tutoring-classes": {
+        "/api/admin/remedial-terms": {
             "get": {
                 "tags": [
                     "Đợt phụ đạo"
                 ],
                 "summary": "Danh sách đợt phụ đạo",
-                "description": "GET /api/admin/tutoring-classes",
-                "operationId": "listTutoringClasses",
-                "parameters": [
-                    {
-                        "name": "tutoring_term_id",
-                        "in": "query",
-                        "description": "Lọc theo đợt phụ đạo",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "status",
-                        "in": "query",
-                        "description": "Lọc theo trạng thái",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "open",
-                                "full",
-                                "closed",
-                                "cancelled"
-                            ]
-                        }
-                    }
-                ],
+                "operationId": "adminListRemedialTerms",
                 "responses": {
                     "200": {
-                        "description": "Thành công"
-                    },
-                    "403": {
-                        "description": "Không có quyền"
+                        "description": "OK"
                     }
                 },
                 "security": [
@@ -569,96 +133,11 @@
                 "tags": [
                     "Đợt phụ đạo"
                 ],
-                "summary": "Thêm đợt phụ đạo mới",
-                "description": "Tạo một đợt phụ đạo mới. Hệ thống kiểm tra ràng buộc thời gian: hạn đăng ký phải trước ngày bắt đầu, ngày kết thúc phải sau ngày bắt đầu.",
-                "operationId": "createTutoringClass",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "course_code",
-                                    "course_name",
-                                    "credits",
-                                    "tutoring_term_id",
-                                    "max_students"
-                                ],
-                                "properties": {
-                                    "course_code": {
-                                        "description": "Mã môn học",
-                                        "type": "string",
-                                        "example": "CS101"
-                                    },
-                                    "course_name": {
-                                        "description": "Tên môn học",
-                                        "type": "string",
-                                        "example": "Lập trình hướng đối tượng"
-                                    },
-                                    "credits": {
-                                        "description": "Số tín chỉ",
-                                        "type": "integer",
-                                        "example": 3
-                                    },
-                                    "tutoring_term_id": {
-                                        "description": "ID đợt phụ đạo",
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "teacher_code": {
-                                        "description": "Mã giảng viên (tuỳ chọn)",
-                                        "type": "string",
-                                        "example": "GV001",
-                                        "nullable": true
-                                    },
-                                    "teacher_name": {
-                                        "type": "string",
-                                        "example": "Nguyễn Văn A",
-                                        "nullable": true
-                                    },
-                                    "max_students": {
-                                        "description": "Sĩ số tối đa",
-                                        "type": "integer",
-                                        "example": 30
-                                    },
-                                    "note": {
-                                        "description": "Ghi chú",
-                                        "type": "string",
-                                        "example": "Ưu tiên sinh viên năm 3",
-                                        "nullable": true
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
+                "summary": "Tạo đợt phụ đạo",
+                "operationId": "adminCreateRemedialTerm",
                 "responses": {
                     "201": {
-                        "description": "Thêm đợt phụ đạo thành công",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Đợt phụ đạo đã được tạo thành công"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        },
-                                        "errors": {
-                                            "type": "null"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                        "description": "Created"
                     }
                 },
                 "security": [
@@ -668,14 +147,13 @@
                 ]
             }
         },
-        "/api/admin/tutoring-classes/{id}": {
+        "/api/admin/remedial-terms/{id}": {
             "get": {
                 "tags": [
                     "Đợt phụ đạo"
                 ],
                 "summary": "Chi tiết đợt phụ đạo",
-                "description": "GET /api/admin/tutoring-classes/{id}",
-                "operationId": "showTutoringClass",
+                "operationId": "adminShowRemedialTerm",
                 "parameters": [
                     {
                         "name": "id",
@@ -688,10 +166,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Thành công"
-                    },
-                    "404": {
-                        "description": "Không tìm thấy"
+                        "description": "OK"
                     }
                 },
                 "security": [
@@ -705,8 +180,7 @@
                     "Đợt phụ đạo"
                 ],
                 "summary": "Xóa đợt phụ đạo",
-                "description": "DELETE /api/admin/tutoring-classes/{id}",
-                "operationId": "deleteTutoringClass",
+                "operationId": "adminDeleteRemedialTerm",
                 "parameters": [
                     {
                         "name": "id",
@@ -719,188 +193,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Xóa thành công"
-                    },
-                    "409": {
-                        "description": "Xung đột dữ liệu"
-                    },
-                    "404": {
-                        "description": "Không tìm thấy"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            },
-            "patch": {
-                "tags": [
-                    "Đợt phụ đạo"
-                ],
-                "summary": "Sửa đợt phụ đạo",
-                "description": "PATCH /api/admin/tutoring-classes/{id}",
-                "operationId": "updateTutoringClass",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Cập nhật thành công"
-                    },
-                    "400": {
-                        "description": "Dữ liệu không hợp lệ"
-                    },
-                    "404": {
-                        "description": "Không tìm thấy"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            }
-        },
-        "/api/admin/tutoring-classes/{id}/assign-teacher": {
-            "patch": {
-                "tags": [
-                    "Đợt phụ đạo"
-                ],
-                "summary": "Phân công giảng viên phụ đạo",
-                "description": "PATCH /api/admin/tutoring-classes/{id}/assign-teacher",
-                "operationId": "assignTeacher",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "teacher_code": {
-                                        "type": "string",
-                                        "example": "GV001"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Phân công thành công"
-                    },
-                    "400": {
-                        "description": "Dữ liệu không hợp lệ"
-                    },
-                    "404": {
-                        "description": "Không tìm thấy"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            }
-        },
-        "/api/admin/tutoring-terms": {
-            "get": {
-                "tags": [
-                    "Đợt phụ đạo"
-                ],
-                "summary": "Danh sách đợt phụ đạo",
-                "description": "GET /api/admin/tutoring-terms",
-                "operationId": "listTutoringTerms",
-                "responses": {
-                    "200": {
-                        "description": "Thành công"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Đợt phụ đạo"
-                ],
-                "summary": "Thêm mới đợt phụ đạo",
-                "description": "POST /api/admin/tutoring-terms",
-                "operationId": "storeTutoringTerm",
-                "responses": {
-                    "201": {
-                        "description": "Thêm thành công"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            }
-        },
-        "/api/admin/tutoring-terms/{id}": {
-            "get": {
-                "tags": [
-                    "Đợt phụ đạo"
-                ],
-                "summary": "Chi tiết đợt phụ đạo",
-                "description": "GET /api/admin/tutoring-terms/{id}",
-                "operationId": "showTutoringTerm",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Thành công"
-                    },
-                    "404": {
-                        "description": "Không tìm thấy"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            },
-            "delete": {
-                "tags": [
-                    "Đợt phụ đạo"
-                ],
-                "summary": "Xóa đợt phụ đạo",
-                "description": "DELETE /api/admin/tutoring-terms/{id}",
-                "operationId": "destroyTutoringTerm",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Xóa thành công"
+                        "description": "OK"
                     }
                 },
                 "security": [
@@ -914,8 +207,7 @@
                     "Đợt phụ đạo"
                 ],
                 "summary": "Cập nhật đợt phụ đạo",
-                "description": "PATCH /api/admin/tutoring-terms/{id}",
-                "operationId": "updateTutoringTerm",
+                "operationId": "adminUpdateRemedialTerm",
                 "parameters": [
                     {
                         "name": "id",
@@ -928,7 +220,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Cập nhật thành công"
+                        "description": "OK"
                     }
                 },
                 "security": [
@@ -938,36 +230,16 @@
                 ]
             }
         },
-        "/api/admin/users": {
+        "/api/admin/system-configurations": {
             "get": {
                 "tags": [
-                    "Người dùng"
+                    "Cài đặt hệ thống"
                 ],
-                "summary": "Danh sách người dùng",
-                "description": "GET /api/admin/users\nDanh sách người dùng (Admin xem).",
-                "operationId": "listUsers",
-                "parameters": [
-                    {
-                        "name": "role",
-                        "in": "query",
-                        "description": "Lọc theo vai trò",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "admin",
-                                "bo_mon",
-                                "sinh_vien"
-                            ]
-                        }
-                    }
-                ],
+                "summary": "Danh sách cấu hình hệ thống",
+                "operationId": "adminListSystemConfigurations",
                 "responses": {
                     "200": {
-                        "description": "Danh sách người dùng"
-                    },
-                    "403": {
-                        "description": "Không có quyền"
+                        "description": "OK"
                     }
                 },
                 "security": [
@@ -978,103 +250,13 @@
             },
             "post": {
                 "tags": [
-                    "Người dùng"
+                    "Cài đặt hệ thống"
                 ],
-                "summary": "Thêm người dùng mới",
-                "description": "Tạo tài khoản người dùng mới. Ràng buộc: student_code bắt buộc nếu role=sinh_vien, department_id bắt buộc nếu role=bo_mon.",
-                "operationId": "createUser",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "name",
-                                    "email",
-                                    "password",
-                                    "role"
-                                ],
-                                "properties": {
-                                    "name": {
-                                        "description": "Họ tên",
-                                        "type": "string",
-                                        "example": "Nguyễn Văn A"
-                                    },
-                                    "email": {
-                                        "type": "string",
-                                        "format": "email",
-                                        "example": "nguyenvana@remedial.edu.vn"
-                                    },
-                                    "password": {
-                                        "type": "string",
-                                        "format": "password",
-                                        "example": "password123"
-                                    },
-                                    "role": {
-                                        "type": "string",
-                                        "example": "bo_mon",
-                                        "enum": [
-                                            "admin",
-                                            "bo_mon",
-                                            "sinh_vien"
-                                        ]
-                                    },
-                                    "student_code": {
-                                        "description": "Bắt buộc nếu role là sinh_vien",
-                                        "type": "string",
-                                        "example": null,
-                                        "nullable": true
-                                    },
-                                    "department_id": {
-                                        "description": "Bắt buộc nếu role là bo_mon",
-                                        "type": "integer",
-                                        "example": 1,
-                                        "nullable": true
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
+                "summary": "Cập nhật cấu hình hệ thống",
+                "operationId": "adminUpdateSystemConfigurations",
                 "responses": {
-                    "201": {
-                        "description": "Thêm thành công – bước 5 Normal Flow",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Thêm người dùng thành công"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        },
-                                        "errors": {
-                                            "type": "null"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Chưa xác thực"
-                    },
-                    "403": {
-                        "description": "Không có quyền – chỉ Admin"
-                    },
-                    "422": {
-                        "description": "AF-1: Thông tin không hợp lệ"
-                    },
-                    "500": {
-                        "description": "AF-2: Thêm thất bại"
+                    "200": {
+                        "description": "OK"
                     }
                 },
                 "security": [
@@ -1084,30 +266,16 @@
                 ]
             }
         },
-        "/api/admin/users/{id}": {
+        "/api/admin/remedial-registrations": {
             "get": {
                 "tags": [
-                    "Người dùng"
+                    "Đăng ký phụ đạo"
                 ],
-                "summary": "Chi tiết người dùng",
-                "description": "GET /api/admin/users/{id}\nLấy thông tin chi tiết một người dùng – bước 1 Normal Flow (chọn người dùng)",
-                "operationId": "showUser",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
+                "summary": "Tra cứu đăng ký phụ đạo (Admin)",
+                "operationId": "adminListRemedialRegistrations",
                 "responses": {
                     "200": {
-                        "description": "Chi tiết người dùng"
-                    },
-                    "404": {
-                        "description": "Không tìm thấy"
+                        "description": "OK"
                     }
                 },
                 "security": [
@@ -1115,36 +283,18 @@
                         "sanctum": []
                     }
                 ]
-            },
-            "delete": {
+            }
+        },
+        "/api/department/me": {
+            "get": {
                 "tags": [
-                    "Người dùng"
+                    "Bộ môn"
                 ],
-                "summary": "Xóa người dùng",
-                "description": "Xóa vĩnh viễn tài khoản người dùng khỏi hệ thống.",
-                "operationId": "deleteUser",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
+                "summary": "Hồ sơ bộ môn đang đăng nhập",
+                "operationId": "departmentShowProfile",
                 "responses": {
                     "200": {
-                        "description": "Bước 4: Xóa thành công"
-                    },
-                    "403": {
-                        "description": "Không có quyền – chỉ Admin, hoặc tự xóa mình"
-                    },
-                    "404": {
-                        "description": "Không tìm thấy người dùng"
-                    },
-                    "500": {
-                        "description": "AF-1: Xóa thất bại"
+                        "description": "OK"
                     }
                 },
                 "security": [
@@ -1155,11 +305,122 @@
             },
             "patch": {
                 "tags": [
-                    "Người dùng"
+                    "Bộ môn"
                 ],
-                "summary": "Sửa người dùng",
-                "description": "Partial update (PATCH). Cập nhật thông tin người dùng. Nếu đổi role sang sinh_vien cần kèm student_code.",
-                "operationId": "updateUser",
+                "summary": "Cập nhật email/SĐT bộ môn",
+                "operationId": "departmentUpdateProfile",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/department/remedial-registrations": {
+            "get": {
+                "tags": [
+                    "Bộ môn"
+                ],
+                "summary": "Đăng ký phụ đạo thuộc bộ môn",
+                "operationId": "departmentListRegistrations",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/department/send-summary-email": {
+            "post": {
+                "tags": [
+                    "Bộ môn"
+                ],
+                "summary": "Gửi email tổng hợp cho bộ môn",
+                "operationId": "departmentSendSummaryEmail",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/student/me/eligible-subjects": {
+            "get": {
+                "tags": [
+                    "Sinh viên – Môn đủ điều kiện"
+                ],
+                "summary": "Môn đủ điều kiện phụ đạo",
+                "operationId": "studentListEligibleSubjects",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/student/me/remedial-registrations": {
+            "get": {
+                "tags": [
+                    "Sinh viên – Đăng ký phụ đạo"
+                ],
+                "summary": "Đăng ký phụ đạo của sinh viên",
+                "operationId": "studentListRegistrations",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Sinh viên – Đăng ký phụ đạo"
+                ],
+                "summary": "Đăng ký phụ đạo",
+                "operationId": "studentCreateRegistration",
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/student/me/remedial-registrations/{id}": {
+            "delete": {
+                "tags": [
+                    "Sinh viên – Đăng ký phụ đạo"
+                ],
+                "summary": "Hủy đăng ký phụ đạo",
+                "operationId": "studentCancelRegistration",
                 "parameters": [
                     {
                         "name": "id",
@@ -1170,70 +431,28 @@
                         }
                     }
                 ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "name": {
-                                        "type": "string",
-                                        "example": "Nguyễn Văn B",
-                                        "nullable": true
-                                    },
-                                    "email": {
-                                        "type": "string",
-                                        "format": "email",
-                                        "example": "nguyenvanb@remedial.edu.vn",
-                                        "nullable": true
-                                    },
-                                    "password": {
-                                        "type": "string",
-                                        "format": "password",
-                                        "example": "newpassword123",
-                                        "nullable": true
-                                    },
-                                    "role": {
-                                        "type": "string",
-                                        "example": "sinh_vien",
-                                        "nullable": true,
-                                        "enum": [
-                                            "admin",
-                                            "bo_mon",
-                                            "sinh_vien"
-                                        ]
-                                    },
-                                    "student_code": {
-                                        "type": "string",
-                                        "example": "SV002",
-                                        "nullable": true
-                                    },
-                                    "department_id": {
-                                        "type": "integer",
-                                        "example": null,
-                                        "nullable": true
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
                 "responses": {
                     "200": {
-                        "description": "Bước 5: Cập nhật thành công"
-                    },
-                    "403": {
-                        "description": "Không có quyền – chỉ Admin"
-                    },
-                    "404": {
-                        "description": "Không tìm thấy người dùng"
-                    },
-                    "422": {
-                        "description": "AF-1: Thông tin không hợp lệ"
-                    },
-                    "500": {
-                        "description": "AF-2: Cập nhật thất bại"
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/student/remedial-terms/current": {
+            "get": {
+                "tags": [
+                    "Sinh viên – Đợt phụ đạo"
+                ],
+                "summary": "Đợt phụ đạo đang mở",
+                "operationId": "studentCurrentRemedialTerm",
+                "responses": {
+                    "200": {
+                        "description": "OK"
                     }
                 },
                 "security": [
@@ -1262,36 +481,36 @@
     },
     "tags": [
         {
-            "name": "Xác thực",
-            "description": "Đăng nhập và quản lý phiên làm việc"
-        },
-        {
             "name": "Bộ môn",
             "description": "Quản lý thông tin Bộ môn và liên lạc"
         },
         {
-            "name": "Học kỳ",
-            "description": "Quản lý Học kỳ (Semester)"
+            "name": "Đăng ký phụ đạo",
+            "description": "Tra cứu đăng ký phụ đạo – Admin"
+        },
+        {
+            "name": "Đợt phụ đạo",
+            "description": "Quản lý đợt phụ đạo (Admin)"
         },
         {
             "name": "Cài đặt hệ thống",
             "description": "Quản lý các cấu hình hệ thống – chỉ Admin"
         },
         {
-            "name": "Thống kê",
-            "description": "Các API thống kê đợt phụ đạo"
+            "name": "Xác thực",
+            "description": "Đăng nhập và quản lý phiên làm việc"
         },
         {
-            "name": "Thanh toán",
-            "description": "Quản lý thanh toán và xuất file – chỉ Admin"
+            "name": "Sinh viên – Môn đủ điều kiện",
+            "description": "Môn học được phép đăng ký phụ đạo"
         },
         {
-            "name": "Đợt phụ đạo",
-            "description": "Quản lý Đợt phụ đạo (Cohorts)"
+            "name": "Sinh viên – Đăng ký phụ đạo",
+            "description": "Đăng ký / hủy / xem đơn của chính sinh viên"
         },
         {
-            "name": "Người dùng",
-            "description": "Quản lý người dùng hệ thống – chỉ Admin"
+            "name": "Sinh viên – Đợt phụ đạo",
+            "description": "Thông tin đợt phụ đạo (read-only)"
         }
     ],
     "security": [

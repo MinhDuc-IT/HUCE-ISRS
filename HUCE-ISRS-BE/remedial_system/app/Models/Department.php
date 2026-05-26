@@ -4,34 +4,31 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-/**
- * <summary>
- * Model đại diện cho bảng Department (Khoa).
- * Quản lý thông tin các Khoa trong trường.
- * </summary>
- */
 class Department extends Model
 {
-    protected $table = 'Department';
-    protected $primaryKey = 'Id';
-    public $timestamps = false; 
+    protected $table = 'departments';
 
     protected $fillable = [
-        'DepartmentCode',
-        'Name',
-        'Email',
-        'Phone',
-        'CreatedAt',
-        'UpdatedAt',
+        'department_code',
+        'faculty_code',
+        'faculty_name',
+        'name',
+        'email',
+        'phone_number',
+        'is_deleted',
     ];
 
-    public function teachers()
+    protected $casts = [
+        'is_deleted' => 'boolean',
+    ];
+
+    public function subjects()
     {
-        return $this->hasMany(Teacher::class, 'DepartmentId');
+        return $this->hasMany(Subject::class, 'department_id');
     }
 
-    public function courses()
+    public function users()
     {
-        return $this->hasMany(Course::class, 'DepartmentId');
+        return $this->hasMany(User::class, 'department_id');
     }
 }

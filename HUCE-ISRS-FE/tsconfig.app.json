@@ -24,5 +24,13 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": [
+    "src/shared/context/DemoDataContext.tsx",
+    "src/shared/components/LecturerAssignmentTable.tsx",
+    "src/modules/admin/mockData/**",
+    "src/modules/admin/pages/DepartmentFormPage.tsx",
+    "src/modules/admin/pages/PaymentsPage.tsx",
+    "src/modules/admin/pages/AdminAssignmentsPage.tsx"
+  ]
 }

@@ -20,4 +20,5 @@ Route::middleware('verify.api.token')->group(function () {
     Route::get('/students/{id}', [StudentController::class, 'show']);
     Route::get('/students/{id}/courses', [StudentController::class, 'courses']);
     Route::get('/students/{id}/courses/semester/{semester_key}', [StudentController::class, 'coursesBySemester']);
+    Route::get('/students/{id}/registered-courses/{year}/{semester}', [StudentController::class, 'registeredCoursesByTerm']);
 });

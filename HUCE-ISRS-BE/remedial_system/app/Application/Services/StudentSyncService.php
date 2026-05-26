@@ -3,9 +3,9 @@
 namespace App\Application\Services;
 
 use App\Domain\Entities\StudentInfo;
-use App\Domain\Ports\StudentInfoPort;
-use App\Domain\Repositories\StudentRepositoryPort;
-use App\Domain\Repositories\CourseRepositoryPort;
+use App\Domain\Ports\External\StudentInfoPort;
+use App\Domain\Ports\Persistence\StudentRepositoryPort;
+use App\Domain\Ports\Persistence\SubjectRepositoryPort;
 use Illuminate\Support\Facades\Log;
 
 class StudentSyncService
@@ -13,39 +13,42 @@ class StudentSyncService
     public function __construct(
         private readonly StudentInfoPort $studentInfoPort,
         private readonly StudentRepositoryPort $studentRepository,
-        private readonly CourseRepositoryPort $courseRepository,
+        private readonly SubjectRepositoryPort $subjectRepository,
     ) {}
 
-    /**
-     * Đồng bộ thông tin sinh viên và các môn học liên quan.
-     */
     public function sync(string $studentCode, StudentInfo $studentInfo): void
     {
-        // 1. Đồng bộ bảng Student
         $this->studentRepository->updateOrCreate($studentCode, [
-            'FullName' => $studentInfo->fullName,
-            'Email'    => $studentInfo->universityEmail ?? $studentInfo->personalEmail,
-            'UpdatedAt'=> now(),
+            'full_name'  => $studentInfo->fullName,
+            'email'      => $studentInfo->universityEmail ?? $studentInfo->personalEmail,
+            'is_deleted' => false,
         ]);
 
-        // 2. Đồng bộ danh sách môn học
         $courses = $this->studentInfoPort->getCourses($studentCode);
         foreach ($courses as $courseInfo) {
-            if (empty($courseInfo->courseCode)) {
+            $subjectCode = $courseInfo->code();
+            if ($subjectCode === '') {
                 Log::warning("[StudentSync] Bỏ qua môn học không có mã học phần cho {$studentCode}");
                 continue;
             }
 
-            // Đảm bảo có khoa (Department)
-            $dept = $this->courseRepository->firstOrCreateDepartment('DEFAULT', [
-                'Name' => 'Khoa Mặc Định'
-            ]);
+            $existing = $this->subjectRepository->findByCode($subjectCode);
 
-            $this->courseRepository->updateOrCreateCourse($courseInfo->courseCode, [
-                'CourseName'   => $courseInfo->subjectName,
-                'Credits'      => $courseInfo->credits,
-                'DepartmentId' => $dept->Id,
-            ]);
+            $payload = [
+                'name'       => $courseInfo->subjectName,
+                'credits'    => $courseInfo->credits,
+                'is_deleted' => false,
+            ];
+
+            // Chỉ gán bộ môn khi tạo mới; không ghi đè nếu admin đã gán department_id.
+            if ($existing === null) {
+                $dept = $this->subjectRepository->firstOrCreateDepartment('DEFAULT', [
+                    'name' => 'Khoa Mặc Định',
+                ]);
+                $payload['department_id'] = $dept->id;
+            }
+
+            $this->subjectRepository->updateOrCreateSubject($subjectCode, $payload);
         }
     }
 }

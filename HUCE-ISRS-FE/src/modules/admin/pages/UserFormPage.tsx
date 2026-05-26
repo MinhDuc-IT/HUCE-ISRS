@@ -2,11 +2,7 @@ import { useState, useEffect, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { apiFetch } from '@/shared/utils/apiClient'
 
-interface Department {
-  id: number
-  DepartmentCode: string
-  DepartmentName: string
-}
+import type { ApiDepartment } from '@/shared/types/api'
 
 export function UserFormPage() {
   const navigate = useNavigate()
@@ -18,7 +14,7 @@ export function UserFormPage() {
   const [password, setPassword] = useState('')
   const [role, setRole] = useState('admin')
   const [departmentId, setDepartmentId] = useState('')
-  const [departments, setDepartments] = useState<Department[]>([])
+  const [departments, setDepartments] = useState<ApiDepartment[]>([])
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -30,7 +26,7 @@ export function UserFormPage() {
 
   async function fetchDepartments() {
     try {
-      const res = await apiFetch<{ data: Department[] }>('/admin/departments')
+      const res = await apiFetch<{ data: ApiDepartment[] }>('/admin/departments')
       setDepartments(res.data || [])
     } catch {
       // silent
@@ -63,6 +59,10 @@ export function UserFormPage() {
     }
     if (!isEdit && !password.trim()) {
       setError('Nhập mật khẩu cho tài khoản mới.')
+      return
+    }
+    if (!isEdit && password.trim().length < 6) {
+      setError('Mật khẩu phải có ít nhất 6 ký tự.')
       return
     }
 
@@ -131,7 +131,11 @@ export function UserFormPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="new-password"
+            minLength={isEdit ? undefined : 6}
           />
+          {!isEdit && (
+            <p className="mt-1 text-xs text-gray-500">Tối thiểu 6 ký tự.</p>
+          )}
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700">Vai trò</label>
@@ -148,7 +152,9 @@ export function UserFormPage() {
             <select className={inputClass} value={departmentId} onChange={(e) => setDepartmentId(e.target.value)}>
               <option value="">-- Chọn bộ môn --</option>
               {departments.map((d) => (
-                <option key={d.id} value={d.id}>{d.DepartmentCode} – {d.DepartmentName}</option>
+                <option key={d.id} value={d.id}>
+                  {d.department_code} – {d.department_name}
+                </option>
               ))}
             </select>
           </div>

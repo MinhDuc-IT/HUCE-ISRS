@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import { getHomePathForRole } from '@/modules/auth/mockData/demoUsers'
 import { useAuth } from '@/shared/context/AuthContext'
+import { resolveRedirectPath } from '@/shared/utils/authUserMapper'
 import { CenteredCardLayout } from '@/shared/layouts/AppShellLayout'
 
 export function LoginPage() {
@@ -14,12 +14,7 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false)
 
   if (user) {
-      let redirectPath = '/'
-      if (user.role === 'admin') redirectPath = '/admin/statistics'
-      else if (user.role === 'department') redirectPath = '/admin/departments'
-      else if (user.role === 'student') redirectPath = '/student/register'
-
-    return <Navigate to={redirectPath} replace />
+    return <Navigate to={resolveRedirectPath(user)} replace />
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -29,12 +24,7 @@ export function LoginPage() {
     
     try {
       const ok = await login(username, password)
-      let redirectPath = '/'
-      if (ok.role === 'admin') redirectPath = '/admin/statistics'
-      else if (ok.role === 'department') redirectPath = '/admin/departments' // Trưởng bộ môn vào trang bộ môn
-      else if (ok.role === 'student') redirectPath = '/student/register'
-      
-      navigate(redirectPath, { replace: true })
+      navigate(resolveRedirectPath(ok), { replace: true })
     } catch (err: any) {
       setError(err.message || 'Đăng nhập thất bại. Vui lòng thử lại.')
     } finally {

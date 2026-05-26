@@ -27,10 +27,13 @@ class UserSeeder extends Seeder
                 'role'          => User::ROLE_ADMIN,
                 'student_code'  => null,
                 'department_id' => null,
+                'is_deleted'    => false,
             ]
         );
 
-        // ── Bộ môn – Khoa CNTT ────────────────────────────────────────────────
+        // ── Bộ môn mẫu: Công nghệ phần mềm (HUCE IDBoMon = 54) ─────────────────
+        $departmentId = \App\Models\Department::where('department_code', '54')->value('id');
+
         User::updateOrCreate(
             ['email' => 'bokhoa.cntt@remedial.edu.vn'],
             [
@@ -38,7 +41,8 @@ class UserSeeder extends Seeder
                 'password'      => Hash::make('BoMon@2024!'),
                 'role'          => User::ROLE_BO_MON,
                 'student_code'  => null,
-                'department_id' => 1,
+                'department_id' => $departmentId,
+                'is_deleted'    => false,
             ]
         );
 

@@ -1,137 +1,133 @@
-﻿import { useState, type FormEvent } from 'react'
-import { useDemoData } from '@/shared/context/DemoDataContext'
+import { useEffect, useState, type FormEvent } from 'react'
+import { apiFetch } from '@/shared/utils/apiClient'
+import type { ApiDepartment } from '@/shared/types/api'
 
 export function AdminSendEmailPage() {
-  const { state, sendDepartmentEmail } = useDemoData()
-  const [departmentId, setDepartmentId] = useState(state.departments[0]?.id ?? '')
-  const [toEmail, setToEmail] = useState(
-    () => state.departments[0]?.headEmail ?? '',
-  )
+  const [departments, setDepartments] = useState<ApiDepartment[]>([])
+  const [departmentId, setDepartmentId] = useState('')
   const [subject, setSubject] = useState('Thông báo phụ đạo — danh sách môn/SV')
   const [body, setBody] = useState(
-    'Kính gửi Trưởng bộ môn,\n\nĐính kèm nội dung danh sách môn phụ đạo và sinh viên (demo UI).\n',
+    'Kính gửi Trưởng bộ môn,\n\nVui lòng xem danh sách môn phụ đạo và sinh viên đăng ký trong hệ thống.\n',
   )
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [sending, setSending] = useState(false)
 
-  function onDeptChange(id: string) {
-    setDepartmentId(id)
-    const d = state.departments.find((x) => x.id === id)
-    if (d) setToEmail(d.headEmail)
+  useEffect(() => {
+    fetchDepartments()
+  }, [])
+
+  async function fetchDepartments() {
+    try {
+      setLoading(true)
+      const res = await apiFetch<{ data: ApiDepartment[] }>('/admin/departments')
+      const list = res.data || []
+      setDepartments(list)
+      if (list.length > 0) {
+        setDepartmentId(String(list[0].id))
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Lỗi không xác định'
+      setError('Không tải danh sách bộ môn: ' + msg)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  function handleSubmit(e: FormEvent) {
+  const selectedDept = departments.find((d) => String(d.id) === departmentId)
+
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setMessage(null)
     setError(null)
-    const res = sendDepartmentEmail({
-      departmentId,
-      toEmail: toEmail.trim(),
-      subject,
-      body,
-    })
-    if (!res.ok) {
-      setError('Email người nhận không hợp lệ.')
+
+    if (!departmentId) {
+      setError('Chọn bộ môn.')
       return
     }
-    setMessage('Đã gửi (mock — chỉ ghi log trong session).')
+
+    try {
+      setSending(true)
+      await apiFetch(`/admin/departments/${departmentId}/send-email`, {
+        method: 'POST',
+        data: { subject, body },
+      })
+      setMessage('Đã gửi email tổng hợp về bộ môn thành công.')
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Gửi email thất bại.'
+      setError(msg)
+    } finally {
+      setSending(false)
+    }
+  }
+
+  if (loading) {
+    return <p className="text-sm text-gray-500">Đang tải...</p>
   }
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold text-gray-800">
-          Gửi email về bộ môn
-        </h1>
-      </div>
+      <h1 className="text-lg font-semibold text-gray-800">Gửi email về bộ môn</h1>
 
       <form
         onSubmit={handleSubmit}
         className="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-theme-sm"
       >
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            Bộ môn
-          </label>
+          <label className="mb-1 block text-sm font-medium text-gray-700">Bộ môn</label>
           <select
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
+            className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
             value={departmentId}
-            onChange={(e) => onDeptChange(e.target.value)}
+            onChange={(e) => setDepartmentId(e.target.value)}
           >
-            {state.departments.map((d) => (
+            {departments.map((d) => (
               <option key={d.id} value={d.id}>
-                {d.name}
+                {d.department_name} ({d.department_code})
               </option>
             ))}
           </select>
+          {selectedDept?.email && (
+            <p className="mt-1 text-xs text-gray-500">Email bộ môn: {selectedDept.email}</p>
+          )}
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            Email nhận
-          </label>
+          <label className="mb-1 block text-sm font-medium text-gray-700">Tiêu đề</label>
           <input
-            type="email"
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
-            value={toEmail}
-            onChange={(e) => setToEmail(e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            Tiêu đề
-          </label>
-          <input
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
+            className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            Nội dung
-          </label>
+          <label className="mb-1 block text-sm font-medium text-gray-700">Nội dung</label>
           <textarea
             rows={8}
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
+            className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
             value={body}
             onChange={(e) => setBody(e.target.value)}
           />
         </div>
 
-        {error ? (
+        {error && (
           <p className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             {error}
           </p>
-        ) : null}
-        {message ? (
+        )}
+        {message && (
           <p className="rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
             {message}
           </p>
-        ) : null}
+        )}
 
         <button
           type="submit"
-          className="rounded bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600"
+          disabled={sending || departments.length === 0}
+          className="rounded bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-70"
         >
-          Gửi email
+          {sending ? 'Đang gửi...' : 'Gửi email'}
         </button>
       </form>
-
-      {state.emailLogs.length > 0 ? (
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-theme-sm">
-          <h2 className="text-sm font-semibold text-gray-800">Log gửi gần đây</h2>
-          <ul className="mt-2 max-h-48 space-y-2 overflow-y-auto text-xs text-gray-600">
-            {state.emailLogs.slice(0, 8).map((log) => (
-              <li key={log.id} className="border-b border-gray-100 pb-2">
-                <span className="font-medium text-gray-700">{log.subject}</span>
-                <br />
-                {new Date(log.sentAt).toLocaleString('vi-VN')} —{' '}
-                {log.ok ? 'OK' : 'Lỗi'}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
     </div>
   )
 }

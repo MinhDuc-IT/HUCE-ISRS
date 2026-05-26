@@ -1,73 +1,47 @@
-# React + TypeScript + Vite
+# HUCE-ISRS Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Giao diện React + TypeScript + Vite cho hệ thống đăng ký phụ đạo. Ba vai trò: **admin**, **department** (API `bo_mon`), **student** (`sinh_vien`).
 
-Currently, two official plugins are available:
+## Yêu cầu
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Node.js 18+
+- Remedial API chạy tại `http://127.0.0.1:8000` (xem `src/shared/utils/apiClient.ts`)
+- University System tại `http://localhost:8001` khi đăng nhập sinh viên
 
-## React Compiler
+## Cài đặt & chạy
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Mở http://localhost:5173
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Build production:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build
+npm run preview
 ```
+
+## Định tuyến theo vai trò
+
+| Role API | Trang chính |
+|----------|-------------|
+| `admin` | `/admin/*` — đợt phụ đạo, người dùng, bộ môn, cấu hình, tra cứu đăng ký |
+| `bo_mon` | `/department/*` — hồ sơ BM, danh sách đăng ký, cập nhật GV |
+| `sinh_vien` | `/student/*` — đăng ký môn, danh sách đã đăng ký, GV phụ đạo |
+
+Login map `home_url` từ API (`authUserMapper.ts`, `rolePaths.ts`).
+
+## API
+
+- Base URL: `http://127.0.0.1:8000/api`
+- Payload/response: **snake_case** (không fallback PascalCase)
+- Token: Bearer từ `POST /auth/login`, gửi qua `apiFetch`
+
+Bảng endpoint đầy đủ: [../HUCE-ISRS-BE/remedial_system/ARCHITECTURE.md](../HUCE-ISRS-BE/remedial_system/ARCHITECTURE.md)
+
+## Regression
+
+Checklist 3 vai trò: [../REGRESSION.md](../REGRESSION.md)

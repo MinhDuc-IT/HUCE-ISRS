@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\DTOs\CourseDto;
+use App\DTOs\RegisteredCourseDto;
 use App\DTOs\StudentDto;
 use App\Http\Controllers\BaseController;
 use App\Models\SinhVien;
@@ -124,7 +125,7 @@ class StudentController extends BaseController
         name: "semester_key",
         in: "path",
         required: true,
-        description: "ID học kỳ (VD: 10) hoặc Mã học kỳ (VD: 20241)",
+        description: "Số 1–3 chữ số: Id DM_Dot (lhp.IDDot). Từ 4 ký tự: YYYY = DM_NamHoc.NamHoc, tùy chọn thêm 1 chữ số = dot.SoThuTu (VD: 20241 = năm 2024, HK có SoThuTu=1). Không dùng 25 để chỉ năm 2025.",
         schema: new OA\Schema(type: "string", example: "20241")
     )]
     #[OA\Response(
@@ -155,6 +156,7 @@ class StudentController extends BaseController
          *   LEFT JOIN TKB_LopHocPhan        lhp ON kq.IDLopHocPhan = lhp.Id
          *   LEFT JOIN TKB_MonHoc            mh  ON lhp.IDMonHoc    = mh.Id
          *   LEFT JOIN DM_Dot               dot  ON lhp.IDDot       = dot.Id
+         *   LEFT JOIN DM_NamHoc            nh   ON dot.IDNamHoc    = nh.Id   (IDNamHoc là FK; năm hiển thị = nh.NamHoc)
          *   WHERE sv.MaSinhVien = ?
          */
         $query = DB::connection('sqlsrv')
@@ -162,6 +164,7 @@ class StudentController extends BaseController
             ->leftJoin('TKB_LopHocPhan as lhp', 'kq.IDLopHocPhan', '=', 'lhp.Id')
             ->leftJoin('TKB_MonHoc as mh',       'lhp.IDMonHoc',    '=', 'mh.Id')
             ->leftJoin('DM_Dot as dot',           'lhp.IDDot',       '=', 'dot.Id')
+            ->leftJoin('DM_NamHoc as nh',         'dot.IDNamHoc',    '=', 'nh.Id')
             ->where('kq.IDSinhVien', $sinhVien->Id)
             ->select(
                 'mh.MaHocPhan',
@@ -175,27 +178,86 @@ class StudentController extends BaseController
                 'kq.DiemTinChi',
                 'kq.DiemChu',
                 'dot.SoThuTu as HocKy',
-                'dot.IdNamHoc'
+                'nh.NamHoc as IDNamHoc',
             );
 
         // Lọc theo học kỳ
         if (is_numeric($semester_key) && strlen($semester_key) < 4) {
-            // Số ngắn (VD: 10) → ID trực tiếp của DM_Dot
+            // Số ngắn (VD: 10) → ID trực tiếp của DM_Dot (không phải năm 20xx)
             $query->where('lhp.IDDot', $semester_key);
         } else {
-            // Chuỗi dạng YYYYS (VD: 20241) hoặc YYYY (VD: 2024)
+            // Chuỗi dạng YYYYS (VD: 20241) hoặc YYYY (VD: 2024) — YYYY = DM_NamHoc.NamHoc, S = dot.SoThuTu
             $year  = substr($semester_key, 0, 4);
             $order = substr($semester_key, 4);
 
-            $query->where('dot.IdNamHoc', $year);
+            $yearInt = (int) $year;
+            $query->whereIn('dot.IDNamHoc', function ($sub) use ($yearInt) {
+                $sub->select('Id')
+                    ->from('DM_NamHoc')
+                    ->where('NamHoc', $yearInt);
+            });
             if ($order !== '') {
-                $query->where('dot.SoThuTu', $order);
+                $query->where('dot.SoThuTu', (int) $order);
             }
         }
 
         $rows = $query->get();
 
         $courses = $rows->map(fn($row) => CourseDto::fromRow($row));
+
+        return $this->success($courses, 'Thành công');
+    }
+
+    #[OA\Get(
+        path: '/api/students/{id}/registered-courses/{year}/{semester}',
+        operationId: 'getStudentRegisteredCoursesByTerm',
+        summary: 'Môn đã đăng ký học chính quy theo năm học và học kỳ',
+        description: 'Lấy từ DT_DangKyHocPhan — môn SV đã đăng ký lớp học phần trong kỳ (DM_NamHoc.NamHoc + DM_Dot.SoThuTu).',
+        security: [['bearerAuth' => []]],
+        tags: ['Sinh viên'],
+    )]
+    public function registeredCoursesByTerm(string $id, int $year, int $semester): JsonResponse
+    {
+        $sinhVien = SinhVien::where('MaSinhVien', $id)->first();
+
+        if (! $sinhVien) {
+            return $this->error('Không tìm thấy sinh viên với mã: ' . $id, null, 404);
+        }
+
+        $rows = DB::connection('sqlsrv')
+            ->table('DT_SinhVien as sv')
+            ->join('DT_DangKyHocPhan as dk', 'dk.IDSinhVien', '=', 'sv.Id')
+            ->join('TKB_LopHocPhan as lhp', 'lhp.Id', '=', 'dk.IDLopHocPhan')
+            ->join('DM_Dot as dot', 'dot.Id', '=', 'lhp.IDDot')
+            ->join('DM_NamHoc as nh', 'nh.Id', '=', 'dot.IDNamHoc')
+            ->join('TKB_MonHoc as tkb_mh', 'tkb_mh.Id', '=', 'lhp.IDMonHoc')
+            ->leftJoin('DM_MonHoc as mh', 'mh.MaMonHoc', '=', 'tkb_mh.MaMonHoc')
+            ->leftJoin('DM_TrangThaiDangKy as ttdk', 'ttdk.Id', '=', 'dk.IDTrangThaiDangKy')
+            ->where('sv.MaSinhVien', $id)
+            ->where('nh.NamHoc', $year)
+            ->where('dot.SoThuTu', $semester)
+            ->whereIn('dk.IDTrangThaiDangKy', [1, 2, 3, 4])
+            ->selectRaw("
+                sv.Id as IDSinhVien,
+                sv.MaSinhVien,
+                nh.NienHoc,
+                nh.NamHoc,
+                dot.SoThuTu as HocKy,
+                dot.TenDot,
+                COALESCE(mh.MaMonHoc, tkb_mh.MaMonHoc) as MaMonHoc,
+                COALESCE(mh.TenMonHoc, tkb_mh.TenMonHoc) as TenMonHoc,
+                COALESCE(mh.SoTinChi, tkb_mh.SoTinChi, 0) as SoTinChi,
+                lhp.MaLopHocPhan,
+                lhp.LopDuKien,
+                dk.NgayDangKy,
+                dk.Id as IDDangKyHocPhan,
+                dk.IDTrangThaiDangKy,
+                ttdk.TenTrangThai as TrangThaiDangKy
+            ")
+            ->orderByRaw('COALESCE(mh.MaMonHoc, tkb_mh.MaMonHoc)')
+            ->get();
+
+        $courses = $rows->map(fn ($row) => RegisteredCourseDto::fromRow($row));
 
         return $this->success($courses, 'Thành công');
     }

@@ -6,7 +6,7 @@ import { useAuth } from '@/shared/context/AuthContext'
 export function StudentDashboardPage() {
   const { user } = useAuth()
   const [regCount, setRegCount] = useState<number | null>(null)
-  const [openTermCount, setOpenTermCount] = useState<number | null>(null)
+  const [hasCurrentTerm, setHasCurrentTerm] = useState<boolean | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -17,16 +17,15 @@ export function StudentDashboardPage() {
   async function fetchData() {
     try {
       setLoading(true)
-      // Fetch registrations for this student
-      const [regsRes, termsRes] = await Promise.all([
-        apiFetch<{ data: any[] }>(`/students/${user!.id}/registrations`),
-        apiFetch<{ data: any[] }>('/admin/statistics/terms'),
+      const [regsRes, termRes] = await Promise.all([
+        apiFetch<{ data: unknown[] }>('/student/me/remedial-registrations'),
+        apiFetch<{ data: unknown }>('/student/remedial-terms/current').catch(() => null),
       ])
       setRegCount(regsRes.data?.length ?? 0)
-      setOpenTermCount(termsRes.data?.length ?? 0)
+      setHasCurrentTerm(termRes !== null && termRes.data != null)
     } catch {
       setRegCount(0)
-      setOpenTermCount(0)
+      setHasCurrentTerm(false)
     } finally {
       setLoading(false)
     }
@@ -37,9 +36,7 @@ export function StudentDashboardPage() {
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-theme-sm">
-        <h1 className="text-lg font-semibold text-gray-800">
-          Xin chào, {user.displayName}
-        </h1>
+        <h1 className="text-lg font-semibold text-gray-800">Xin chào, {user.displayName}</h1>
         <div className="mt-4 flex flex-wrap gap-3">
           <Link
             to="/student/register"
@@ -65,10 +62,10 @@ export function StudentDashboardPage() {
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-theme-sm">
           <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-            Đợt hiện có trong hệ thống
+            Đợt phụ đạo hiện tại
           </p>
           <p className="mt-1 text-2xl font-semibold text-gray-800">
-            {loading ? '—' : openTermCount}
+            {loading ? '—' : hasCurrentTerm ? 'Đang mở' : 'Chưa có'}
           </p>
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-theme-sm">

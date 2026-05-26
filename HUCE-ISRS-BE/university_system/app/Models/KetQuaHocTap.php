@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * @property int    $Id              Khóa chính
  * @property int    $IDSinhVien      Khóa ngoại tới DT_SinhVien
- * @property int    $IDLopHoc       Khóa ngoại tới TKB_LopHocPhan
+ * @property int    $IDLopHocPhan  Khóa ngoại tới TKB_LopHocPhan
  * @property float  $DiemChuyenCan1  Điểm chuyên cần / quá trình
  * @property float  $DiemThi         Điểm thi cuối kỳ
  * @property float  $DiemTongKet     Điểm tổng kết (hệ 10)
@@ -34,6 +34,6 @@ class KetQuaHocTap extends Model
      */
     public function lopHocPhan(): BelongsTo
     {
-        return $this->belongsTo(LopHocPhan::class, 'IDLopHoc', 'Id');
+        return $this->belongsTo(LopHocPhan::class, 'IDLopHocPhan', 'Id');
     }
 }
