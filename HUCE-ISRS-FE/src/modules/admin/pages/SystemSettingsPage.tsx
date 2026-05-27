@@ -2,27 +2,24 @@ import { useState, useEffect, type FormEvent } from 'react'
 import { apiFetch } from '@/shared/utils/apiClient'
 
 interface ApiSetting {
-  id: string
   key: string
   value: string
   description?: string
 }
 
 export function SystemSettingsPage() {
-  const [formData, setFormData] = useState({
-    senderEmail: '',
-    senderPassword: '',
-    adminEmail: '',
-    weeksFromRegistration: '',
-    wsLogin: '',
-    wsStudentInfo: '',
-    wsHost: ''
+  const [settings, setSettings] = useState<ApiSetting[]>([])
+  const [newSetting, setNewSetting] = useState<ApiSetting>({
+    key: '',
+    value: '',
+    description: ''
   })
-
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [savingKey, setSavingKey] = useState<string | null>(null)
+  const [deletingKey, setDeletingKey] = useState<string | null>(null)
+  const [isCreating, setIsCreating] = useState(false)
 
   useEffect(() => {
     fetchSettings()
@@ -32,20 +29,8 @@ export function SystemSettingsPage() {
     try {
       setLoading(true)
       const res = await apiFetch<{ data: ApiSetting[] }>('/admin/system-configurations')
-      const settings = res.data || []
-      
-      // Map API settings (key-value) to our formData
-      const newFormData = { ...formData }
-      settings.forEach(s => {
-        if (s.key === 'sender_email') newFormData.senderEmail = s.value
-        if (s.key === 'sender_password') newFormData.senderPassword = s.value
-        if (s.key === 'admin_email') newFormData.adminEmail = s.value
-        if (s.key === 'weeks_from_registration') newFormData.weeksFromRegistration = s.value
-        if (s.key === 'ws_login') newFormData.wsLogin = s.value
-        if (s.key === 'ws_student_info') newFormData.wsStudentInfo = s.value
-        if (s.key === 'ws_host') newFormData.wsHost = s.value
-      })
-      setFormData(newFormData)
+      const list = res.data || []
+      setSettings(list.sort((a, b) => a.key.localeCompare(b.key)))
     } catch (err: any) {
       setError('Lỗi khi tải cấu hình: ' + err.message)
     } finally {
@@ -53,43 +38,109 @@ export function SystemSettingsPage() {
     }
   }
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleCreate(e: FormEvent) {
     e.preventDefault()
     setMessage(null)
     setError(null)
-    
+
     try {
-      setIsSubmitting(true)
-      
-      // Chuyển đổi formData sang mảng key-value cho Backend
+      setIsCreating(true)
+
       const payload = {
-        settings: [
-          { key: 'sender_email', value: formData.senderEmail },
-          { key: 'sender_password', value: formData.senderPassword },
-          { key: 'admin_email', value: formData.adminEmail },
-          { key: 'weeks_from_registration', value: formData.weeksFromRegistration },
-          { key: 'ws_login', value: formData.wsLogin },
-          { key: 'ws_student_info', value: formData.wsStudentInfo },
-          { key: 'ws_host', value: formData.wsHost },
-        ]
+        key: newSetting.key.trim(),
+        value: newSetting.value,
+        description: newSetting.description?.trim() || ''
       }
 
-      await apiFetch('/admin/system-configurations', {
+      const res = await apiFetch<{ data: ApiSetting }>('/admin/system-configurations/create', {
         method: 'POST',
         data: payload
       })
 
-      setMessage('Đã lưu cấu hình hệ thống thành công.')
+      setSettings(prev =>
+        [...prev, res.data].sort((a, b) => a.key.localeCompare(b.key))
+      )
+      setNewSetting({ key: '', value: '', description: '' })
+      setMessage('Đã thêm cấu hình mới.')
       setTimeout(() => setMessage(null), 3000)
     } catch (err: any) {
-      setError('Lỗi khi lưu cấu hình: ' + err.message)
+      setError('Lỗi khi thêm cấu hình: ' + err.message)
     } finally {
-      setIsSubmitting(false)
+      setIsCreating(false)
     }
   }
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
+  async function handleUpdate(setting: ApiSetting) {
+    setMessage(null)
+    setError(null)
+
+    try {
+      setSavingKey(setting.key)
+      const res = await apiFetch<{ data: ApiSetting }>(
+        `/admin/system-configurations/${encodeURIComponent(setting.key)}`,
+        {
+          method: 'PATCH',
+          data: {
+            value: setting.value,
+            description: setting.description ?? ''
+          }
+        }
+      )
+
+      setSettings(prev =>
+        prev.map(item => (item.key === setting.key ? res.data : item))
+      )
+      setMessage('Đã cập nhật cấu hình.')
+      setTimeout(() => setMessage(null), 3000)
+    } catch (err: any) {
+      setError('Lỗi khi cập nhật cấu hình: ' + err.message)
+    } finally {
+      setSavingKey(null)
+    }
+  }
+
+  async function handleDelete(settingKey: string) {
+    const confirmed = window.confirm('Bạn có chắc muốn xóa cấu hình này?')
+    if (!confirmed) return
+
+    setMessage(null)
+    setError(null)
+
+    try {
+      setDeletingKey(settingKey)
+      await apiFetch(`/admin/system-configurations/${encodeURIComponent(settingKey)}`, {
+        method: 'DELETE'
+      })
+
+      setSettings(prev => prev.filter(item => item.key !== settingKey))
+      setMessage('Đã xóa cấu hình.')
+      setTimeout(() => setMessage(null), 3000)
+    } catch (err: any) {
+      setError('Lỗi khi xóa cấu hình: ' + err.message)
+    } finally {
+      setDeletingKey(null)
+    }
+  }
+
+  function handleSettingChange(
+    key: string,
+    field: keyof ApiSetting,
+    value: string
+  ) {
+    setSettings(prev =>
+      prev.map(item => (item.key === key ? { ...item, [field]: value } : item))
+    )
+  }
+
+  function handleNewSettingChange(
+    field: keyof ApiSetting,
+    value: string
+  ) {
+    setNewSetting(prev => ({ ...prev, [field]: value }))
+  }
+
+  function isSensitiveKey(key: string) {
+    return /password|secret/i.test(key)
   }
 
   return (
@@ -97,6 +148,11 @@ export function SystemSettingsPage() {
       {error && (
         <div className="mb-4 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
+        </div>
+      )}
+      {message && (
+        <div className="mb-4 rounded border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {message}
         </div>
       )}
       <div className="bg-white rounded border border-gray-200 shadow-sm relative">
@@ -108,112 +164,121 @@ export function SystemSettingsPage() {
         <div className="bg-[#1976d2] text-white px-4 py-2.5 rounded-t text-center font-medium text-sm">
           Cấu hình hệ thống
         </div>
-        
-        <form onSubmit={handleSubmit} className="p-6">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-bold text-gray-800 mb-1">
-                Email dùng để gửi email:
-              </label>
-              <input
-                type="email"
-                name="senderEmail"
-                value={formData.senderEmail}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1976d2] focus:ring-1 focus:ring-[#1976d2]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-gray-800 mb-1">
-                Password:
-              </label>
-              <input
-                type="password"
-                name="senderPassword"
-                value={formData.senderPassword}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1976d2] focus:ring-1 focus:ring-[#1976d2]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-gray-800 mb-1">
-                Email đơn vị quản lý:
-              </label>
-              <input
-                type="email"
-                name="adminEmail"
-                value={formData.adminEmail}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1976d2] focus:ring-1 focus:ring-[#1976d2]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-gray-800 mb-1">
-                Số tuần tính từ tuần đăng ký:
-              </label>
-              <input
-                type="text"
-                name="weeksFromRegistration"
-                value={formData.weeksFromRegistration}
-                onChange={handleChange}
-                className="w-24 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1976d2] focus:ring-1 focus:ring-[#1976d2]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-gray-800 mb-1">
-                Webservice đăng nhập:
-              </label>
-              <input
-                type="text"
-                name="wsLogin"
-                value={formData.wsLogin}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1976d2] focus:ring-1 focus:ring-[#1976d2]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-gray-800 mb-1">
-                Webservice lấy thông tin sinh viên:
-              </label>
-              <input
-                type="text"
-                name="wsStudentInfo"
-                value={formData.wsStudentInfo}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1976d2] focus:ring-1 focus:ring-[#1976d2]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-gray-800 mb-1">
-                Host webservice học phụ đạo:
-              </label>
-              <input
-                type="text"
-                name="wsHost"
-                value={formData.wsHost}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1976d2] focus:ring-1 focus:ring-[#1976d2]"
-              />
-            </div>
+        <div className="p-6">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border border-gray-200 rounded">
+              <thead className="bg-gray-50 text-gray-700">
+                <tr>
+                  <th className="text-left px-3 py-2 border-b">Key</th>
+                  <th className="text-left px-3 py-2 border-b">Giá trị</th>
+                  <th className="text-left px-3 py-2 border-b">Mô tả</th>
+                  <th className="text-right px-3 py-2 border-b">Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                {settings.length === 0 && !loading && (
+                  <tr>
+                    <td colSpan={4} className="px-3 py-6 text-center text-gray-500">
+                      Chưa có cấu hình nào.
+                    </td>
+                  </tr>
+                )}
+                {settings.map(setting => (
+                  <tr key={setting.key} className="border-t">
+                    <td className="px-3 py-2 font-medium text-gray-800">{setting.key}</td>
+                    <td className="px-3 py-2">
+                      <input
+                        type={isSensitiveKey(setting.key) ? 'password' : 'text'}
+                        value={setting.value}
+                        onChange={e =>
+                          handleSettingChange(setting.key, 'value', e.target.value)
+                        }
+                        className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:border-[#1976d2] focus:ring-1 focus:ring-[#1976d2]"
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="text"
+                        value={setting.description ?? ''}
+                        onChange={e =>
+                          handleSettingChange(setting.key, 'description', e.target.value)
+                        }
+                        className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:border-[#1976d2] focus:ring-1 focus:ring-[#1976d2]"
+                      />
+                    </td>
+                    <td className="px-3 py-2 text-right space-x-2">
+                      <button
+                        type="button"
+                        onClick={() => handleUpdate(setting)}
+                        disabled={savingKey === setting.key || loading}
+                        className="bg-[#1976d2] hover:bg-[#1565c0] text-white px-3 py-1.5 rounded text-xs font-medium shadow-sm transition-colors disabled:opacity-70"
+                      >
+                        {savingKey === setting.key ? 'Đang lưu...' : 'Lưu'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(setting.key)}
+                        disabled={deletingKey === setting.key || loading}
+                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs font-medium shadow-sm transition-colors disabled:opacity-70"
+                      >
+                        {deletingKey === setting.key ? 'Đang xóa...' : 'Xóa'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
 
-          <div className="mt-8 flex justify-end items-center gap-4">
-            {message && <span className="text-emerald-600 text-sm font-medium">{message}</span>}
-            <button
-              type="submit"
-              disabled={isSubmitting || loading}
-              className="bg-[#1976d2] hover:bg-[#1565c0] text-white px-6 py-2 rounded text-sm font-medium shadow-sm transition-colors disabled:opacity-70"
-            >
-              {isSubmitting ? 'Đang lưu...' : 'Lưu'}
-            </button>
-          </div>
-        </form>
+          <form onSubmit={handleCreate} className="mt-6 border-t pt-6">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 mb-1">
+                  Key
+                </label>
+                <input
+                  type="text"
+                  value={newSetting.key}
+                  onChange={e => handleNewSettingChange('key', e.target.value)}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1976d2] focus:ring-1 focus:ring-[#1976d2]"
+                  placeholder="vd: sender_email"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 mb-1">
+                  Giá trị
+                </label>
+                <input
+                  type={isSensitiveKey(newSetting.key) ? 'password' : 'text'}
+                  value={newSetting.value}
+                  onChange={e => handleNewSettingChange('value', e.target.value)}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1976d2] focus:ring-1 focus:ring-[#1976d2]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 mb-1">
+                  Mô tả
+                </label>
+                <input
+                  type="text"
+                  value={newSetting.description ?? ''}
+                  onChange={e => handleNewSettingChange('description', e.target.value)}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1976d2] focus:ring-1 focus:ring-[#1976d2]"
+                />
+              </div>
+            </div>
+            <div className="mt-4 flex justify-end items-center gap-4">
+              <button
+                type="submit"
+                disabled={isCreating || loading}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded text-sm font-medium shadow-sm transition-colors disabled:opacity-70"
+              >
+                {isCreating ? 'Đang thêm...' : 'Thêm cấu hình'}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   )

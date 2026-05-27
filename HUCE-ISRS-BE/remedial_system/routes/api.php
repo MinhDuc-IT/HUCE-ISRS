@@ -47,6 +47,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::prefix('admin/system-configurations')->group(function () {
             Route::get('/', [SystemConfigurationController::class, 'index']);
             Route::post('/', [SystemConfigurationController::class, 'update']);
+            Route::post('/create', [SystemConfigurationController::class, 'store']);
+            Route::patch('/{key}', [SystemConfigurationController::class, 'updateItem']);
+            Route::delete('/{key}', [SystemConfigurationController::class, 'destroy']);
         });
 
         Route::prefix('admin/statistics/terms')->group(function () {
