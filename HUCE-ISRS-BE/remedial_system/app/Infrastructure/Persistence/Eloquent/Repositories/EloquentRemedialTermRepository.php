@@ -23,13 +23,13 @@ class EloquentRemedialTermRepository implements RemedialTermRepositoryPort
 
         $model = RemedialTermModel::where('status', \App\Domain\Enums\RemedialTermStatus::REGISTRATION_OPEN->value)
             ->orderByDesc('year')
-            ->orderByDesc('id')
+            ->orderByDesc('semester')
             ->first();
 
         if ($model === null) {
             $model = RemedialTermModel::where('status', \App\Domain\Enums\RemedialTermStatus::ACTIVE->value)
                 ->orderByDesc('year')
-                ->orderByDesc('id')
+                ->orderByDesc('semester')
                 ->first();
         }
 

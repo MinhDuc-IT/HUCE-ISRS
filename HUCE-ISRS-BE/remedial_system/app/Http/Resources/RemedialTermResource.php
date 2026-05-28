@@ -25,7 +25,7 @@ class RemedialTermResource extends ApiResource
                 'price_per_period'     => $term->pricePerPeriod,
                 'price_coefficient'    => $term->priceCoefficient,
                 // 'is_current_term'      => ($term->status ?? \App\Domain\Enums\RemedialTermStatus::DRAFT)->isCurrent(), // legacy
-                'status'               => $term->status->label(),
+                'status'               => $term->status->value,
                 'status_name'          => $term->status->description(),
             ];
         }
@@ -43,7 +43,7 @@ class RemedialTermResource extends ApiResource
             'price_per_period'     => $term->price_per_period,
             'price_coefficient'    => $term->price_coefficient,
             // 'is_current_term'      => ($term->status ?? \App\Domain\Enums\RemedialTermStatus::DRAFT)->isCurrent(), // legacy
-            'status'               => $term->status?->label() ?? \App\Domain\Enums\RemedialTermStatus::DRAFT->label(),
+            'status'               => $term->status?->value ?? \App\Domain\Enums\RemedialTermStatus::DRAFT->value,
             'status_name'          => $term->status ? $term->status->description() : \App\Domain\Enums\RemedialTermStatus::DRAFT->description(),
             'created_at'           => $term->created_at?->toIso8601String(),
             'updated_at'           => $term->updated_at?->toIso8601String(),
