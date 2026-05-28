@@ -19,7 +19,19 @@ class EloquentRemedialTermRepository implements RemedialTermRepositoryPort
 
     public function findCurrent(): ?RemedialTerm
     {
-        $model = RemedialTermModel::where('is_current_term', true)->first();
+//         $model = RemedialTermModel::where('is_current_term', true)->first();
+
+        $model = RemedialTermModel::where('status', \App\Domain\Enums\RemedialTermStatus::REGISTRATION_OPEN->value)
+            ->orderByDesc('year')
+            ->orderByDesc('id')
+            ->first();
+
+        if ($model === null) {
+            $model = RemedialTermModel::where('status', \App\Domain\Enums\RemedialTermStatus::ACTIVE->value)
+                ->orderByDesc('year')
+                ->orderByDesc('id')
+                ->first();
+        }
 
         return $model ? RemedialTermMapper::toDomain($model) : null;
     }
@@ -52,16 +64,16 @@ class EloquentRemedialTermRepository implements RemedialTermRepositoryPort
         RemedialTermModel::whereKey($id)->update(['is_deleted' => true]);
     }
 
-    public function clearCurrentTermExcept(?int $exceptId = null): void
-    {
-        $query = RemedialTermModel::where('is_current_term', true);
-
-        if ($exceptId !== null) {
-            $query->where('id', '!=', $exceptId);
-        }
-
-        $query->update(['is_current_term' => false]);
-    }
+//     public function clearCurrentTermExcept(?int $exceptId = null): void
+//     {
+//         $query = RemedialTermModel::where('is_current_term', true);
+//
+//         if ($exceptId !== null) {
+//             $query->where('id', '!=', $exceptId);
+//         }
+//
+//         $query->update(['is_current_term' => false]);
+//     }
 
     public function hasActiveRegistrations(int $id): bool
     {

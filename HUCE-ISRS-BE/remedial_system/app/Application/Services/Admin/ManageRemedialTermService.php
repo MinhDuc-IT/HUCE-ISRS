@@ -25,9 +25,9 @@ class ManageRemedialTermService
 
     public function create(array $data): RemedialTerm
     {
-        if ($this->toBool($data['is_current_term'] ?? false)) {
-            $this->termRepository->clearCurrentTermExcept(null);
-        }
+//         if ($this->toBool($data['is_current_term'] ?? false)) {
+//             $this->termRepository->clearCurrentTermExcept(null);
+//         }
 
         return $this->termRepository->save($this->buildEntity(null, $data));
     }
@@ -36,9 +36,10 @@ class ManageRemedialTermService
     {
         $existing = $this->requireById($id);
 
-        if (array_key_exists('is_current_term', $data) && $this->toBool($data['is_current_term'])) {
-            $this->termRepository->clearCurrentTermExcept($id);
-        }
+//         if (array_key_exists('is_current_term', $data) && $this->toBool($data['is_current_term'])) {
+//             $this->termRepository->clearCurrentTermExcept($id);
+//         }
+        $existing->validateUpdate($data);
 
         return $this->termRepository->save($this->buildEntity($id, $data, $existing));
     }
@@ -65,6 +66,20 @@ class ManageRemedialTermService
         return $term;
     }
 
+    public function transitionTo(int $id, \App\Domain\Enums\RemedialTermStatus $status): RemedialTerm
+    {
+        $term = $this->requireById($id);
+
+        if (in_array($status, [
+            \App\Domain\Enums\RemedialTermStatus::REGISTRATION_OPEN,
+            \App\Domain\Enums\RemedialTermStatus::ACTIVE,
+        ], true)) {
+            $this->assertNoOtherOpenTerm($id);
+        }
+
+        return $this->termRepository->save($term->transitionTo($status));
+    }
+
     private function buildEntity(?int $id, array $data, ?RemedialTerm $existing = null): RemedialTerm
     {
         return new RemedialTerm(
@@ -77,9 +92,10 @@ class ManageRemedialTermService
             remedialCoefficient: (int) ($data['remedial_coefficient'] ?? $existing?->remedialCoefficient ?? 1),
             pricePerPeriod:      (int) ($data['price_per_period'] ?? $existing?->pricePerPeriod ?? 150000),
             priceCoefficient:    (float) ($data['price_coefficient'] ?? $existing?->priceCoefficient ?? 1),
-            isCurrentTerm:       array_key_exists('is_current_term', $data)
-                ? $this->toBool($data['is_current_term'])
-                : ($existing?->isCurrentTerm ?? false),
+//             isCurrentTerm:       array_key_exists('is_current_term', $data)
+//                 ? $this->toBool($data['is_current_term'])
+//                 : ($existing?->isCurrentTerm ?? false),
+            isCurrentTerm:       ($existing?->status ?? \App\Domain\Enums\RemedialTermStatus::DRAFT)->isCurrent(),
             registrationStart:   $this->parseDate($data, 'registration_start', $existing?->registrationStart),
             registrationEnd:     $this->parseDate($data, 'registration_end', $existing?->registrationEnd),
         );
@@ -104,8 +120,20 @@ class ManageRemedialTermService
         };
     }
 
-    private function toBool(mixed $value): bool
+//      private function toBool(mixed $value): bool
+//     {
+//         return filter_var($value, FILTER_VALIDATE_BOOLEAN);
+//     }
+
+    private function assertNoOtherOpenTerm(int $excludeId): void
     {
-        return filter_var($value, FILTER_VALIDATE_BOOLEAN);
+        $hasOpenTerm = \App\Models\RemedialTerm::whereIn('status', [
+            \App\Domain\Enums\RemedialTermStatus::REGISTRATION_OPEN->value,
+            \App\Domain\Enums\RemedialTermStatus::ACTIVE->value
+        ])->where('id', '!=', $excludeId)->exists();
+
+        if ($hasOpenTerm) {
+            throw new \DomainException('Đã có một đợt phụ đạo khác đang mở đăng ký hoặc đang hoạt động. Vui lòng hoàn thành hoặc huỷ đợt đó trước.');
+        }
     }
 }

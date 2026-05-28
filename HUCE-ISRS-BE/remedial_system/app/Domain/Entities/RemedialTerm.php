@@ -20,7 +20,66 @@ class RemedialTerm
         public readonly bool    $isCurrentTerm = false,
         public readonly ?Carbon $registrationStart = null,
         public readonly ?Carbon $registrationEnd = null,
+        public readonly \App\Domain\Enums\RemedialTermStatus $status = \App\Domain\Enums\RemedialTermStatus::DRAFT,
     ) {}
+
+    public function getState(): \App\Domain\Entities\TermStates\TermState
+    {
+        return match ($this->status) {
+            \App\Domain\Enums\RemedialTermStatus::DRAFT => new \App\Domain\Entities\TermStates\DraftState($this),
+            \App\Domain\Enums\RemedialTermStatus::REGISTRATION_OPEN => new \App\Domain\Entities\TermStates\RegistrationOpenState($this),
+            \App\Domain\Enums\RemedialTermStatus::ACTIVE => new \App\Domain\Entities\TermStates\ActiveState($this),
+            \App\Domain\Enums\RemedialTermStatus::COMPLETED => new \App\Domain\Entities\TermStates\CompletedState($this),
+            \App\Domain\Enums\RemedialTermStatus::CANCELLED => new \App\Domain\Entities\TermStates\CancelledState($this),
+        };
+    }
+
+    public function validateUpdate(array $data): void
+    {
+        $this->getState()->validateUpdate($data);
+    }
+
+    public function openRegistration(): void
+    {
+        $this->getState()->openRegistration();
+    }
+
+    public function activate(): void
+    {
+        $this->getState()->activate();
+    }
+
+    public function complete(): void
+    {
+        $this->getState()->complete();
+    }
+
+    public function cancel(): void
+    {
+        $this->getState()->cancel();
+    }
+
+    public function transitionTo(\App\Domain\Enums\RemedialTermStatus $status): self
+    {
+        $state = $this->getState();
+        $state->transitionTo($status);
+
+        return $this->withStatus($status);
+    }
+
+    public function nextStatus(): ?\App\Domain\Enums\RemedialTermStatus
+    {
+        return $this->getState()->nextStatus();
+    }
+
+    public function withStatus(\App\Domain\Enums\RemedialTermStatus $status): self
+    {
+        return new self(
+            $this->id, $this->year, $this->semester, $this->name, $this->startDate, $this->endDate,
+            $this->remedialCoefficient, $this->pricePerPeriod, $this->priceCoefficient, $this->isCurrentTerm,
+            $this->registrationStart, $this->registrationEnd, $status
+        );
+    }
 
     public function isRegistrationOpen(): bool
     {

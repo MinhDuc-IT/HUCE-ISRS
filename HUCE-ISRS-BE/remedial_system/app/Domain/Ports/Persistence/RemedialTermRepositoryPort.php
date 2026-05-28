@@ -17,8 +17,8 @@ interface RemedialTermRepositoryPort
 
     public function softDelete(int $id): void;
 
-    /** Bỏ cờ đợt hiện tại trên mọi bản ghi, trừ $exceptId nếu có. */
-    public function clearCurrentTermExcept(?int $exceptId = null): void;
+    // /** Bỏ cờ đợt hiện tại trên mọi bản ghi, trừ $exceptId nếu có. */
+    // public function clearCurrentTermExcept(?int $exceptId = null): void;
 
     public function hasActiveRegistrations(int $id): bool;
 }

@@ -71,6 +71,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/{id}/statistics', [StatisticsController::class, 'termStatistics']);
             Route::get('/{id}', [RemedialTermController::class, 'show']);
             Route::patch('/{id}', [RemedialTermController::class, 'update']);
+            Route::patch('/{id}/status', [RemedialTermController::class, 'updateStatus']);
             Route::delete('/{id}', [RemedialTermController::class, 'destroy']);
         });
 
