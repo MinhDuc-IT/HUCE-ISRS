@@ -20,9 +20,10 @@ final class RemedialTermMapper
             remedialCoefficient: $model->remedial_coefficient ?? 1,
             pricePerPeriod:      $model->price_per_period ?? 150000,
             priceCoefficient:    (float) ($model->price_coefficient ?? 1),
-            isCurrentTerm:       (bool) $model->is_current_term,
+            isCurrentTerm:       ($model->status ?? \App\Domain\Enums\RemedialTermStatus::DRAFT)->isCurrent(),
             registrationStart:   $model->registration_start ? Carbon::parse($model->registration_start) : null,
             registrationEnd:     $model->registration_end ? Carbon::parse($model->registration_end) : null,
+            status:              $model->status ?? \App\Domain\Enums\RemedialTermStatus::DRAFT,
         );
     }
 
@@ -39,7 +40,8 @@ final class RemedialTermMapper
             'remedial_coefficient' => $entity->remedialCoefficient,
             'price_per_period'     => $entity->pricePerPeriod,
             'price_coefficient'    => $entity->priceCoefficient,
-            'is_current_term'      => $entity->isCurrentTerm,
+            'is_current_term'      => $entity->status->isCurrent(),
+            'status'               => $entity->status->value,
         ];
     }
 }

@@ -18,8 +18,9 @@ class RemedialTerm extends Model
         'remedial_coefficient',
         'price_per_period',
         'price_coefficient',
-        'is_current_term',
+        // 'is_current_term', // legacy, derived from status.
         'is_deleted',
+        'status',
     ];
 
     protected $casts = [
@@ -32,8 +33,9 @@ class RemedialTerm extends Model
         'remedial_coefficient' => 'integer',
         'price_per_period'     => 'integer',
         'price_coefficient'    => 'integer',
-        'is_current_term'      => 'boolean',
+        // 'is_current_term'      => 'boolean', // legacy, derived from status.
         'is_deleted'           => 'boolean',
+        'status'               => \App\Domain\Enums\RemedialTermStatus::class,
     ];
 
     protected static function booted(): void

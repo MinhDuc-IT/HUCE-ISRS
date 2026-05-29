@@ -20,6 +20,7 @@ use App\Application\Services\RemedialRegistrationService;
 use App\Application\Services\StudentProvisioningService;
 use App\Application\Services\StudentRegistrationPresenter;
 use App\Application\Services\StudentSyncService;
+use App\Domain\Enums\SystemConfigKey;
 use App\Domain\Ports\External\StudentInfoPort;
 use App\Domain\Ports\Persistence\DepartmentRepositoryPort;
 use App\Domain\Ports\Persistence\RemedialRegistrationQueryPort;
@@ -46,9 +47,16 @@ class RemedialServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->singleton(UniversityAuthClient::class, function () {
+        $this->app->singleton(UniversityAuthClient::class, function ($app) {
+            $configRepository = $app->make(SystemConfigurationRepositoryPort::class);
+            $baseUrl = $this->resolveSystemConfigValue(
+                $configRepository,
+                SystemConfigKey::WS_HOST->value,
+                config('remedial.university_base_url')
+            );
+
             return new UniversityAuthClient(
-                baseUrl:        config('remedial.university_base_url'),
+                baseUrl:        $baseUrl,
                 clientId:       config('remedial.university_client_id'),
                 clientSecret:   config('remedial.university_client_secret'),
                 timeoutSeconds: (int) config('remedial.http_timeout', 10),
@@ -56,10 +64,21 @@ class RemedialServiceProvider extends ServiceProvider
         });
 
         $this->app->bind(StudentInfoPort::class, function ($app) {
+            $configRepository = $app->make(SystemConfigurationRepositoryPort::class);
+            $baseUrl = $this->resolveSystemConfigValue(
+                $configRepository,
+                SystemConfigKey::WS_HOST->value,
+                config('remedial.university_base_url')
+            );
+            $loginUrl = $this->resolveSystemConfigValue($configRepository, SystemConfigKey::WS_LOGIN->value, '');
+            $studentInfoUrl = $this->resolveSystemConfigValue($configRepository, SystemConfigKey::WS_STUDENT_INFO->value, '');
+
             $baseAdapter = new StudentInfoApiAdapter(
                 authClient:     $app->make(UniversityAuthClient::class),
-                baseUrl:        config('remedial.university_base_url'),
+                baseUrl:        $baseUrl,
                 timeoutSeconds: (int) config('remedial.http_timeout', 15),
+                loginUrl:       $loginUrl !== '' ? $loginUrl : null,
+                studentInfoBaseUrl: $studentInfoUrl !== '' ? $studentInfoUrl : null,
             );
 
             return new CachedStudentInfoAdapter(
@@ -114,5 +133,21 @@ class RemedialServiceProvider extends ServiceProvider
     public function boot(): void
     {
         //
+    }
+
+    private function resolveSystemConfigValue(
+        SystemConfigurationRepositoryPort $configRepository,
+        string $key,
+        string $default
+    ): string {
+        $value = $configRepository->get($key);
+
+        if ($value === null) {
+            return $default;
+        }
+
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? $default : $trimmed;
     }
 }

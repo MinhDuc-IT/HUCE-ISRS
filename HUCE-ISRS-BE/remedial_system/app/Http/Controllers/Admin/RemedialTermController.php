@@ -80,4 +80,21 @@ class RemedialTermController extends BaseController
             return $this->error($e->getMessage(), null, $status);
         }
     }
+
+    public function updateStatus(\App\Http\Requests\Admin\ChangeRemedialTermStatusRequest $request, int $id): JsonResponse
+    {
+        try {
+            $status = \App\Domain\Enums\RemedialTermStatus::from((int) $request->input('status'));
+            $term = $this->termService->transitionTo($id, $status);
+
+            return $this->success(
+                (new RemedialTermResource($term))->resolve(),
+                'Cập nhật trạng thái đợt phụ đạo thành công'
+            );
+        } catch (\DomainException $e) {
+            $status = str_contains($e->getMessage(), 'không tồn tại') ? 404 : 400;
+
+            return $this->error($e->getMessage(), null, $status);
+        }
+    }
 }

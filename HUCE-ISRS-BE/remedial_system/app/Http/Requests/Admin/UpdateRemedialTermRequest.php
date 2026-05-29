@@ -24,7 +24,7 @@ class UpdateRemedialTermRequest extends ApiFormRequest
             'remedial_coefficient' => ['sometimes', 'integer', 'min:0'],
             'price_per_period'     => ['sometimes', 'integer', 'min:0'],
             'price_coefficient'    => ['sometimes', 'numeric', 'min:0'],
-            'is_current_term'      => ['sometimes', 'boolean'],
+            // 'is_current_term'      => ['sometimes', 'boolean'], // legacy, derived from status.
         ];
     }
 

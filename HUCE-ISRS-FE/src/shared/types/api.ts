@@ -13,6 +13,8 @@ export type ApiRemedialTerm = {
   price_per_period?: number;
   price_coefficient?: number;
   is_current_term?: boolean;
+  status?: number;
+  status_name?: string;
 };
 
 export type ApiDepartmentSubjectAssignment = {

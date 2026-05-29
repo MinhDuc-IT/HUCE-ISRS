@@ -184,6 +184,9 @@ Prefix chung: `/api`. Response envelope: `{ success, message, data, errors }` (s
 |--------|------|------|--------|
 | GET | `/admin/system-configurations` | admin | Danh sách cấu hình |
 | POST | `/admin/system-configurations` | admin | Cập nhật cấu hình (bulk) |
+| POST | `/admin/system-configurations/create` | admin | Tạo cấu hình |
+| PATCH | `/admin/system-configurations/{key}` | admin | Cập nhật cấu hình theo key |
+| DELETE | `/admin/system-configurations/{key}` | admin | Xóa cấu hình theo key |
 | GET | `/admin/statistics/terms` | admin | Danh sách đợt + thống kê tóm tắt |
 | GET | `/admin/statistics/terms/{id}` | admin | Thống kê chi tiết một đợt |
 | GET | `/admin/users` | admin | Danh sách người dùng |

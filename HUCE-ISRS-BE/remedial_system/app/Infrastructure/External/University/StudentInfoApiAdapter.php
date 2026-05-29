@@ -31,6 +31,8 @@ class StudentInfoApiAdapter implements StudentInfoPort
         private readonly UniversityAuthClient $authClient,
         private readonly string              $baseUrl,
         private readonly int                 $timeoutSeconds = 15,
+        private readonly ?string             $loginUrl = null,
+        private readonly ?string             $studentInfoBaseUrl = null,
     ) {
         $this->circuitBreaker = new CircuitBreaker('university_api', 5, 60);
     }
@@ -120,10 +122,13 @@ class StudentInfoApiAdapter implements StudentInfoPort
     {
         try {
             $token = $this->authClient->getToken();
+            $loginUrl = $this->resolveLoginUrl();
+
+            Log::info("Đang gửi request xác thực đến University System: {$loginUrl} với studentCode={$studentCode}\n");
 
             $response = Http::timeout($this->timeoutSeconds)
                 ->withToken($token)
-                ->post("{$this->baseUrl}/api/student/login", [
+                ->post($loginUrl, [
                     'student_id' => $studentCode,
                     'password'   => $password,
                 ]);
@@ -154,11 +159,14 @@ class StudentInfoApiAdapter implements StudentInfoPort
         return $this->circuitBreaker->execute(function () use ($method, $endpoint) {
             try {
                 $token = $this->authClient->getToken();
+                $url = $this->resolveEndpointUrl($endpoint);
+
+                Log::info("Gửi request {$method} đến University System: {$url}\n");
 
                 $response = Http::timeout($this->timeoutSeconds)
                     ->retry(2, 300)
                     ->withToken($token)
-                    ->send($method, "{$this->baseUrl}{$endpoint}");
+                    ->send($method, $url);
 
                 // Nếu token hết hạn – làm mới và thử lại một lần
                 if ($response->status() === 401) {
@@ -167,7 +175,7 @@ class StudentInfoApiAdapter implements StudentInfoPort
                     $token    = $this->authClient->getToken();
                     $response = Http::timeout($this->timeoutSeconds)
                         ->withToken($token)
-                        ->send($method, "{$this->baseUrl}{$endpoint}");
+                        ->send($method, $url);
                 }
 
                 if ($response->status() === 404) {
@@ -196,5 +204,42 @@ class StudentInfoApiAdapter implements StudentInfoPort
                 throw new ExternalSystemException('Không thể kết nối đến University System: ' . $e->getMessage());
             }
         });
+    }
+
+    private function resolveLoginUrl(): string
+    {
+        $override = $this->loginUrl ? trim($this->loginUrl) : '';
+        if ($override !== '') {
+            return $override;
+        }
+
+        return rtrim($this->baseUrl, '/') . '/api/student/login';
+    }
+
+    private function resolveEndpointUrl(string $endpoint): string
+    {
+        if (preg_match('/^https?:\/\//', $endpoint) === 1) {
+            return $endpoint;
+        }
+
+        $baseUrl = rtrim($this->resolveStudentInfoBaseUrl(), '/');
+        $normalizedEndpoint = $endpoint;
+
+        if (str_contains($baseUrl, '/api/students') && str_starts_with($endpoint, '/api/students')) {
+            $normalizedEndpoint = substr($endpoint, strlen('/api/students'));
+        }
+
+        return $baseUrl . $normalizedEndpoint;
+    }
+
+    private function resolveStudentInfoBaseUrl(): string
+    {
+        $override = $this->studentInfoBaseUrl ? trim($this->studentInfoBaseUrl) : '';
+
+        if ($override === '' || str_contains($override, '?')) {
+            return $this->baseUrl;
+        }
+
+        return $override;
     }
 }

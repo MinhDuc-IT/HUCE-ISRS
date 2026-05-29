@@ -82,6 +82,38 @@ final class RemedialApiPaths
     )]
     public static function adminUpdateSystemConfigurations(): void {}
 
+    #[OA\Post(
+        path: '/api/admin/system-configurations/create',
+        operationId: 'adminCreateSystemConfiguration',
+        summary: 'Tạo cấu hình hệ thống',
+        security: [['sanctum' => []]],
+        tags: ['Cài đặt hệ thống'],
+        responses: [new OA\Response(response: 201, description: 'Created')]
+    )]
+    public static function adminCreateSystemConfiguration(): void {}
+
+    #[OA\Patch(
+        path: '/api/admin/system-configurations/{key}',
+        operationId: 'adminUpdateSystemConfigurationItem',
+        summary: 'Cập nhật cấu hình hệ thống theo key',
+        security: [['sanctum' => []]],
+        tags: ['Cài đặt hệ thống'],
+        parameters: [new OA\Parameter(name: 'key', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'OK')]
+    )]
+    public static function adminUpdateSystemConfigurationItem(): void {}
+
+    #[OA\Delete(
+        path: '/api/admin/system-configurations/{key}',
+        operationId: 'adminDeleteSystemConfigurationItem',
+        summary: 'Xóa cấu hình hệ thống theo key',
+        security: [['sanctum' => []]],
+        tags: ['Cài đặt hệ thống'],
+        parameters: [new OA\Parameter(name: 'key', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'OK')]
+    )]
+    public static function adminDeleteSystemConfigurationItem(): void {}
+
     #[OA\Get(
         path: '/api/admin/remedial-registrations',
         operationId: 'adminListRemedialRegistrations',
