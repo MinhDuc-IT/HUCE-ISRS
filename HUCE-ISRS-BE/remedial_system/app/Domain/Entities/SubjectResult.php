@@ -18,12 +18,14 @@ class SubjectResult
         public readonly ?float  $finalScore,
         public readonly ?float  $gpaScore,
         public readonly ?string $letterGrade,
+        public readonly ?int    $departmentCode = null,
+        public readonly ?string $departmentName = null,
     ) {}
 
     /** Mã tra cứu thống nhất (ưu tiên courseCode từ API trường). */
     public function code(): string
     {
-        return $this->courseCode !== '' ? $this->courseCode : $this->subjectCode;
+        return $this->subjectCode !== '' ? $this->subjectCode : $this->courseCode;
     }
 
     public function isFailed(): bool

@@ -80,6 +80,8 @@ class StudentInfoApiAdapter implements StudentInfoPort
                 finalScore:       isset($item['finalScore']) ? (float) $item['finalScore'] : null,
                 gpaScore:         isset($item['gpaScore']) ? (float) $item['gpaScore'] : null,
                 letterGrade:      $item['letterGrade'] ?? null,
+                departmentCode:   isset($item['departmentId']) ? (int) $item['departmentId'] : null,
+                departmentName:   $item['departmentName'] ?? null,
             ),
             $response['data']
         );
