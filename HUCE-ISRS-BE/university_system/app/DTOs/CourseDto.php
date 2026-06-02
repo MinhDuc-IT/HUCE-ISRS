@@ -34,6 +34,12 @@ class CourseDto
     #[OA\Property(property: "academicYear", type: "integer", example: 2024, description: "Năm học")]
     public int $academicYear;
 
+    #[OA\Property(property: "departmentId", type: "integer", nullable: true, example: 12, description: "ID bộ môn / phòng ban")]
+    public ?int $departmentId = null;
+
+    #[OA\Property(property: "departmentName", type: "string", nullable: true, example: "Khoa Công nghệ thông tin", description: "Tên bộ môn / phòng ban")]
+    public ?string $departmentName = null;
+
     #[OA\Property(property: "processScore", type: "number", format: "float", nullable: true, example: 8.5, description: "Điểm quá trình")]
     public ?float $processScore;
 
@@ -69,6 +75,8 @@ class CourseDto
         $dto->classSectionCode = $lopHocPhan?->MaLopHocPhan ?? '';
         $dto->semesterOrder    = (int) ($dot?->SoThuTu ?? 0);
         $dto->academicYear     = (int) ($dot?->IDNamHoc ?? 0);
+        $dto->departmentId     = isset($monHoc?->IDToBoMon) ? (int) $monHoc->IDToBoMon : null;
+        $dto->departmentName   = null;
         $dto->processScore     = $ketQua->DiemChuyenCan1;
         $dto->examScore        = $ketQua->DiemThi;
         $dto->finalScore       = $ketQua->DiemTongKet;
@@ -100,6 +108,8 @@ class CourseDto
         $dto->classSectionCode = $row->MaLopHocPhan ?? '';
         $dto->semesterOrder    = (int) ($row->HocKy   ?? 0);
         $dto->academicYear     = (int) ($row->IDNamHoc ?? 0);
+        $dto->departmentId     = isset($row->departmentId) ? (int) $row->departmentId : null;
+        $dto->departmentName   = $row->departmentName ?? null;
         $dto->processScore     = isset($row->DiemChuyenCan1) ? (float) $row->DiemChuyenCan1 : null;
         $dto->examScore        = isset($row->DiemThi)        ? (float) $row->DiemThi        : null;
         $dto->finalScore       = isset($row->DiemTongKet)    ? (float) $row->DiemTongKet    : null;
