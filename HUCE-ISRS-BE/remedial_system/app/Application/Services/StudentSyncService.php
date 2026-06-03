@@ -28,7 +28,7 @@ class StudentSyncService
         foreach ($courses as $courseInfo) {
             $subjectCode = $courseInfo->code();
             if ($subjectCode === '') {
-                Log::warning("[StudentSync] Bỏ qua môn học không có mã học phần cho {$studentCode}");
+                Log::warning("[StudentSync] Skip course without subject code for {$studentCode}");
                 continue;
             }
 
@@ -40,11 +40,15 @@ class StudentSyncService
                 'is_deleted' => false,
             ];
 
-            // Chỉ gán bộ môn khi tạo mới; không ghi đè nếu admin đã gán department_id.
             if ($existing === null) {
-                $dept = $this->subjectRepository->firstOrCreateDepartment('DEFAULT', [
-                    'name' => 'Khoa Mặc Định',
+                $deptCode = $courseInfo->departmentCode !== null
+                    ? (string) $courseInfo->departmentCode
+                    : 'DEFAULT';
+
+                $dept = $this->subjectRepository->firstOrCreateDepartment($deptCode, [
+                    'name' => $courseInfo->departmentName ?: 'Khoa Mac Dinh',
                 ]);
+
                 $payload['department_id'] = $dept->id;
             }
 

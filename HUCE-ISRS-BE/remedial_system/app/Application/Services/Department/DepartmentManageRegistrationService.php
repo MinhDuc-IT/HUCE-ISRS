@@ -6,6 +6,7 @@ use App\Domain\Entities\RemedialRegistration;
 use App\Domain\Ports\Persistence\RemedialRegistrationRepositoryPort;
 use App\Domain\Ports\Persistence\RemedialTermRepositoryPort;
 use App\Domain\Ports\Persistence\SubjectRepositoryPort;
+use App\Events\LecturerAssignedToSubject;
 use App\Models\RemedialRegistration as RemedialRegistrationModel;
 use App\Models\User;
 
@@ -76,6 +77,19 @@ class DepartmentManageRegistrationService
 
         if ($updated === 0) {
             throw new \DomainException('Không có đăng ký phụ đạo nào cho môn học này.');
+        }
+
+        $lecturerEmail = trim((string) ($data['lecturer_email'] ?? ''));
+        if ($lecturerEmail !== '') {
+            event(new LecturerAssignedToSubject(
+                subjectId: $subjectId,
+                departmentId: $departmentId,
+                lecturerEmail: $lecturerEmail,
+                lecturerName: $data['lecture_name'] ?? null,
+                lecturerPhoneNumber: $data['lecturer_phone_number'] ?? null,
+                updatedCount: $updated,
+                assignedBy: $user->name,
+            ));
         }
 
         return $updated;

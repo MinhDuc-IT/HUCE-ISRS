@@ -41,7 +41,10 @@ use App\Infrastructure\Persistence\Eloquent\Repositories\EloquentStudentReposito
 use App\Infrastructure\Persistence\Eloquent\Repositories\EloquentSubjectRepository;
 use App\Infrastructure\Persistence\Eloquent\Repositories\EloquentSystemConfigurationRepository;
 use App\Infrastructure\Persistence\Eloquent\Repositories\EloquentUserRepository;
+use App\Events\LecturerAssignedToSubject;
+use App\Listeners\SendLecturerAssignmentEmail;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Event;
 
 class RemedialServiceProvider extends ServiceProvider
 {
@@ -132,7 +135,7 @@ class RemedialServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        //
+        Event::listen(LecturerAssignedToSubject::class, SendLecturerAssignmentEmail::class);
     }
 
     private function resolveSystemConfigValue(

@@ -97,11 +97,28 @@ class StudentController extends BaseController
             return $this->error('Không tìm thấy sinh viên với mã: ' . $id, null, 404);
         }
 
-        $ketQuaList = $sinhVien->ketQuaHocTap()
-            ->with(['lopHocPhan.monHoc', 'lopHocPhan.dot'])
+        $rows = DB::connection('sqlsrv')
+            ->table('DT_SinhVien as sv')
+            ->join('DT_DangKyHocPhan as dk', 'dk.IDSinhVien', '=', 'sv.Id')
+            ->leftJoin('TKB_LopHocPhan as lhp', 'dk.IDLopHocPhan', '=', 'lhp.Id')
+            ->leftJoin('TKB_MonHoc as mh', 'lhp.IDMonHoc', '=', 'mh.Id')
+            ->leftJoin('DM_Dot as dot', 'lhp.IDDot', '=', 'dot.Id')
+            ->leftJoin('TMP_DsBoMonKhoa as BMK', 'mh.IDToBoMon', '=', 'BMK.IDBoMon')
+            ->where('sv.MaSinhVien', $id)
+            ->select(
+                'mh.MaHocPhan',
+                'mh.MaMonHoc',
+                'mh.TenMonHoc',
+                'mh.SoTinChi',
+                'lhp.MaLopHocPhan',
+                'dot.SoThuTu as HocKy',
+                'dot.IDNamHoc as IDNamHoc',
+                'BMK.IDBoMon as departmentId',
+                'BMK.TenBoMon as departmentName',
+            )
             ->get();
 
-        $courses = $ketQuaList->map(fn($kq) => CourseDto::fromKetQua($kq));
+        $courses = $rows->map(fn ($row) => CourseDto::fromRow($row));
 
         return $this->success($courses, 'Thành công');
     }
