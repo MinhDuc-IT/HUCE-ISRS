@@ -15,6 +15,159 @@
         }
     ],
     "paths": {
+        "/api/admin/statistics/terms": {
+            "get": {
+                "tags": [
+                    "Thống kê"
+                ],
+                "summary": "Lấy danh sách đợt phụ đạo để lọc",
+                "operationId": "fc652af4748d3a277c3c75b33fddefb5",
+                "responses": {
+                    "200": {
+                        "description": "Thành công"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/statistics/terms/{id}": {
+            "get": {
+                "tags": [
+                    "Thống kê"
+                ],
+                "summary": "Thống kê tổng quan đợt phụ đạo",
+                "operationId": "28ba44890cc97973038097d7954672ee",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/statistics/terms/{id}/teaching-payments": {
+            "get": {
+                "tags": [
+                    "Thống kê"
+                ],
+                "summary": "Thống kê thanh toán giảng dạy phụ đạo",
+                "operationId": "7198451efd729a78bc59961bb1fab822",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "keyword",
+                        "in": "query",
+                        "description": "Tên giảng viên",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Số lượng trên trang",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Trang hiện tại",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/statistics/terms/{id}/teaching-payments/export": {
+            "get": {
+                "tags": [
+                    "Thống kê"
+                ],
+                "summary": "Xuất Excel thanh toán giảng dạy phụ đạo",
+                "operationId": "0dc9c07a398fdeef02e017e2965671b5",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "keyword",
+                        "in": "query",
+                        "description": "Tên giảng viên",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "File Excel"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/auth/login": {
             "post": {
                 "tags": [
@@ -266,6 +419,81 @@
                 ]
             }
         },
+        "/api/admin/system-configurations/create": {
+            "post": {
+                "tags": [
+                    "Cài đặt hệ thống"
+                ],
+                "summary": "Tạo cấu hình hệ thống",
+                "operationId": "adminCreateSystemConfiguration",
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/system-configurations/{key}": {
+            "delete": {
+                "tags": [
+                    "Cài đặt hệ thống"
+                ],
+                "summary": "Xóa cấu hình hệ thống theo key",
+                "operationId": "adminDeleteSystemConfigurationItem",
+                "parameters": [
+                    {
+                        "name": "key",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Cài đặt hệ thống"
+                ],
+                "summary": "Cập nhật cấu hình hệ thống theo key",
+                "operationId": "adminUpdateSystemConfigurationItem",
+                "parameters": [
+                    {
+                        "name": "key",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/admin/remedial-registrations": {
             "get": {
                 "tags": [
@@ -491,6 +719,10 @@
         {
             "name": "Đợt phụ đạo",
             "description": "Quản lý đợt phụ đạo (Admin)"
+        },
+        {
+            "name": "Thống kê",
+            "description": "Các API thống kê đợt phụ đạo"
         },
         {
             "name": "Cài đặt hệ thống",
