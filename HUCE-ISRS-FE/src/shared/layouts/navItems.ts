@@ -15,6 +15,7 @@ const adminNav: NavItem[] = [
   { to: '/admin/email-department', label: 'Gửi email BM' },
   { to: '/admin/settings', label: 'Cài đặt' },
   { to: '/admin/statistics', label: 'Thống kê đợt' },
+  { to: '/admin/teaching-payments', label: 'Thanh toán tiền phụ đạo' },
 ]
 
 const departmentNav: NavItem[] = [
