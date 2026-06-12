@@ -1,30 +1,29 @@
-# Thong bao phan cong giang vien phu dao
+<x-mail::message>
+# Thông báo phân công giảng viên phụ đạo
 
-Kinh gui {{ $lecturerName ?: 'Giang vien' }},
+Kính gửi {{ $lecturerName ?: 'Giảng viên' }},
 
-Thay/co da duoc phan cong phu dao mon **{{ $subjectModel->name }}** ({{ $subjectModel->subject_code }}).
+Thầy/cô đã được phân công phụ đạo môn <strong>{{ $subjectModel->name }}</strong> ({{ $subjectModel->subject_code }}).
 
-Bo mon: **{{ $subjectModel->department?->name ?? 'Chua xac dinh' }}**
-
-So dang ky duoc phan cong: **{{ $updatedCount }}**
+Khoa/bộ môn: <strong>{{ $subjectModel->department?->name ?? 'Chưa xác định' }}</strong><br>
+Số đăng ký được phân công: <strong>{{ $updatedCount }}</strong>
 
 @if($lecturerPhoneNumber)
-So dien thoai lien he: {{ $lecturerPhoneNumber }}
+Số điện thoại liên hệ: {{ $lecturerPhoneNumber }}<br>
 @endif
 
 @if($assignedBy)
-Nguoi phan cong: {{ $assignedBy }}
+Người phân công: {{ $assignedBy }}<br>
 @endif
 
+<br>
 @if($registrations->isNotEmpty())
-## Danh sach sinh vien dang ky
-
-| MSSV | Ho va ten | Dot phu dao | So tiet | Ngay dang ky |
-|:--- |:--- |:--- |:---:|:--- |
-@foreach($registrations as $registration)
-| {{ $registration->user?->student_code ?? '-' }} | {{ $registration->user?->name ?? '-' }} | {{ $registration->remedialTerm?->name ?? '-' }} | {{ $registration->remedial_periods }} | {{ $registration->registration_date?->format('d/m/Y H:i') ?? '-' }} |
-@endforeach
+Danh sách sinh viên chi tiết đã được đính kèm trong file Excel.
+@else
+Hiện chưa có sinh viên nào được phân vào môn phụ đạo này.
 @endif
 
-Tran trong,
-He thong quan ly hoc vu.
+<br>
+Trân trọng,<br>
+Hệ thống quản lý học vụ.
+</x-mail::message>
