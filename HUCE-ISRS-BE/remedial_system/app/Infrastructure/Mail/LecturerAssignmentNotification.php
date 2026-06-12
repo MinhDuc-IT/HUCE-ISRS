@@ -2,11 +2,15 @@
 
 namespace App\Infrastructure\Mail;
 
+use App\Infrastructure\Exports\LecturerAssignmentRegistrationsExport;
 use Illuminate\Bus\Queueable;
+use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Maatwebsite\Excel\Excel as ExcelWriter;
+use Maatwebsite\Excel\Facades\Excel;
 
 class LecturerAssignmentNotification extends Mailable
 {
@@ -24,7 +28,7 @@ class LecturerAssignmentNotification extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: "Phan cong giang vien phu dao - {$this->subjectModel->name}",
+            subject: "Phân công giảng viên phụ đạo - {$this->subjectModel->name}",
         );
     }
 
@@ -41,5 +45,22 @@ class LecturerAssignmentNotification extends Mailable
                 'assignedBy' => $this->assignedBy,
             ],
         );
+    }
+
+    public function attachments(): array
+    {
+        if ($this->registrations->isEmpty()) {
+            return [];
+        }
+
+        return [
+            Attachment::fromData(
+                fn () => Excel::raw(
+                    new LecturerAssignmentRegistrationsExport($this->registrations),
+                    ExcelWriter::XLSX,
+                ),
+                'danh_sach_sinh_vien_phu_dao.xlsx',
+            )->withMime('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
+        ];
     }
 }
