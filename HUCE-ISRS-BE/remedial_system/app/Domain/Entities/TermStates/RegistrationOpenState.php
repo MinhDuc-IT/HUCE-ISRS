@@ -13,9 +13,6 @@ class RegistrationOpenState extends BaseTermState
 
     public function validateUpdate(array $data): void
     {
-        if (array_key_exists('remedial_coefficient', $data) || array_key_exists('price_per_period', $data) || array_key_exists('price_coefficient', $data)) {
-            throw new \DomainException('Không thể cập nhật hệ số hoặc đơn giá khi đang mở đăng ký.');
-        }
     }
 
     public function nextStatus(): ?RemedialTermStatus

@@ -102,4 +102,54 @@ class RemedialTerm
 
         return true;
     }
+
+
+
+    public function getLogicStatus(): \App\Domain\Enums\RemedialTermLogicStatus
+    {
+        $now = Carbon::now();
+
+        if ($this->status === \App\Domain\Enums\RemedialTermStatus::DRAFT) {
+            return \App\Domain\Enums\RemedialTermLogicStatus::DRAFT;
+        }
+
+        if ($this->status === \App\Domain\Enums\RemedialTermStatus::COMPLETED) {
+            return \App\Domain\Enums\RemedialTermLogicStatus::COMPLETED;
+        }
+
+        if ($this->status === \App\Domain\Enums\RemedialTermStatus::CANCELLED) {
+            return \App\Domain\Enums\RemedialTermLogicStatus::CANCELLED;
+        }
+
+        if ($this->endDate && $now->gt($this->endDate->copy()->endOfDay())) {
+            return \App\Domain\Enums\RemedialTermLogicStatus::ACTIVE_ENDED;
+        }
+
+        if ($this->registrationStart && $this->registrationEnd) {
+            if ($now->lessThan($this->registrationStart)) {
+                return \App\Domain\Enums\RemedialTermLogicStatus::ACTIVE_PENDING_REGISTRATION;
+            }
+
+            if ($now->greaterThanOrEqualTo($this->registrationStart) && $now->lessThanOrEqualTo($this->registrationEnd->copy()->endOfDay())) {
+                return \App\Domain\Enums\RemedialTermLogicStatus::REGISTRATION_OPEN;
+            }
+        }
+
+        if ($this->registrationEnd && $now->gt($this->registrationEnd->copy()->endOfDay())) {
+            if ($this->startDate && $now->lt($this->startDate->copy()->startOfDay())) {
+                return \App\Domain\Enums\RemedialTermLogicStatus::ACTIVE_PENDING_CLASS;
+            }
+            return \App\Domain\Enums\RemedialTermLogicStatus::ACTIVE_IN_PROGRESS;
+        }
+
+        return \App\Domain\Enums\RemedialTermLogicStatus::ACTIVE_IN_PROGRESS;
+    }
+
+    public function isLogicCurrentTerm(): bool
+    {
+        return in_array($this->status, [
+            \App\Domain\Enums\RemedialTermStatus::REGISTRATION_OPEN,
+            \App\Domain\Enums\RemedialTermStatus::ACTIVE
+        ], true);
+    }
 }

@@ -57,6 +57,10 @@ class RemedialRegistrationService
             throw new \DomainException("Dữ liệu môn học {$courseCode} chưa được đồng bộ.");
         }
 
+        if ($localSubject->credits <= 1) {
+            throw new \DomainException("Môn học {$courseCode} có số tín chỉ <= 1, không được phép đăng ký phụ đạo.");
+        }
+
         if ($this->registrationRepository->existsRegistration($user->id, $localSubject->id, $currentTerm->id)) {
             throw new \DomainException("Bạn đã đăng ký môn {$courseCode} trong đợt này rồi.");
         }
