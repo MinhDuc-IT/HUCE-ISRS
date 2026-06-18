@@ -111,7 +111,6 @@ class RemedialServiceProvider extends ServiceProvider
             return new StudentProvisioningService(
                 studentInfoPort: $app->make(StudentInfoPort::class),
                 userRepository:  $app->make(UserRepositoryPort::class),
-                syncService:     $app->make(StudentSyncService::class),
             );
         });
 
