@@ -281,19 +281,23 @@ export function StudentRegisterPage() {
                   const isRegistered = registeredCourseCodes.has(
                     subject.course_code,
                   );
+                  const isNotEligible = subject.credits <= 1;
+                  const disabled = isRegistered || isNotEligible;
+                  
                   return (
                     <tr
                       key={subject.course_code}
-                      className={`border-b border-gray-100 hover:bg-gray-50 text-center ${isRegistered ? "bg-green-50/30" : ""}`}
+                      className={`border-b border-gray-100 hover:bg-gray-50 text-center ${isRegistered ? "bg-green-50/30" : ""} ${isNotEligible && !isRegistered ? "opacity-60 bg-gray-50" : ""}`}
+                      title={isNotEligible && !isRegistered ? "Môn học có số tín chỉ <= 1 không được đăng ký phụ đạo" : undefined}
                     >
                       <td className="px-4 py-2">
                         <input
                           type="checkbox"
-                          className="w-4 h-4 rounded border-gray-300"
-                          disabled={isRegistered}
+                          className="w-4 h-4 rounded border-gray-300 disabled:cursor-not-allowed"
+                          disabled={disabled}
                           checked={
                             isRegistered ||
-                            Boolean(selectedToRegister[subject.course_code])
+                            (!isNotEligible && Boolean(selectedToRegister[subject.course_code]))
                           }
                           onChange={(e) =>
                             handleToggleRegister(

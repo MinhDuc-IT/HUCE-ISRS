@@ -13,13 +13,6 @@ class ActiveState extends BaseTermState
 
     public function validateUpdate(array $data): void
     {
-        if (array_key_exists('remedial_coefficient', $data) || array_key_exists('price_per_period', $data) || array_key_exists('price_coefficient', $data)) {
-            throw new \DomainException('Không thể cập nhật hệ số hoặc đơn giá khi đợt đang hoạt động.');
-        }
-        
-        if (array_key_exists('registration_start', $data) || array_key_exists('registration_end', $data)) {
-            throw new \DomainException('Không thể cập nhật thời gian đăng ký khi đợt đang hoạt động.');
-        }
     }
 
     public function nextStatus(): ?RemedialTermStatus

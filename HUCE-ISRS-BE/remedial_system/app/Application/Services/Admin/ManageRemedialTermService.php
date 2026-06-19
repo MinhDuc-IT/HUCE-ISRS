@@ -70,6 +70,10 @@ class ManageRemedialTermService
     {
         $term = $this->requireById($id);
 
+        if ($term->status === $status) {
+            return $term;
+        }
+
         if (in_array($status, [
             \App\Domain\Enums\RemedialTermStatus::REGISTRATION_OPEN,
             \App\Domain\Enums\RemedialTermStatus::ACTIVE,
@@ -82,6 +86,10 @@ class ManageRemedialTermService
 
     private function buildEntity(?int $id, array $data, ?RemedialTerm $existing = null): RemedialTerm
     {
+        $status = $existing?->status ?? \App\Domain\Enums\RemedialTermStatus::DRAFT;
+        $allowPriceUpdate = $status === \App\Domain\Enums\RemedialTermStatus::DRAFT;
+        $allowRegDateUpdate = $status !== \App\Domain\Enums\RemedialTermStatus::ACTIVE && $status !== \App\Domain\Enums\RemedialTermStatus::COMPLETED && $status !== \App\Domain\Enums\RemedialTermStatus::CANCELLED;
+
         return new RemedialTerm(
             id:                  $id,
             year:                (int) ($data['year'] ?? $existing?->year),
@@ -89,15 +97,15 @@ class ManageRemedialTermService
             name:                (string) ($data['name'] ?? $existing?->name),
             startDate:           $this->parseDate($data, 'start_date', $existing?->startDate),
             endDate:             $this->parseDate($data, 'end_date', $existing?->endDate),
-            remedialCoefficient: (int) ($data['remedial_coefficient'] ?? $existing?->remedialCoefficient ?? 1),
-            pricePerPeriod:      (int) ($data['price_per_period'] ?? $existing?->pricePerPeriod ?? 150000),
-            priceCoefficient:    (float) ($data['price_coefficient'] ?? $existing?->priceCoefficient ?? 1),
+            remedialCoefficient: $allowPriceUpdate ? (int) ($data['remedial_coefficient'] ?? $existing?->remedialCoefficient ?? 1) : ($existing?->remedialCoefficient ?? 1),
+            pricePerPeriod:      $allowPriceUpdate ? (int) ($data['price_per_period'] ?? $existing?->pricePerPeriod ?? 150000) : ($existing?->pricePerPeriod ?? 150000),
+            priceCoefficient:    $allowPriceUpdate ? (float) ($data['price_coefficient'] ?? $existing?->priceCoefficient ?? 1) : ($existing?->priceCoefficient ?? 1),
 //             isCurrentTerm:       array_key_exists('is_current_term', $data)
 //                 ? $this->toBool($data['is_current_term'])
 //                 : ($existing?->isCurrentTerm ?? false),
-            isCurrentTerm:       ($existing?->status ?? \App\Domain\Enums\RemedialTermStatus::DRAFT)->isCurrent(),
-            registrationStart:   $this->parseDate($data, 'registration_start', $existing?->registrationStart),
-            registrationEnd:     $this->parseDate($data, 'registration_end', $existing?->registrationEnd),
+            isCurrentTerm:       $status->isCurrent(),
+            registrationStart:   $allowRegDateUpdate ? $this->parseDate($data, 'registration_start', $existing?->registrationStart) : $existing?->registrationStart,
+            registrationEnd:     $allowRegDateUpdate ? $this->parseDate($data, 'registration_end', $existing?->registrationEnd) : $existing?->registrationEnd,
         );
     }
 

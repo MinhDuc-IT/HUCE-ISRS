@@ -8,23 +8,25 @@ use App\Domain\Ports\External\StudentInfoPort;
 use App\Domain\Ports\Persistence\UserRepositoryPort;
 use App\Domain\Exceptions\StudentNotFoundException;
 use App\Domain\Exceptions\ExternalSystemException;
+use App\Jobs\SyncStudentDataJob;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 
 /**
  * StudentProvisioningService – Điều phối quy trình Auto-provision.
+ * Bước Sync dữ liệu được tách ra thành {@see SyncStudentDataJob} để chạy bất đồng bộ.
  */
 class StudentProvisioningService
 {
     public function __construct(
         private readonly StudentInfoPort $studentInfoPort,
         private readonly UserRepositoryPort $userRepository,
-        private readonly StudentSyncService $syncService,
     ) {}
 
     /**
      * Tìm hoặc tạo tài khoản local cho sinh viên.
+     * Bước sync dữ liệu được dispatch bất đồng bộ để không block quá trình đăng nhập.
      */
     public function findOrProvision(string $studentCode): User
     {
@@ -40,18 +42,18 @@ class StudentProvisioningService
         Log::info("[StudentProvisioning] Đang xác minh {$studentCode} qua University System...");
         $studentInfo = $this->studentInfoPort->getStudent($studentCode);
 
-        // ── Bước 3 & 4: Thực hiện Sync và Provision trong một Transaction ─────
-        return DB::transaction(function () use ($studentCode, $studentInfo) {
-            // Đồng bộ dữ liệu Student/Course
-            $this->syncService->sync($studentCode, $studentInfo);
-
-            // Tạo User account
+        // ── Bước 3: Tạo User account trong Transaction (đồng bộ - cần thiết để login) ───
+        $user = DB::transaction(function () use ($studentCode, $studentInfo) {
             $user = $this->provisionUser($studentCode, $studentInfo);
-
-            Log::info("[StudentProvisioning] Đã đồng bộ và provision thành công: {$studentCode}");
-
+            Log::info("[StudentProvisioning] Đã provision thành công: {$studentCode}");
             return $user;
         });
+
+        // ── Bước 4: Dispatch job đồng bộ dữ liệu bất đồng bộ (không block login) ────────
+        \App\Jobs\SyncStudentDataJob::dispatch($studentCode);
+        Log::info("[StudentProvisioning] Đã dispatch SyncStudentDataJob cho: {$studentCode}");
+
+        return $user;
     }
 
     /**

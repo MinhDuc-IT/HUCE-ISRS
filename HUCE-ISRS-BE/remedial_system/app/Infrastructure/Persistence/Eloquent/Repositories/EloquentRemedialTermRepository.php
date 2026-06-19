@@ -19,21 +19,40 @@ class EloquentRemedialTermRepository implements RemedialTermRepositoryPort
 
     public function findCurrent(): ?RemedialTerm
     {
-//         $model = RemedialTermModel::where('is_current_term', true)->first();
+        $models = RemedialTermModel::whereIn('status', [
+            \App\Domain\Enums\RemedialTermStatus::REGISTRATION_OPEN->value,
+            \App\Domain\Enums\RemedialTermStatus::ACTIVE->value
+        ])
+        ->orderByDesc('year')
+        ->orderByDesc('semester')
+        ->orderByDesc('id')
+        ->get();
 
-        $model = RemedialTermModel::where('status', \App\Domain\Enums\RemedialTermStatus::REGISTRATION_OPEN->value)
-            ->orderByDesc('year')
-            ->orderByDesc('semester')
-            ->first();
-
-        if ($model === null) {
-            $model = RemedialTermModel::where('status', \App\Domain\Enums\RemedialTermStatus::ACTIVE->value)
-                ->orderByDesc('year')
-                ->orderByDesc('semester')
-                ->first();
+        if ($models->isEmpty()) {
+            return null;
         }
 
-        return $model ? RemedialTermMapper::toDomain($model) : null;
+        $terms = $models->map(fn ($model) => RemedialTermMapper::toDomain($model));
+
+        // 1. Ưu tiên đợt đang chính thức mở đăng ký theo thời gian
+        $openTerm = $terms->first(fn ($term) => $term->getLogicStatus() === \App\Domain\Enums\RemedialTermLogicStatus::REGISTRATION_OPEN);
+        if ($openTerm !== null) {
+            return $openTerm;
+        }
+
+        // 2. Nếu không có đợt mở đăng ký, lấy đợt đang active (sắp mở/đang học/...)
+        $activeTerm = $terms->first(fn ($term) => in_array($term->getLogicStatus(), [
+            \App\Domain\Enums\RemedialTermLogicStatus::ACTIVE_PENDING_REGISTRATION,
+            \App\Domain\Enums\RemedialTermLogicStatus::ACTIVE_PENDING_CLASS,
+            \App\Domain\Enums\RemedialTermLogicStatus::ACTIVE_IN_PROGRESS,
+        ], true));
+
+        if ($activeTerm !== null) {
+            return $activeTerm;
+        }
+
+        // 3. Fallback (e.g. đã hết thời gian nhưng DB chưa update sang COMPLETED)
+        return $terms->first();
     }
 
     public function findAll(): array

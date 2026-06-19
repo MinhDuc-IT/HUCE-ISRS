@@ -15,6 +15,8 @@ export type ApiRemedialTerm = {
   is_current_term?: boolean;
   status?: number;
   status_name?: string;
+  status_logic?: number;
+  status_logic_name?: string;
 };
 
 export type ApiDepartmentSubjectAssignment = {
