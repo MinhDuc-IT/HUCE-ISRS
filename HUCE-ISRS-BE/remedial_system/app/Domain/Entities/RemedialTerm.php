@@ -20,7 +20,66 @@ class RemedialTerm
         public readonly bool    $isCurrentTerm = false,
         public readonly ?Carbon $registrationStart = null,
         public readonly ?Carbon $registrationEnd = null,
+        public readonly \App\Domain\Enums\RemedialTermStatus $status = \App\Domain\Enums\RemedialTermStatus::DRAFT,
     ) {}
+
+    public function getState(): \App\Domain\Entities\TermStates\TermState
+    {
+        return match ($this->status) {
+            \App\Domain\Enums\RemedialTermStatus::DRAFT => new \App\Domain\Entities\TermStates\DraftState($this),
+            \App\Domain\Enums\RemedialTermStatus::REGISTRATION_OPEN => new \App\Domain\Entities\TermStates\RegistrationOpenState($this),
+            \App\Domain\Enums\RemedialTermStatus::ACTIVE => new \App\Domain\Entities\TermStates\ActiveState($this),
+            \App\Domain\Enums\RemedialTermStatus::COMPLETED => new \App\Domain\Entities\TermStates\CompletedState($this),
+            \App\Domain\Enums\RemedialTermStatus::CANCELLED => new \App\Domain\Entities\TermStates\CancelledState($this),
+        };
+    }
+
+    public function validateUpdate(array $data): void
+    {
+        $this->getState()->validateUpdate($data);
+    }
+
+    public function openRegistration(): void
+    {
+        $this->getState()->openRegistration();
+    }
+
+    public function activate(): void
+    {
+        $this->getState()->activate();
+    }
+
+    public function complete(): void
+    {
+        $this->getState()->complete();
+    }
+
+    public function cancel(): void
+    {
+        $this->getState()->cancel();
+    }
+
+    public function transitionTo(\App\Domain\Enums\RemedialTermStatus $status): self
+    {
+        $state = $this->getState();
+        $state->transitionTo($status);
+
+        return $this->withStatus($status);
+    }
+
+    public function nextStatus(): ?\App\Domain\Enums\RemedialTermStatus
+    {
+        return $this->getState()->nextStatus();
+    }
+
+    public function withStatus(\App\Domain\Enums\RemedialTermStatus $status): self
+    {
+        return new self(
+            $this->id, $this->year, $this->semester, $this->name, $this->startDate, $this->endDate,
+            $this->remedialCoefficient, $this->pricePerPeriod, $this->priceCoefficient, $this->isCurrentTerm,
+            $this->registrationStart, $this->registrationEnd, $status
+        );
+    }
 
     public function isRegistrationOpen(): bool
     {
@@ -42,5 +101,55 @@ class RemedialTerm
         }
 
         return true;
+    }
+
+
+
+    public function getLogicStatus(): \App\Domain\Enums\RemedialTermLogicStatus
+    {
+        $now = Carbon::now();
+
+        if ($this->status === \App\Domain\Enums\RemedialTermStatus::DRAFT) {
+            return \App\Domain\Enums\RemedialTermLogicStatus::DRAFT;
+        }
+
+        if ($this->status === \App\Domain\Enums\RemedialTermStatus::COMPLETED) {
+            return \App\Domain\Enums\RemedialTermLogicStatus::COMPLETED;
+        }
+
+        if ($this->status === \App\Domain\Enums\RemedialTermStatus::CANCELLED) {
+            return \App\Domain\Enums\RemedialTermLogicStatus::CANCELLED;
+        }
+
+        if ($this->endDate && $now->gt($this->endDate->copy()->endOfDay())) {
+            return \App\Domain\Enums\RemedialTermLogicStatus::ACTIVE_ENDED;
+        }
+
+        if ($this->registrationStart && $this->registrationEnd) {
+            if ($now->lessThan($this->registrationStart)) {
+                return \App\Domain\Enums\RemedialTermLogicStatus::ACTIVE_PENDING_REGISTRATION;
+            }
+
+            if ($now->greaterThanOrEqualTo($this->registrationStart) && $now->lessThanOrEqualTo($this->registrationEnd->copy()->endOfDay())) {
+                return \App\Domain\Enums\RemedialTermLogicStatus::REGISTRATION_OPEN;
+            }
+        }
+
+        if ($this->registrationEnd && $now->gt($this->registrationEnd->copy()->endOfDay())) {
+            if ($this->startDate && $now->lt($this->startDate->copy()->startOfDay())) {
+                return \App\Domain\Enums\RemedialTermLogicStatus::ACTIVE_PENDING_CLASS;
+            }
+            return \App\Domain\Enums\RemedialTermLogicStatus::ACTIVE_IN_PROGRESS;
+        }
+
+        return \App\Domain\Enums\RemedialTermLogicStatus::ACTIVE_IN_PROGRESS;
+    }
+
+    public function isLogicCurrentTerm(): bool
+    {
+        return in_array($this->status, [
+            \App\Domain\Enums\RemedialTermStatus::REGISTRATION_OPEN,
+            \App\Domain\Enums\RemedialTermStatus::ACTIVE
+        ], true);
     }
 }

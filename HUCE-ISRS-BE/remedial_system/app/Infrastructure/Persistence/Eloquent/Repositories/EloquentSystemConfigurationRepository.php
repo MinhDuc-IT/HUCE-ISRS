@@ -2,6 +2,7 @@
 
 namespace App\Infrastructure\Persistence\Eloquent\Repositories;
 
+use App\Domain\Entities\SystemConfiguration;
 use App\Domain\Ports\Persistence\SystemConfigurationRepositoryPort;
 use App\Infrastructure\Persistence\Eloquent\Mappers\SystemConfigurationMapper;
 use App\Models\SystemConfiguration as SystemConfigurationModel;
@@ -15,6 +16,15 @@ class EloquentSystemConfigurationRepository implements SystemConfigurationReposi
             ->first();
 
         return $config ? $config->value : ($default !== null ? (string) $default : null);
+    }
+
+    public function findByKey(string $key): ?SystemConfiguration
+    {
+        $model = SystemConfigurationModel::where('key', $key)
+            ->where('is_deleted', false)
+            ->first();
+
+        return $model ? SystemConfigurationMapper::toDomain($model) : null;
     }
 
     public function all(): array
@@ -35,5 +45,15 @@ class EloquentSystemConfigurationRepository implements SystemConfigurationReposi
                 'is_deleted'  => false,
             ]
         );
+    }
+
+    public function delete(string $key): void
+    {
+        SystemConfigurationModel::where('key', $key)
+            ->where('is_deleted', false)
+            ->update([
+                'is_deleted' => true,
+                'updated_at' => now(),
+            ]);
     }
 }

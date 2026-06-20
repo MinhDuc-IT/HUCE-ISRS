@@ -47,11 +47,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::prefix('admin/system-configurations')->group(function () {
             Route::get('/', [SystemConfigurationController::class, 'index']);
             Route::post('/', [SystemConfigurationController::class, 'update']);
+            Route::post('/create', [SystemConfigurationController::class, 'store']);
+            Route::patch('/{key}', [SystemConfigurationController::class, 'updateItem']);
+            Route::delete('/{key}', [SystemConfigurationController::class, 'destroy']);
         });
 
         Route::prefix('admin/statistics/terms')->group(function () {
             Route::get('/', [StatisticsController::class, 'listTerms']);
             Route::get('/{id}', [StatisticsController::class, 'termStatistics']);
+            Route::get('/{id}/teaching-payments', [StatisticsController::class, 'teachingPaymentStatistics']);
+            Route::get('/{id}/teaching-payments/export', [StatisticsController::class, 'exportTeachingPayments']);
         });
 
         Route::prefix('admin/users')->group(function () {
@@ -68,6 +73,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/{id}/statistics', [StatisticsController::class, 'termStatistics']);
             Route::get('/{id}', [RemedialTermController::class, 'show']);
             Route::patch('/{id}', [RemedialTermController::class, 'update']);
+            Route::patch('/{id}/status', [RemedialTermController::class, 'updateStatus']);
             Route::delete('/{id}', [RemedialTermController::class, 'destroy']);
         });
 

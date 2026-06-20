@@ -24,7 +24,7 @@ class StoreRemedialTermRequest extends ApiFormRequest
             'remedial_coefficient' => ['nullable', 'integer', 'min:0'],
             'price_per_period'     => ['nullable', 'integer', 'min:0'],
             'price_coefficient'    => ['nullable', 'numeric', 'min:0'],
-            'is_current_term'      => ['sometimes', 'boolean'],
+            // 'is_current_term'      => ['sometimes', 'boolean'], // legacy, derived from status.
         ];
     }
 

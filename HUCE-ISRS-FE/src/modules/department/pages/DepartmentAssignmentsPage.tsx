@@ -7,6 +7,7 @@ export function DepartmentAssignmentsPage() {
   const { user } = useAuth();
   const [rows, setRows] = useState<ApiDepartmentSubjectAssignment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [editingSubjectId, setEditingSubjectId] = useState<number | null>(null);
@@ -52,6 +53,7 @@ export function DepartmentAssignmentsPage() {
     if (editingSubjectId === null) return;
     setError(null);
     setMessage(null);
+    setIsSubmitting(true);
     try {
       const res = await apiFetch<{
         data: { updated_count: number };
@@ -70,10 +72,13 @@ export function DepartmentAssignmentsPage() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Lỗi không xác định";
       setError("Lưu thất bại: " + msg);
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
   function closeModal() {
+    if (isSubmitting) return;
     setIsModalOpen(false);
     setEditingSubjectId(null);
   }
@@ -226,14 +231,14 @@ export function DepartmentAssignmentsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-12 items-center gap-3">
-                <label className="col-span-12 sm:col-span-3 text-sm font-semibold">
-                  Điện thoại:
-                </label>
+              <div className="grid grid-cols-12 gap-3">
+                <div className="col-span-12 sm:col-span-3 text-sm font-semibold">
+                  Số điện thoại:
+                </div>
                 <div className="col-span-12 sm:col-span-9">
                   <input
                     className="w-full rounded border px-3 py-2 text-sm"
-                    placeholder="Điện thoại"
+                    placeholder="Số điện thoại giảng viên"
                     value={form.lecturer_phone_number}
                     onChange={(e) =>
                       setForm((f) => ({
@@ -267,17 +272,43 @@ export function DepartmentAssignmentsPage() {
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
-                  className="rounded border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  className="rounded border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
                   onClick={closeModal}
+                  disabled={isSubmitting}
                 >
                   Hủy
                 </button>
                 <button
                   type="button"
-                  className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                  className="inline-flex items-center gap-2 rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
                   onClick={saveEdit}
+                  disabled={isSubmitting}
                 >
-                  Lưu
+                  {isSubmitting && (
+                    <svg
+                      className="h-4 w-4 animate-spin"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      aria-hidden="true"
+                    >
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        className="opacity-25"
+                      />
+                      <path
+                        d="M22 12a10 10 0 0 1-10 10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        strokeLinecap="round"
+                        className="opacity-75"
+                      />
+                    </svg>
+                  )}
+                  <span>{isSubmitting ? "Đang lưu..." : "Lưu"}</span>
                 </button>
               </div>
             </div>

@@ -11,6 +11,48 @@ class SystemConfigSeeder extends Seeder
     {
         $configs = [
             [
+                'key'         => 'sender_email',
+                'value'       => 'byebyevidu@gmail.com',
+                'description' => 'Email dùng để gửi email hệ thống',
+                'is_deleted'  => false,
+            ],
+            [
+                'key'         => 'sender_password',
+                'value'       => '',
+                'description' => 'Mật khẩu email gửi',
+                'is_deleted'  => false,
+            ],
+            [
+                'key'         => 'admin_email',
+                'value'       => 'phongdaotao@nuce.edu.vn',
+                'description' => 'Email đơn vị quản lý',
+                'is_deleted'  => false,
+            ],
+            [
+                'key'         => 'weeks_from_registration',
+                'value'       => '10',
+                'description' => 'Số tuần tính từ tuần đăng ký',
+                'is_deleted'  => false,
+            ],
+            [
+                'key'         => 'ws_login',
+                'value'       => 'http://127.0.0.1:8001/api/student/login',
+                'description' => 'Webservice đăng nhập',
+                'is_deleted'  => false,
+            ],
+            [
+                'key'         => 'ws_student_info',
+                'value'       => 'http://127.0.0.1:8001',
+                'description' => 'Webservice lấy thông tin sinh viên',
+                'is_deleted'  => false,
+            ],
+            [
+                'key'         => 'ws_host',
+                'value'       => 'http://127.0.0.1:8001',
+                'description' => 'Host webservice học phụ đạo',
+                'is_deleted'  => false,
+            ],
+            [
                 'key'         => 'default_periods',
                 'value'       => '45',
                 'description' => 'Số tiết học mặc định khi đăng ký phụ đạo',

@@ -4,6 +4,7 @@ import { AdminDashboardPage } from '@/modules/admin/pages/AdminDashboardPage'
 import { AdminRegistrationsPage } from '@/modules/admin/pages/AdminRegistrationsPage'
 import { AdminSendEmailPage } from '@/modules/admin/pages/AdminSendEmailPage'
 import { StatisticsCohortPage } from '@/modules/admin/pages/StatisticsCohortPage'
+import { TeachingPaymentsPage } from '@/modules/admin/pages/TeachingPaymentsPage'
 import { SystemSettingsPage } from '@/modules/admin/pages/SystemSettingsPage'
 import { CohortFormPage } from '@/modules/admin/pages/CohortFormPage'
 import { CohortListPage } from '@/modules/admin/pages/CohortListPage'
@@ -41,6 +42,7 @@ export function AppRoutes() {
           <Route path="email-department" element={<AdminSendEmailPage />} />
           <Route path="settings" element={<SystemSettingsPage />} />
           <Route path="statistics" element={<StatisticsCohortPage />} />
+          <Route path="teaching-payments" element={<TeachingPaymentsPage />} />
         </Route>
       </Route>
 
