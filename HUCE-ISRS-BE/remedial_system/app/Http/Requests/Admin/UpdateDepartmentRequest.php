@@ -25,6 +25,10 @@ class UpdateDepartmentRequest extends ApiFormRequest
             'faculty_name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'email'        => ['sometimes', 'nullable', 'email', 'max:255'],
             'phone_number' => ['sometimes', 'nullable', 'string', 'max:50'],
+            'login_user'   => ['sometimes', 'array'],
+            'login_user.name' => ['required_with:login_user', 'string', 'max:255'],
+            'login_user.email'=> ['required_with:login_user', 'email', 'max:255'],
+            'login_user.password' => ['nullable', 'string', 'min:6'],
         ];
     }
 }

@@ -12,6 +12,7 @@ use App\Application\Services\Admin\ManageSystemConfigurationService;
 use App\Application\Services\Admin\ManageUserService;
 use App\Application\Services\Admin\RemedialStatisticsService;
 use App\Application\Services\Department\DepartmentManageRegistrationService;
+use App\Application\Services\Department\DepartmentBoMonAccountService;
 use App\Application\Services\Department\DepartmentProfileService;
 use App\Application\Services\Department\DepartmentRegistrationQueryService;
 use App\Application\Services\Department\SendDepartmentSummaryEmailService;
@@ -117,6 +118,7 @@ class RemedialServiceProvider extends ServiceProvider
         $this->app->singleton(AuthUserPresenter::class);
         $this->app->singleton(AuthenticateUserService::class);
         $this->app->singleton(DepartmentService::class);
+        $this->app->singleton(DepartmentBoMonAccountService::class);
         $this->app->singleton(DepartmentProfileService::class);
         $this->app->singleton(DepartmentRegistrationQueryService::class);
         $this->app->singleton(SendDepartmentSummaryEmailService::class);

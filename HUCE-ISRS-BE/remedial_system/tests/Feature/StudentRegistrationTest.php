@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Department;
 use App\Models\RemedialTerm;
 use App\Models\Subject;
+use App\Domain\Enums\RemedialTermStatus;
 use Carbon\Carbon;
 use Tests\TestCase;
 
@@ -25,7 +26,7 @@ class StudentRegistrationTest extends TestCase
             'remedial_coefficient' => 1,
             'price_per_period'     => 150000,
             'price_coefficient'    => 1,
-            'is_current_term'      => true,
+            'status'               => RemedialTermStatus::REGISTRATION_OPEN,
             'is_deleted'           => false,
         ]);
 
@@ -42,7 +43,7 @@ class StudentRegistrationTest extends TestCase
 
     public function test_student_can_register_and_list_remedial_registration(): void
     {
-        $this->seedOpenTermAndSubject();
+        [$term] = $this->seedOpenTermAndSubject();
         $student = $this->createStudentUser('SVTEST', 'SVTEST');
 
         $register = $this->actingAs($student, 'sanctum')
@@ -55,7 +56,7 @@ class StudentRegistrationTest extends TestCase
             ->assertJsonPath('data.course_code', 'CS101');
 
         $this->actingAs($student, 'sanctum')
-            ->apiJson('GET', '/student/me/remedial-registrations')
+            ->apiJson('GET', '/student/me/remedial-registrations?remedial_term_id='.$term->id)
             ->assertOk()
             ->assertJsonFragment(['course_code' => 'CS101']);
 
@@ -80,7 +81,7 @@ class StudentRegistrationTest extends TestCase
             'remedial_coefficient' => 1,
             'price_per_period'     => 150000,
             'price_coefficient'    => 1,
-            'is_current_term'      => true,
+            'status'               => RemedialTermStatus::REGISTRATION_OPEN,
             'is_deleted'           => false,
         ]);
 

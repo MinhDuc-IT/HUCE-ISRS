@@ -4,27 +4,37 @@ namespace App\Application\Services\Department;
 
 use App\Domain\Entities\Department;
 use App\Domain\Ports\Persistence\DepartmentRepositoryPort;
+use App\Http\Resources\DepartmentResource;
 use App\Models\User;
 
 class DepartmentProfileService
 {
     public function __construct(
         private readonly DepartmentRepositoryPort $departmentRepository,
+        private readonly DepartmentBoMonAccountService $boMonAccountService,
     ) {}
 
-    public function getProfile(User $user): Department
+    /** @return array<string, mixed> */
+    public function getProfilePayload(User $user): array
     {
-        return $this->requireDepartment($user);
+        $dept = $this->requireDepartment($user);
+        $data = (new DepartmentResource($dept))->resolve();
+        $data['login_user'] = $this->boMonAccountService->toLoginUserPayload($user);
+
+        return $data;
     }
 
-    public function updateProfile(User $user, array $data): Department
+    /** @return array<string, mixed> */
+    public function updateProfile(User $user, array $data): array
     {
         $existing = $this->requireDepartment($user);
 
         $entity = new Department(
             id:             $existing->id,
             departmentCode: $existing->departmentCode,
-            departmentName: $existing->departmentName,
+            departmentName: array_key_exists('name', $data)
+                ? trim((string) $data['name'])
+                : $existing->departmentName,
             facultyCode:    $existing->facultyCode,
             facultyName:    $existing->facultyName,
             email:          array_key_exists('email', $data) ? $data['email'] : $existing->email,
@@ -32,7 +42,17 @@ class DepartmentProfileService
             createdAt:      $existing->createdAt,
         );
 
-        return $this->departmentRepository->save($entity);
+        $dept = $this->departmentRepository->save($entity);
+        $loginUser = $user;
+
+        if (isset($data['login_user']) && is_array($data['login_user'])) {
+            $loginUser = $this->boMonAccountService->updateLoginUser($user, $data['login_user']);
+        }
+
+        $payload = (new DepartmentResource($dept))->resolve();
+        $payload['login_user'] = $this->boMonAccountService->toLoginUserPayload($loginUser);
+
+        return $payload;
     }
 
     public function resolveDepartmentId(User $user): int

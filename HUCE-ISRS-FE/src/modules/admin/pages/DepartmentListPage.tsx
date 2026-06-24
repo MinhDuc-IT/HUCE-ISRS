@@ -16,6 +16,9 @@ export function DepartmentListPage() {
     name: '',
     email: '',
     phone: '',
+    loginName: '',
+    loginEmail: '',
+    loginPassword: '',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -45,13 +48,24 @@ export function DepartmentListPage() {
       name: dept.department_name,
       email: dept.email ?? '',
       phone: dept.phone_number ?? '',
+      loginName: dept.login_user?.name ?? '',
+      loginEmail: dept.login_user?.email ?? '',
+      loginPassword: '',
     })
   }
 
   function handleAdd() {
     setEditingDept(null)
     setIsAdding(true)
-    setFormData({ code: '', name: '', email: '', phone: '' })
+    setFormData({
+      code: '',
+      name: '',
+      email: '',
+      phone: '',
+      loginName: '',
+      loginEmail: '',
+      loginPassword: '',
+    })
   }
 
   function handleCloseModal() {
@@ -79,7 +93,18 @@ export function DepartmentListPage() {
     e.preventDefault()
     try {
       setIsSubmitting(true)
+      const loginUser = {
+        name: formData.loginName.trim(),
+        email: formData.loginEmail.trim(),
+        ...(formData.loginPassword.trim() ? { password: formData.loginPassword.trim() } : {}),
+      }
+
       if (isAdding) {
+        if (!formData.loginPassword.trim()) {
+          setError('Nhập mật khẩu tài khoản đăng nhập bộ môn.')
+          setIsSubmitting(false)
+          return
+        }
         await apiFetch(`/admin/departments`, {
           method: 'POST',
           data: {
@@ -87,6 +112,10 @@ export function DepartmentListPage() {
             name: formData.name.trim(),
             email: formData.email.trim() || null,
             phone_number: formData.phone.trim() || null,
+            login_user: {
+              ...loginUser,
+              password: formData.loginPassword.trim(),
+            },
           },
         })
         setMessage('Thêm bộ môn thành công.')
@@ -98,6 +127,7 @@ export function DepartmentListPage() {
             name: formData.name.trim(),
             email: formData.email.trim() || null,
             phone_number: formData.phone.trim() || null,
+            login_user: loginUser,
           },
         })
         setMessage('Cập nhật bộ môn thành công.')
@@ -223,7 +253,11 @@ export function DepartmentListPage() {
             </div>
 
             {/* Modal Body */}
-            <form onSubmit={handleSave} className="p-6 space-y-4">
+            <form onSubmit={handleSave} autoComplete="off" className="p-6 space-y-4">
+              <div className="hidden" aria-hidden="true">
+                <input type="text" tabIndex={-1} autoComplete="username" />
+                <input type="password" tabIndex={-1} autoComplete="current-password" />
+              </div>
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">Mã bộ môn:</label>
                 <input
@@ -244,18 +278,17 @@ export function DepartmentListPage() {
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  disabled={!isAdding}
                   required
-                  className={`w-full border border-gray-300 rounded px-3 py-2 text-sm ${
-                    !isAdding ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'focus:outline-none focus:border-[#1976d2]'
-                  }`}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1976d2]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Email:</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Email liên hệ bộ môn:</label>
                 <input
                   type="email"
+                  name="department-contact-email"
+                  autoComplete="off"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="Email trưởng bộ môn"
@@ -264,7 +297,7 @@ export function DepartmentListPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Điện thoại trưởng bộ môn:</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Điện thoại liên hệ:</label>
                 <input
                   type="text"
                   value={formData.phone}
@@ -272,6 +305,48 @@ export function DepartmentListPage() {
                   placeholder="Số điện thoại"
                   className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1976d2]"
                 />
+              </div>
+
+              <div className="border-t border-gray-200 pt-4 space-y-4">
+                <p className="text-xs font-bold uppercase tracking-wide text-gray-600">
+                  Tài khoản đăng nhập bộ môn
+                </p>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Họ tên hiển thị:</label>
+                  <input
+                    type="text"
+                    value={formData.loginName}
+                    onChange={(e) => setFormData({ ...formData, loginName: e.target.value })}
+                    required
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1976d2]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Email đăng nhập:</label>
+                  <input
+                    type="email"
+                    name="department-login-email"
+                    autoComplete="off"
+                    value={formData.loginEmail}
+                    onChange={(e) => setFormData({ ...formData, loginEmail: e.target.value })}
+                    required
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1976d2]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Mật khẩu {isAdding ? '' : '(để trống nếu giữ nguyên)'}
+                  </label>
+                  <input
+                    type="password"
+                    name="department-login-password"
+                    autoComplete="new-password"
+                    value={formData.loginPassword}
+                    onChange={(e) => setFormData({ ...formData, loginPassword: e.target.value })}
+                    required={isAdding}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1976d2]"
+                  />
+                </div>
               </div>
 
               {/* Modal Footer */}

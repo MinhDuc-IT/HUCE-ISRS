@@ -81,6 +81,12 @@ export type ApiAdminRegistration = {
   lecturer_email?: string | null;
 };
 
+export type ApiDepartmentLoginUser = {
+  id: number;
+  name: string;
+  email: string;
+};
+
 export type ApiDepartment = {
   id: number;
   department_code: string;
@@ -90,6 +96,15 @@ export type ApiDepartment = {
   email?: string | null;
   phone?: string | null;
   phone_number?: string | null;
+  login_user?: ApiDepartmentLoginUser | null;
+};
+
+export type ApiTermStatisticsSummary = {
+  remedial_term_id: number;
+  remedial_term_name: string;
+  distinct_student_count: number;
+  courses_with_registration_count: number;
+  total_revenue: number;
 };
 
 export type ApiTermStatistics = {

@@ -44,11 +44,16 @@ class EloquentRemedialRegistrationRepository implements RemedialRegistrationRepo
             ->exists();
     }
 
-    public function findByUser(int $userId): array
+    public function findByUser(int $userId, ?int $remedialTermId = null): array
     {
-        return RemedialRegistrationModel::where('student_id', $userId)
-            ->where('is_deleted', false)
-            ->orderByDesc('registration_date')
+        $query = RemedialRegistrationModel::where('student_id', $userId)
+            ->where('is_deleted', false);
+
+        if ($remedialTermId !== null) {
+            $query->where('remedial_term_id', $remedialTermId);
+        }
+
+        return $query->orderByDesc('registration_date')
             ->get()
             ->map(fn ($model) => RemedialRegistrationMapper::toDomain($model))
             ->all();

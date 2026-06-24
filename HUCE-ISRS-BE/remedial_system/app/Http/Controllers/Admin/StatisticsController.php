@@ -28,6 +28,11 @@ class StatisticsController extends BaseController
         return $this->success(['terms' => $this->statisticsService->listTermOptions()]);
     }
 
+    public function listTermSummaries(): JsonResponse
+    {
+        return $this->success($this->statisticsService->listAllTermSummaries());
+    }
+
     #[OA\Get(
         path: '/api/admin/statistics/terms/{id}',
         summary: 'Thống kê tổng quan đợt phụ đạo',

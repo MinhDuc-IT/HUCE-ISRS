@@ -26,4 +26,9 @@ interface UserRepositoryPort
     public function update(User $user, array $data): User;
 
     public function delete(int $id): void;
+
+    public function findBoMonByDepartmentId(int $departmentId): ?User;
+
+    /** @return User[] */
+    public function findAllBoMonUsers(): array;
 }

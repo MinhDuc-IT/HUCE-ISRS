@@ -15,7 +15,7 @@ interface RemedialRegistrationRepositoryPort
     public function existsRegistration(int $userId, int $subjectId, int $remedialTermId): bool;
 
     /** @return RemedialRegistration[] */
-    public function findByUser(int $userId): array;
+    public function findByUser(int $userId, ?int $remedialTermId = null): array;
 
     public function bulkUpdateLecturerForSubject(int $subjectId, int $departmentId, array $data): int;
 }

@@ -78,4 +78,21 @@ class EloquentUserRepository implements UserRepositoryPort
     {
         User::withoutGlobalScopes()->whereKey($id)->update(['is_deleted' => true]);
     }
+
+    public function findBoMonByDepartmentId(int $departmentId): ?User
+    {
+        return User::where('department_id', $departmentId)
+            ->where('role', User::ROLE_BO_MON)
+            ->where('is_deleted', false)
+            ->first();
+    }
+
+    public function findAllBoMonUsers(): array
+    {
+        return User::where('role', User::ROLE_BO_MON)
+            ->where('is_deleted', false)
+            ->whereNotNull('department_id')
+            ->get()
+            ->all();
+    }
 }

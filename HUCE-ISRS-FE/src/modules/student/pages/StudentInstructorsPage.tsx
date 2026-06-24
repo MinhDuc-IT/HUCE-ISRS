@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/shared/context/AuthContext'
 import { apiFetch } from '@/shared/utils/apiClient'
-import type { ApiStudentRegistration } from '@/shared/types/api'
+import type { ApiRemedialTerm, ApiStudentRegistration } from '@/shared/types/api'
 
 export function StudentInstructorsPage() {
   const { user } = useAuth()
@@ -17,8 +17,23 @@ export function StudentInstructorsPage() {
   async function fetchRegs() {
     try {
       setLoading(true)
+      let termId: number | null = null
+      try {
+        const termRes = await apiFetch<{ data: ApiRemedialTerm }>(
+          '/student/remedial-terms/current',
+        )
+        termId = termRes.data?.id ?? null
+      } catch {
+        termId = null
+      }
+
+      if (termId == null) {
+        setRegs([])
+        return
+      }
+
       const res = await apiFetch<{ data: ApiStudentRegistration[] }>(
-        '/student/me/remedial-registrations',
+        `/student/me/remedial-registrations?remedial_term_id=${termId}`,
       )
       setRegs(res.data || [])
     } catch {
