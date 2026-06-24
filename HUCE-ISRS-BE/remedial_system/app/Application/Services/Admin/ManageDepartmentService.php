@@ -2,6 +2,7 @@
 
 namespace App\Application\Services\Admin;
 
+use App\Application\Services\Department\DepartmentBoMonAccountService;
 use App\Application\Services\Department\SendDepartmentSummaryEmailService;
 use App\Domain\Entities\Department;
 use App\Domain\Ports\Persistence\DepartmentRepositoryPort;
@@ -11,7 +12,31 @@ class ManageDepartmentService
     public function __construct(
         private readonly DepartmentRepositoryPort $departmentRepository,
         private readonly SendDepartmentSummaryEmailService $summaryEmailService,
+        private readonly DepartmentBoMonAccountService $boMonAccountService,
     ) {}
+
+    /** @return array<int, array<string, mixed>> */
+    public function listWithLoginUsers(): array
+    {
+        $departments = $this->departmentRepository->findAll();
+        $loginUsers  = $this->boMonAccountService->findAllIndexedByDepartmentId();
+
+        return array_map(
+            fn (Department $dept) => $this->formatDepartment($dept, $loginUsers[$dept->id] ?? null),
+            $departments
+        );
+    }
+
+    public function findByIdWithLoginUser(int $id): ?array
+    {
+        $dept = $this->departmentRepository->findById($id);
+
+        if ($dept === null) {
+            return null;
+        }
+
+        return $this->formatDepartment($dept, $this->boMonAccountService->findByDepartmentId($id));
+    }
 
     /** @return Department[] */
     public function list(): array
@@ -24,7 +49,7 @@ class ManageDepartmentService
         return $this->departmentRepository->findById($id);
     }
 
-    public function create(array $data): Department
+    public function create(array $data): array
     {
         $code = trim((string) $data['department_code']);
 
@@ -42,10 +67,17 @@ class ManageDepartmentService
             phoneNumber:    $data['phone_number'] ?? null,
         );
 
-        return $this->departmentRepository->save($entity);
+        $dept = $this->departmentRepository->save($entity);
+        $loginUser = $this->boMonAccountService->upsertForDepartment(
+            $dept->id,
+            $data['login_user'],
+            passwordRequired: true,
+        );
+
+        return $this->formatDepartment($dept, $loginUser);
     }
 
-    public function update(int $id, array $data): Department
+    public function update(int $id, array $data): array
     {
         $existing = $this->requireById($id);
 
@@ -62,7 +94,14 @@ class ManageDepartmentService
             createdAt:      $existing->createdAt,
         );
 
-        return $this->departmentRepository->save($entity);
+        $dept = $this->departmentRepository->save($entity);
+        $loginUser = $this->boMonAccountService->findByDepartmentId($id);
+
+        if (isset($data['login_user']) && is_array($data['login_user'])) {
+            $loginUser = $this->boMonAccountService->upsertForDepartment($id, $data['login_user']);
+        }
+
+        return $this->formatDepartment($dept, $loginUser);
     }
 
     public function delete(int $id): void
@@ -85,5 +124,14 @@ class ManageDepartmentService
         }
 
         return $dept;
+    }
+
+    /** @return array<string, mixed> */
+    private function formatDepartment(Department $dept, ?\App\Models\User $loginUser = null): array
+    {
+        $data = (new \App\Http\Resources\DepartmentResource($dept))->resolve();
+        $data['login_user'] = $this->boMonAccountService->toLoginUserPayload($loginUser);
+
+        return $data;
     }
 }

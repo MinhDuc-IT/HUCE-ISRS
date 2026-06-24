@@ -21,6 +21,26 @@ class RemedialStatisticsService
         );
     }
 
+    /** @return array<int, array<string, mixed>> */
+    public function listAllTermSummaries(): array
+    {
+        $summaries = [];
+
+        foreach ($this->termRepository->findAll() as $term) {
+            $stats = $this->computeTermStatistics($term);
+
+            $summaries[] = [
+                'remedial_term_id'                => $term->id,
+                'remedial_term_name'              => $term->name,
+                'distinct_student_count'          => $stats['distinct_student_count'],
+                'courses_with_registration_count' => $stats['courses_with_registration_count'],
+                'total_revenue'                   => $stats['total_revenue'],
+            ];
+        }
+
+        return $summaries;
+    }
+
     public function getTermStatistics(int $termId): array
     {
         $term = $this->termRepository->findById($termId);
@@ -29,11 +49,25 @@ class RemedialStatisticsService
             throw new \DomainException('Không tìm thấy đợt phụ đạo.');
         }
 
-        $registrations = RemedialRegistrationModel::where('remedial_term_id', $termId)->get();
+        $stats = $this->computeTermStatistics($term);
 
-        $distinctStudentCount = $registrations->pluck('student_id')->unique()->count();
-        $subjectsWithRegistration = $registrations->pluck('subject_id')->unique()->count();
-        $catalogCourseCount = count($this->subjectRepository->findAll());
+        return [
+            'remedial_term_id'                 => $termId,
+            'distinct_student_count'           => $stats['distinct_student_count'],
+            'catalog_course_count'             => count($this->subjectRepository->findAll()),
+            'courses_with_registration_count'  => $stats['courses_with_registration_count'],
+            'assigned_class_count'             => $stats['assigned_class_count'],
+            'total_registrations'              => $stats['total_registrations'],
+            'total_revenue'                    => $stats['total_revenue'],
+        ];
+    }
+
+    /** @return array{distinct_student_count: int, courses_with_registration_count: int, assigned_class_count: int, total_registrations: int, total_revenue: int} */
+    private function computeTermStatistics(\App\Domain\Entities\RemedialTerm $term): array
+    {
+        $registrations = RemedialRegistrationModel::where('remedial_term_id', $term->id)
+            ->where('is_deleted', false)
+            ->get();
 
         $totalRevenue = $registrations->sum(
             fn ($reg) => $reg->remedial_periods
@@ -41,18 +75,14 @@ class RemedialStatisticsService
                 * $term->priceCoefficient
         );
 
-        $assignedClassCount = $registrations
-            ->filter(fn ($reg) => trim((string) ($reg->lecture_name ?? '')) !== '')
-            ->count();
-
         return [
-            'remedial_term_id'                 => $termId,
-            'distinct_student_count'           => $distinctStudentCount,
-            'catalog_course_count'             => $catalogCourseCount,
-            'courses_with_registration_count'  => $subjectsWithRegistration,
-            'assigned_class_count'             => $assignedClassCount,
-            'total_registrations'              => $registrations->count(),
-            'total_revenue'                    => $totalRevenue,
+            'distinct_student_count'          => $registrations->pluck('student_id')->unique()->count(),
+            'courses_with_registration_count' => $registrations->pluck('subject_id')->unique()->count(),
+            'assigned_class_count'            => $registrations
+                ->filter(fn ($reg) => trim((string) ($reg->lecture_name ?? '')) !== '')
+                ->count(),
+            'total_registrations'             => $registrations->count(),
+            'total_revenue'                   => $totalRevenue,
         ];
     }
 

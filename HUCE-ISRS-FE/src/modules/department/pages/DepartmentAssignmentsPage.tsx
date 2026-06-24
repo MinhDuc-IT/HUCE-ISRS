@@ -121,23 +121,24 @@ export function DepartmentAssignmentsPage() {
               <th className="px-3 py-2">Tên môn</th>
               <th className="px-3 py-2">Bộ môn</th>
               <th className="px-3 py-2 text-center">STC</th>
-              <th className="px-3 py-2 text-center">Số ĐK</th>
+              <th className="px-3 py-2 text-center">Số SV</th>
               <th className="px-3 py-2">Giảng viên</th>
-              <th className="px-3 py-2">SĐT / Email</th>
+              <th className="px-3 py-2">SĐT</th>
+              <th className="px-3 py-2">Email</th>
               <th className="px-3 py-2 w-24"></th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={9} className="px-3 py-6 text-center text-gray-500">
+                <td colSpan={10} className="px-3 py-6 text-center text-gray-500">
                   Đang tải...
                 </td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={9}
+                  colSpan={10}
                   className="px-3 py-6 text-center text-gray-500 italic"
                 >
                   Chưa có môn nào có đăng ký phụ đạo.
@@ -163,17 +164,10 @@ export function DepartmentAssignmentsPage() {
                     {row.lecture_name || "—"}
                   </td>
                   <td className="px-3 py-2 text-xs">
-                    <>
-                      {row.lecturer_phone && (
-                        <span className="block">{row.lecturer_phone}</span>
-                      )}
-                      {row.lecturer_email && (
-                        <span className="block text-gray-500">
-                          {row.lecturer_email}
-                        </span>
-                      )}
-                      {!row.lecturer_phone && !row.lecturer_email && "—"}
-                    </>
+                    {row.lecturer_phone || "—"}
+                  </td>
+                  <td className="px-3 py-2 text-xs text-gray-600">
+                    {row.lecturer_email || "—"}
                   </td>
                   <td className="px-3 py-2">
                     {row.can_assign_lecturer ? (

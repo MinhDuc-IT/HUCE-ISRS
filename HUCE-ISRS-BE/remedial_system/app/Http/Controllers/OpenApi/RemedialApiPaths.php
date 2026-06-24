@@ -180,6 +180,15 @@ final class RemedialApiPaths
         summary: 'Đăng ký phụ đạo của sinh viên',
         security: [['sanctum' => []]],
         tags: ['Sinh viên – Đăng ký phụ đạo'],
+        parameters: [
+            new OA\Parameter(
+                name: 'remedial_term_id',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(type: 'integer'),
+                description: 'Lọc theo đợt phụ đạo (thường là đợt hiện tại)',
+            ),
+        ],
         responses: [new OA\Response(response: 200, description: 'OK')]
     )]
     public static function studentListRegistrations(): void {}

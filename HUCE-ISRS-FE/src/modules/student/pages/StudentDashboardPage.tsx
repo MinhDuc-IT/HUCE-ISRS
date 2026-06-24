@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { apiFetch } from '@/shared/utils/apiClient'
 import { useAuth } from '@/shared/context/AuthContext'
+import type { ApiRemedialTerm, ApiStudentRegistration } from '@/shared/types/api'
 
 export function StudentDashboardPage() {
   const { user } = useAuth()
@@ -17,12 +18,27 @@ export function StudentDashboardPage() {
   async function fetchData() {
     try {
       setLoading(true)
-      const [regsRes, termRes] = await Promise.all([
-        apiFetch<{ data: unknown[] }>('/student/me/remedial-registrations'),
-        apiFetch<{ data: unknown }>('/student/remedial-terms/current').catch(() => null),
-      ])
-      setRegCount(regsRes.data?.length ?? 0)
-      setHasCurrentTerm(termRes !== null && termRes.data != null)
+      let termId: number | null = null
+      try {
+        const termRes = await apiFetch<{ data: ApiRemedialTerm }>(
+          '/student/remedial-terms/current',
+        )
+        termId = termRes.data?.id ?? null
+      } catch {
+        termId = null
+      }
+
+      setHasCurrentTerm(termId != null)
+
+      if (termId == null) {
+        setRegCount(0)
+        return
+      }
+
+      const res = await apiFetch<{ data: ApiStudentRegistration[] }>(
+        `/student/me/remedial-registrations?remedial_term_id=${termId}`,
+      )
+      setRegCount(res.data?.length ?? 0)
     } catch {
       setRegCount(0)
       setHasCurrentTerm(false)

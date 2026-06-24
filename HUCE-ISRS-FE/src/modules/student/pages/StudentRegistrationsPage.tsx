@@ -4,12 +4,13 @@ import { useAuth } from '@/shared/context/AuthContext'
 import { useConfirm } from '@/shared/context/ConfirmContext'
 import { useToast } from '@/shared/context/ToastContext'
 import { apiFetch } from '@/shared/utils/apiClient'
-import type { ApiStudentRegistration } from '@/shared/types/api'
+import type { ApiRemedialTerm, ApiStudentRegistration } from '@/shared/types/api'
 
 export function StudentRegistrationsPage() {
   const { user } = useAuth()
   const { confirm } = useConfirm()
   const { success, error: showError } = useToast()
+  const [currentTermId, setCurrentTermId] = useState<number | null>(null)
   const [list, setList] = useState<ApiStudentRegistration[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -21,8 +22,24 @@ export function StudentRegistrationsPage() {
   async function fetchList() {
     try {
       setLoading(true)
+      let termId: number | null = null
+      try {
+        const termRes = await apiFetch<{ data: ApiRemedialTerm }>(
+          '/student/remedial-terms/current',
+        )
+        termId = termRes.data?.id ?? null
+      } catch {
+        termId = null
+      }
+      setCurrentTermId(termId)
+
+      if (termId == null) {
+        setList([])
+        return
+      }
+
       const res = await apiFetch<{ data: ApiStudentRegistration[] }>(
-        '/student/me/remedial-registrations',
+        `/student/me/remedial-registrations?remedial_term_id=${termId}`,
       )
       setList(res.data || [])
     } catch (err: unknown) {
@@ -42,7 +59,11 @@ export function StudentRegistrationsPage() {
     })
     if (!ok) return
     try {
-      await apiFetch(`/student/me/remedial-registrations/${regId}`, { method: 'DELETE' })
+      const deleteUrl =
+        currentTermId != null
+          ? `/student/me/remedial-registrations/${regId}?remedial_term_id=${currentTermId}`
+          : `/student/me/remedial-registrations/${regId}`
+      await apiFetch(deleteUrl, { method: 'DELETE' })
       success('Đã hủy đăng ký.')
       await fetchList()
     } catch (err: unknown) {

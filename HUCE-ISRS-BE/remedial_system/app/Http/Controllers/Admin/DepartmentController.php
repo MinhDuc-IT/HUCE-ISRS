@@ -7,7 +7,6 @@ use App\Http\Controllers\BaseController;
 use App\Http\Requests\Admin\SendDepartmentEmailRequest;
 use App\Http\Requests\Admin\StoreDepartmentRequest;
 use App\Http\Requests\Admin\UpdateDepartmentRequest;
-use App\Http\Resources\DepartmentResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use OpenApi\Attributes as OA;
@@ -21,20 +20,18 @@ class DepartmentController extends BaseController
 
     public function index(): JsonResponse
     {
-        return $this->success(
-            DepartmentResource::collection($this->departmentService->list())->resolve()
-        );
+        return $this->success($this->departmentService->listWithLoginUsers());
     }
 
     public function show(int $id): JsonResponse
     {
-        $dept = $this->departmentService->findById($id);
+        $dept = $this->departmentService->findByIdWithLoginUser($id);
 
         if ($dept === null) {
             return $this->error('Bộ môn không tồn tại', null, 404);
         }
 
-        return $this->success((new DepartmentResource($dept))->resolve());
+        return $this->success($dept);
     }
 
     public function store(StoreDepartmentRequest $request): JsonResponse
@@ -43,7 +40,7 @@ class DepartmentController extends BaseController
             $dept = $this->departmentService->create($request->validated());
 
             return $this->success(
-                (new DepartmentResource($dept))->resolve(),
+                $dept,
                 'Thêm bộ môn thành công',
                 201
             );
@@ -58,7 +55,7 @@ class DepartmentController extends BaseController
             $dept = $this->departmentService->update($id, $request->validated());
 
             return $this->success(
-                (new DepartmentResource($dept))->resolve(),
+                $dept,
                 'Cập nhật thông tin bộ môn thành công'
             );
         } catch (\DomainException $e) {

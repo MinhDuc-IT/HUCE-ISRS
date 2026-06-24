@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import { useAuth } from "@/shared/context/AuthContext";
 import { apiFetch } from "@/shared/utils/apiClient";
 import type {
+  ApiRemedialTerm,
   ApiStudentRegistration,
   ApiTermRegisteredSubject,
 } from "@/shared/types/api";
@@ -15,6 +16,7 @@ export function StudentRegisterPage() {
   const [registerableSubjects, setRegisterableSubjects] = useState<
     ApiTermRegisteredSubject[]
   >([]);
+  const [currentTermId, setCurrentTermId] = useState<number | null>(null);
   const [loadingData, setLoadingData] = useState(true);
 
   const [selectedToRegister, setSelectedToRegister] = useState<
@@ -36,10 +38,23 @@ export function StudentRegisterPage() {
     if (!user) return;
     try {
       setLoadingData(true);
+      let termId: number | null = null;
+      try {
+        const termRes = await apiFetch<{ data: ApiRemedialTerm }>(
+          "/student/remedial-terms/current",
+        );
+        termId = termRes.data?.id ?? null;
+      } catch {
+        termId = null;
+      }
+      setCurrentTermId(termId);
+
       const [regsResponse, subjectsResponse] = await Promise.all([
-        apiFetch<{ data: ApiStudentRegistration[] }>(
-          "/student/me/remedial-registrations",
-        ),
+        termId != null
+          ? apiFetch<{ data: ApiStudentRegistration[] }>(
+              `/student/me/remedial-registrations?remedial_term_id=${termId}`,
+            )
+          : Promise.resolve({ data: [] as ApiStudentRegistration[] }),
         apiFetch<{ data: ApiTermRegisteredSubject[] }>(
           "/student/me/term-registered-subjects",
         ),
@@ -116,7 +131,11 @@ export function StudentRegisterPage() {
     try {
       setIsSubmitting(true);
       for (const regId of regIds) {
-        await apiFetch(`/student/me/remedial-registrations/${regId}`, {
+        const deleteUrl =
+          currentTermId != null
+            ? `/student/me/remedial-registrations/${regId}?remedial_term_id=${currentTermId}`
+            : `/student/me/remedial-registrations/${regId}`;
+        await apiFetch(deleteUrl, {
           method: "DELETE",
         });
       }

@@ -54,6 +54,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::prefix('admin/statistics/terms')->group(function () {
             Route::get('/', [StatisticsController::class, 'listTerms']);
+            Route::get('/summaries', [StatisticsController::class, 'listTermSummaries']);
             Route::get('/{id}', [StatisticsController::class, 'termStatistics']);
             Route::get('/{id}/teaching-payments', [StatisticsController::class, 'teachingPaymentStatistics']);
             Route::get('/{id}/teaching-payments/export', [StatisticsController::class, 'exportTeachingPayments']);

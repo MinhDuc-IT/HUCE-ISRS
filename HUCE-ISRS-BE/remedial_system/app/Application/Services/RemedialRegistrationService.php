@@ -92,11 +92,11 @@ class RemedialRegistrationService
     }
 
     /** @return RemedialRegistration[] */
-    public function getRegistrationsForUser(User $user): array
+    public function getRegistrationsForUser(User $user, ?int $remedialTermId = null): array
     {
         $this->assertSinhVien($user);
 
-        return $this->registrationRepository->findByUser($user->id);
+        return $this->registrationRepository->findByUser($user->id, $remedialTermId);
     }
 
     /** @return \App\Domain\Entities\TermRegisteredCourse[] */

@@ -9,6 +9,7 @@ use App\Domain\Exceptions\StudentNotFoundException;
 use App\Http\Controllers\BaseController;
 use App\Http\Requests\Student\StoreRemedialRegistrationRequest;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 
 #[OA\Tag(name: 'Sinh viên – Đăng ký phụ đạo', description: 'Đăng ký / hủy / xem đơn của chính sinh viên')]
@@ -19,11 +20,14 @@ class RemedialRegistrationController extends BaseController
         private readonly StudentRegistrationPresenter $presenter,
     ) {}
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         try {
-            $user = request()->user();
-            $registrations = $this->registrationService->getRegistrationsForUser($user);
+            $user = $request->user();
+            $remedialTermId = $request->filled('remedial_term_id')
+                ? $request->integer('remedial_term_id')
+                : null;
+            $registrations = $this->registrationService->getRegistrationsForUser($user, $remedialTermId);
 
             return $this->success($this->presenter->formatMany($registrations, $user));
         } catch (\DomainException $e) {
@@ -65,13 +69,16 @@ class RemedialRegistrationController extends BaseController
         }
     }
 
-    public function destroy(int $id): JsonResponse
+    public function destroy(Request $request, int $id): JsonResponse
     {
         try {
-            $user = request()->user();
+            $user = $request->user();
             $this->registrationService->cancelRegistrationForUser($user, $id);
 
-            $registrations = $this->registrationService->getRegistrationsForUser($user);
+            $remedialTermId = $request->filled('remedial_term_id')
+                ? $request->integer('remedial_term_id')
+                : null;
+            $registrations = $this->registrationService->getRegistrationsForUser($user, $remedialTermId);
 
             return $this->success(
                 $this->presenter->formatMany($registrations, $user),
