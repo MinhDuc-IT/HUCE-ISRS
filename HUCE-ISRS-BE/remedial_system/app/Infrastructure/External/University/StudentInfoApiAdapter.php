@@ -112,6 +112,7 @@ class StudentInfoApiAdapter implements StudentInfoPort
                 academicYear:           (int) ($item['academicYear'] ?? 0),
                 semesterOrder:          (int) ($item['semesterOrder'] ?? 0),
                 termName:               $item['termName'] ?? '',
+                examDate:               $item['examDate'] ?? null,
             ),
             $response['data'] ?? []
         );

@@ -91,6 +91,7 @@ abstract class TestCase extends \Illuminate\Foundation\Testing\TestCase
                     academicYear: 2025,
                     semesterOrder: 1,
                     termName: 'Học kỳ 1',
+                    examDate: '2025-12-15',
                 ),
             ],
             2025,

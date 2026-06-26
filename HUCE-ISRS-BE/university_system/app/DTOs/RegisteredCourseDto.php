@@ -51,6 +51,9 @@ class RegisteredCourseDto
     #[OA\Property(property: 'termName', type: 'string', example: 'Học kỳ 1')]
     public string $termName;
 
+    #[OA\Property(property: 'examDate', type: 'string', nullable: true, example: '2025-01-15', description: 'Ngày thi (ưu tiên TKB_LichThi, fallback TKB_DanhSachLopHocPhanThi)')]
+    public ?string $examDate;
+
     public static function fromRow(stdClass $row): self
     {
         $dto = new self();
@@ -68,6 +71,7 @@ class RegisteredCourseDto
         $dto->academicYear           = (int) ($row->NamHoc ?? 0);
         $dto->semesterOrder          = (int) ($row->HocKy ?? 0);
         $dto->termName               = (string) ($row->TenDot ?? '');
+        $dto->examDate               = isset($row->NgayThi) ? (string) $row->NgayThi : null;
 
         return $dto;
     }

@@ -229,7 +229,7 @@ class StudentController extends BaseController
         path: '/api/students/{id}/registered-courses/{year}/{semester}',
         operationId: 'getStudentRegisteredCoursesByTerm',
         summary: 'Môn đã đăng ký học chính quy theo năm học và học kỳ',
-        description: 'Lấy từ DT_DangKyHocPhan — môn SV đã đăng ký lớp học phần trong kỳ (DM_NamHoc.NamHoc + DM_Dot.SoThuTu).',
+        description: 'Lấy từ DT_DangKyHocPhan — môn SV đã đăng ký lớp học phần trong kỳ (DM_NamHoc.NamHoc + DM_Dot.SoThuTu). Không trả về môn có 1 tín chỉ.',
         security: [['bearerAuth' => []]],
         tags: ['Sinh viên'],
     )]
@@ -250,10 +250,15 @@ class StudentController extends BaseController
             ->join('TKB_MonHoc as tkb_mh', 'tkb_mh.Id', '=', 'lhp.IDMonHoc')
             ->leftJoin('DM_MonHoc as mh', 'mh.MaMonHoc', '=', 'tkb_mh.MaMonHoc')
             ->leftJoin('DM_TrangThaiDangKy as ttdk', 'ttdk.Id', '=', 'dk.IDTrangThaiDangKy')
+            ->leftJoin('TKB_DanhSachLopHocPhanThi as dst', function ($join) {
+                $join->on('dst.IDLopHocPhan', '=', 'lhp.Id')
+                    ->on('dst.IDDot', '=', 'lhp.IDDot');
+            })
             ->where('sv.MaSinhVien', $id)
             ->where('nh.NamHoc', $year)
             ->where('dot.SoThuTu', $semester)
             ->whereIn('dk.IDTrangThaiDangKy', [1, 2, 3, 4])
+            ->whereRaw('COALESCE(mh.SoTinChi, tkb_mh.SoTinChi, 0) <> 1')
             ->selectRaw("
                 sv.Id as IDSinhVien,
                 sv.MaSinhVien,
@@ -269,7 +274,18 @@ class StudentController extends BaseController
                 dk.NgayDangKy,
                 dk.Id as IDDangKyHocPhan,
                 dk.IDTrangThaiDangKy,
-                ttdk.TenTrangThai as TrangThaiDangKy
+                ttdk.TenTrangThai as TrangThaiDangKy,
+                COALESCE(
+                    (
+                        SELECT TOP (1) lt.NgayThi
+                        FROM TKB_DanhSachLopXepLichThi ds
+                        INNER JOIN TKB_LopXepLichThi lxt ON lxt.Id = ds.IDLopXepLichThi
+                        INNER JOIN TKB_LichThi lt ON lt.IDLopXepLichThi = lxt.Id
+                        WHERE ds.IDLopHocPhan = lhp.Id
+                        ORDER BY lt.NgayThi, lt.TuTiet
+                    ),
+                    dst.NgayThi
+                ) as NgayThi
             ")
             ->orderByRaw('COALESCE(mh.MaMonHoc, tkb_mh.MaMonHoc)')
             ->get();

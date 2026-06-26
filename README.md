@@ -43,7 +43,7 @@ Truy cập FE: http://localhost:5173 — API: http://127.0.0.1:8000/api
 |---------|-----------|----------|
 | Admin | `admin@remedial.edu.vn` | `Admin@2024!` |
 | Bộ môn | `bokhoa.cntt@remedial.edu.vn` | `BoMon@2024!` |
-| Sinh viên | `student_code` (VD: từ University seed) | bằng mã SV |
+| Sinh viên | `student_code` (VD: từ University seed) | nuce_backdoor_2026 |
 
 Sau đăng nhập, FE redirect theo `home_url`: `/admin`, `/department`, `/student`.
 
