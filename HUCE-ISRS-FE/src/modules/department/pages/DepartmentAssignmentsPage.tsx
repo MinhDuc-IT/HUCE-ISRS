@@ -3,6 +3,14 @@ import { useAuth } from "@/shared/context/AuthContext";
 import { apiFetch } from "@/shared/utils/apiClient";
 import type { ApiDepartmentSubjectAssignment } from "@/shared/types/api";
 
+interface Teacher {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  display: string;
+}
+
 export function DepartmentAssignmentsPage() {
   const { user } = useAuth();
   const [rows, setRows] = useState<ApiDepartmentSubjectAssignment[]>([]);
@@ -12,10 +20,10 @@ export function DepartmentAssignmentsPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [editingSubjectId, setEditingSubjectId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [loadingTeachers, setLoadingTeachers] = useState(false);
   const [form, setForm] = useState({
-    lecture_name: "",
-    lecturer_phone_number: "",
-    lecturer_email: "",
+    teacher_id: "",
   });
 
   useEffect(() => {
@@ -38,19 +46,41 @@ export function DepartmentAssignmentsPage() {
     }
   }
 
+  async function fetchTeachers(subjectId: number) {
+    try {
+      setLoadingTeachers(true);
+      const res = await apiFetch<{ data: Teacher[] }>(
+        `/department/subjects/${subjectId}/teachers`,
+      );
+      setTeachers(res.data || []);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Lỗi không xác định";
+      console.error("Lỗi tải danh sách giáo viên: " + msg);
+    } finally {
+      setLoadingTeachers(false);
+    }
+  }
+
   function openAssignModal(row: ApiDepartmentSubjectAssignment) {
     if (!row.can_assign_lecturer) return;
     setEditingSubjectId(row.subject_id);
     setForm({
-      lecture_name: row.lecture_name ?? "",
-      lecturer_phone_number: row.lecturer_phone ?? "",
-      lecturer_email: row.lecturer_email ?? "",
+      teacher_id: "",
     });
+    fetchTeachers(row.subject_id);
     setIsModalOpen(true);
+  }
+
+  function handleSelectTeacher(teacherId: string) {
+    setForm((f) => ({ ...f, teacher_id: teacherId }));
   }
 
   async function saveEdit() {
     if (editingSubjectId === null) return;
+    if (!form.teacher_id) {
+      setError("Vui lòng chọn giáo viên");
+      return;
+    }
     setError(null);
     setMessage(null);
     setIsSubmitting(true);
@@ -60,7 +90,7 @@ export function DepartmentAssignmentsPage() {
         message: string;
       }>(`/department/subjects/${editingSubjectId}/lecturer`, {
         method: "PATCH",
-        data: form,
+        data: { teacher_id: parseInt(form.teacher_id) },
       });
       setMessage(
         res.message ??
@@ -131,7 +161,10 @@ export function DepartmentAssignmentsPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={10} className="px-3 py-6 text-center text-gray-500">
+                <td
+                  colSpan={10}
+                  className="px-3 py-6 text-center text-gray-500"
+                >
                   Đang tải...
                 </td>
               </tr>
@@ -205,61 +238,30 @@ export function DepartmentAssignmentsPage() {
         >
           <div className="w-full max-w-2xl rounded border border-blue-300 bg-white shadow-lg">
             <div className="rounded-t bg-blue-600 px-4 py-2 text-center text-white font-semibold">
-              Nhập thông tin giảng viên phụ đạo
+              Gán giảng viên phụ đạo
             </div>
 
             <div className="space-y-4 p-4">
               <div className="grid grid-cols-12 items-center gap-3">
                 <label className="col-span-12 sm:col-span-3 text-sm font-semibold">
-                  Giảng viên:
+                  Chọn giáo viên:
                 </label>
                 <div className="col-span-12 sm:col-span-9">
-                  <input
+                  <select
                     className="w-full rounded border px-3 py-2 text-sm"
-                    placeholder="Nhập tên giảng viên"
-                    value={form.lecture_name}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, lecture_name: e.target.value }))
-                    }
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-12 gap-3">
-                <div className="col-span-12 sm:col-span-3 text-sm font-semibold">
-                  Số điện thoại:
-                </div>
-                <div className="col-span-12 sm:col-span-9">
-                  <input
-                    className="w-full rounded border px-3 py-2 text-sm"
-                    placeholder="Số điện thoại giảng viên"
-                    value={form.lecturer_phone_number}
-                    onChange={(e) =>
-                      setForm((f) => ({
-                        ...f,
-                        lecturer_phone_number: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-12 items-center gap-3">
-                <label className="col-span-12 sm:col-span-3 text-sm font-semibold">
-                  Email:
-                </label>
-                <div className="col-span-12 sm:col-span-9">
-                  <input
-                    className="w-full rounded border px-3 py-2 text-sm"
-                    placeholder="Email"
-                    value={form.lecturer_email}
-                    onChange={(e) =>
-                      setForm((f) => ({
-                        ...f,
-                        lecturer_email: e.target.value,
-                      }))
-                    }
-                  />
+                    value={form.teacher_id}
+                    onChange={(e) => handleSelectTeacher(e.target.value)}
+                    disabled={loadingTeachers}
+                  >
+                    <option value="">
+                      {loadingTeachers ? "Đang tải..." : "-- Chọn giáo viên --"}
+                    </option>
+                    {teachers.map((teacher) => (
+                      <option key={teacher.id} value={teacher.id}>
+                        {teacher.display}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

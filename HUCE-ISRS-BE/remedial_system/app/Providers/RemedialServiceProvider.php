@@ -21,6 +21,7 @@ use App\Application\Services\RemedialRegistrationService;
 use App\Application\Services\StudentProvisioningService;
 use App\Application\Services\StudentRegistrationPresenter;
 use App\Application\Services\StudentSyncService;
+use App\Application\Services\TeacherSyncService;
 use App\Domain\Enums\SystemConfigKey;
 use App\Domain\Ports\External\StudentInfoPort;
 use App\Domain\Ports\Persistence\DepartmentRepositoryPort;
@@ -31,6 +32,7 @@ use App\Domain\Ports\Persistence\StudentRepositoryPort;
 use App\Domain\Ports\Persistence\SubjectRepositoryPort;
 use App\Domain\Ports\Persistence\SystemConfigurationRepositoryPort;
 use App\Domain\Ports\Persistence\UserRepositoryPort;
+use App\Domain\Ports\Persistence\TeacherRepositoryPort;
 use App\Infrastructure\External\University\CachedStudentInfoAdapter;
 use App\Infrastructure\External\University\StudentInfoApiAdapter;
 use App\Infrastructure\External\University\UniversityAuthClient;
@@ -42,6 +44,7 @@ use App\Infrastructure\Persistence\Eloquent\Repositories\EloquentStudentReposito
 use App\Infrastructure\Persistence\Eloquent\Repositories\EloquentSubjectRepository;
 use App\Infrastructure\Persistence\Eloquent\Repositories\EloquentSystemConfigurationRepository;
 use App\Infrastructure\Persistence\Eloquent\Repositories\EloquentUserRepository;
+use App\Infrastructure\Persistence\Eloquent\Repositories\EloquentTeacherRepository;
 use App\Events\LecturerAssignedToSubject;
 use App\Listeners\SendLecturerAssignmentEmail;
 use Illuminate\Support\ServiceProvider;
@@ -92,6 +95,7 @@ class RemedialServiceProvider extends ServiceProvider
         });
 
         $this->app->bind(UserRepositoryPort::class, EloquentUserRepository::class);
+        $this->app->bind(TeacherRepositoryPort::class, EloquentTeacherRepository::class);
         $this->app->bind(StudentRepositoryPort::class, EloquentStudentRepository::class);
         $this->app->bind(RemedialRegistrationRepositoryPort::class, EloquentRemedialRegistrationRepository::class);
         $this->app->bind(RemedialRegistrationQueryPort::class, EloquentRemedialRegistrationQueryRepository::class);
@@ -105,6 +109,13 @@ class RemedialServiceProvider extends ServiceProvider
                 studentInfoPort:   $app->make(StudentInfoPort::class),
                 studentRepository: $app->make(StudentRepositoryPort::class),
                 subjectRepository: $app->make(SubjectRepositoryPort::class),
+            );
+        });
+
+        $this->app->bind(TeacherSyncService::class, function ($app) {
+            return new TeacherSyncService(
+                studentInfoPort: $app->make(StudentInfoPort::class),
+                teacherRepository: $app->make(TeacherRepositoryPort::class),
             );
         });
 

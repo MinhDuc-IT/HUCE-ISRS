@@ -8,6 +8,7 @@ use App\Domain\Ports\Persistence\RemedialTermRepositoryPort;
 use App\Domain\Ports\Persistence\SubjectRepositoryPort;
 use App\Events\LecturerAssignedToSubject;
 use App\Models\RemedialRegistration as RemedialRegistrationModel;
+use App\Models\Teacher;
 use App\Models\User;
 
 class DepartmentManageRegistrationService
@@ -69,6 +70,21 @@ class DepartmentManageRegistrationService
 
         $this->assertRegistrationPeriodClosedForSubject($subjectId, $departmentId);
 
+        // Nếu có teacher_id, lấy thông tin giáo viên từ hệ thống
+        if (!empty($data['teacher_id'])) {
+            $teacher = Teacher::where('id', $data['teacher_id'])
+                ->where('department_id', $departmentId)
+                ->first();
+
+            if ($teacher === null) {
+                throw new \DomainException('Giáo viên không thuộc bộ môn của bạn.');
+            }
+
+            $data['lecture_name'] = trim($teacher->last_name . ' ' . $teacher->first_name);
+            $data['lecturer_email'] = $teacher->email;
+            $data['lecturer_phone_number'] = $teacher->phone ?? '';
+        }
+
         $updated = $this->registrationRepository->bulkUpdateLecturerForSubject(
             $subjectId,
             $departmentId,
@@ -80,7 +96,7 @@ class DepartmentManageRegistrationService
         }
 
         $lecturerEmail = trim((string) ($data['lecturer_email'] ?? ''));
-        if ($lecturerEmail !== '') {
+        if ($lecturerEmail !== '' && filter_var($lecturerEmail, FILTER_VALIDATE_EMAIL)) {
             event(new LecturerAssignedToSubject(
                 subjectId: $subjectId,
                 departmentId: $departmentId,

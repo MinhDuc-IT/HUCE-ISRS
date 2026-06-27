@@ -45,4 +45,13 @@ class CachedStudentInfoAdapter implements StudentInfoPort
         // Không cache thông tin xác thực
         return $this->innerAdapter->verifyCredentials($studentCode, $password);
     }
+
+    public function getLecturersForDepartment(int $departmentId): array
+    {
+        return Cache::remember(
+            "department_lecturers:{$departmentId}",
+            $this->ttlSeconds,
+            fn() => $this->innerAdapter->getLecturersForDepartment($departmentId)
+        );
+    }
 }

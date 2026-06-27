@@ -107,6 +107,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('remedial-registrations', [DepartmentRemedialRegistrationController::class, 'index']);
         Route::patch('remedial-registrations/{id}', [DepartmentRemedialRegistrationController::class, 'update']);
         Route::get('subject-assignments', [DepartmentSubjectAssignmentController::class, 'index']);
+        Route::get('subjects/{subjectId}/teachers', [DepartmentSubjectAssignmentController::class, 'getTeachers']);
         Route::patch('subjects/{subjectId}/lecturer', [DepartmentSubjectAssignmentController::class, 'update']);
         Route::post('send-summary-email', [SummaryEmailController::class, 'send']);
     });
