@@ -38,6 +38,16 @@ interface StudentInfoPort
     public function getCourses(string $studentCode): array;
 
     /**
+     * Lấy danh sách giảng viên thuộc bộ môn (department) theo ID bộ môn từ University System.
+     *
+     * @param int $departmentId
+     * @return array[]  Mảng associative arrays: [departmentId, departmentName, lastName, firstName, email, phone]
+     *
+     * @throws \App\Domain\Exceptions\ExternalSystemException
+     */
+    public function getLecturersForDepartment(int $departmentId): array;
+
+    /**
      * Môn học chính quy sinh viên đã đăng ký theo năm học (NamHoc) và học kỳ (SoThuTu).
      *
      * @return TermRegisteredCourse[]

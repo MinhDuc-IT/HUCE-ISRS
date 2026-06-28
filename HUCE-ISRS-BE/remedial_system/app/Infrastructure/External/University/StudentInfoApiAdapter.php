@@ -147,6 +147,28 @@ class StudentInfoApiAdapter implements StudentInfoPort
     }
 
     /**
+     * Lấy danh sách giảng viên cho một bộ môn từ University System.
+     * Trả về mảng associative arrays với các key: departmentId, departmentName, lastName, firstName, email, phone
+     *
+     * @throws \App\Domain\Exceptions\ExternalSystemException
+     */
+    public function getLecturersForDepartment(int $departmentId): array
+    {
+        $response = $this->callApi('GET', "/api/departments/{$departmentId}/lecturers");
+
+        $data = $response['data'] ?? [];
+
+        return array_map(fn(array $item) => [
+            'departmentId'   => $item['departmentId'] ?? null,
+            'departmentName' => $item['departmentName'] ?? null,
+            'lastName'       => $item['lastName'] ?? null,
+            'firstName'      => $item['firstName'] ?? null,
+            'email'          => $item['email'] ?? null,
+            'phone'          => $item['phone'] ?? null,
+        ], $data);
+    }
+
+    /**
      * Thực hiện HTTP request đến University System với Bearer token.
      *
      * @param string $method   Phương thức HTTP (GET, POST, ...)

@@ -123,6 +123,37 @@ class StudentController extends BaseController
         return $this->success($courses, 'Thành công');
     }
 
+    /**
+     * Lấy danh sách giảng viên (lecturers) thuộc một bộ môn (department) theo ID bộ môn.
+     * SQL mẫu:
+     * select k.IDBoMon, k.TenBoMon, g.HoDem, g.Ten, g.Email, g.SoDienThoai
+     * from TMP_DsBoMonKhoa k, TMP_DsGVBoMon m, DM_GiangVien g
+     * where k.IDBoMon = m.IDBoMon
+     *   and m.MaNhanSu = g.MaGiangVien
+     *   and g.Email is not null
+     *   and k.IDBoMon = :id
+     */
+    public function departmentLecturers(string $id): JsonResponse
+    {
+        $rows = DB::connection('sqlsrv')
+            ->table('TMP_DsBoMonKhoa as k')
+            ->join('TMP_DsGVBoMon as m', 'k.IDBoMon', '=', 'm.IDBoMon')
+            ->join('DM_GiangVien as g', 'm.MaNhanSu', '=', 'g.MaGiangVien')
+            ->whereNotNull('g.Email')
+            ->where('k.IDBoMon', $id)
+            ->select(
+                'k.IDBoMon as departmentId',
+                'k.TenBoMon as departmentName',
+                'g.HoDem as lastName',
+                'g.Ten as firstName',
+                'g.Email as email',
+                'g.SoDienThoai as phone'
+            )
+            ->get();
+
+        return $this->success($rows, 'Thành công');
+    }
+
     #[OA\Get(
         path: "/api/students/{id}/courses/semester/{semester_key}",
         operationId: "getStudentCoursesBySemester",

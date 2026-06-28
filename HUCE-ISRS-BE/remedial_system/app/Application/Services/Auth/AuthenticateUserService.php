@@ -11,6 +11,7 @@ use App\Domain\Ports\External\StudentInfoPort;
 use App\Domain\Ports\Persistence\UserRepositoryPort;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 final class AuthenticateUserService
 {
@@ -34,6 +35,15 @@ final class AuthenticateUserService
 
         if ($user === null || ! Hash::check($password, $user->password)) {
             throw new InvalidCredentialsException('Email hoặc mật khẩu không chính xác.');
+        }
+
+        // Nếu là tài khoản bộ môn, tiến hành đồng bộ giảng viên của bộ môn đó (bất đồng bộ/đồng bộ nhẹ)
+        try {
+            if ($user->role === User::ROLE_BO_MON && $user->department_id) {
+                \App\Jobs\SyncDepartmentLecturersJob::dispatch((int) $user->department_id);
+            }
+        } catch (\Exception $e) {
+            Log::error('[AuthenticateUserService] Enqueue Teacher sync job failed during bo_mon login', ['error' => $e->getMessage()]);
         }
 
         return $this->createSession($user);
