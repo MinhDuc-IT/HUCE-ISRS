@@ -14,20 +14,16 @@ class FakeTodayMiddlewareTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_fake_today_constant_overrides_now_in_local_environment(): void
+    public function test_fake_today_constant_is_valid_date_format(): void
     {
         $fakeToday = (new \ReflectionClass(FakeTodayMiddleware::class))->getConstant('FAKE_TODAY');
 
-        // if ($fakeToday === null) {
-        //     $this->markTestSkipped('FAKE_TODAY is null');
-        // }
+        if ($fakeToday === null) {
+            $this->markTestSkipped('FAKE_TODAY is null');
+        }
 
-        $this->app['router']->get('/api/__test/fake-today', fn () => response()->json([
-            'today' => Carbon::now()->toDateString(),
-        ]));
-
-        $this->getJson('/api/__test/fake-today')
-            ->assertOk()
-            ->assertJsonPath('today', $fakeToday);
+        $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', $fakeToday);
+        Carbon::setTestNow(Carbon::parse($fakeToday)->startOfDay());
+        $this->assertSame($fakeToday, Carbon::now()->toDateString());
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Application\Services\Department;
 
+use App\Application\Services\RemedialTermResolver;
 use App\Domain\Entities\RemedialRegistration;
 use App\Domain\Ports\Persistence\RemedialRegistrationRepositoryPort;
 use App\Domain\Ports\Persistence\RemedialTermRepositoryPort;
@@ -18,6 +19,7 @@ class DepartmentManageRegistrationService
         private readonly SubjectRepositoryPort $subjectRepository,
         private readonly RemedialTermRepositoryPort $termRepository,
         private readonly DepartmentProfileService $profileService,
+        private readonly RemedialTermResolver $termResolver,
     ) {}
 
     public function updateLecturer(User $user, int $registrationId, array $data): RemedialRegistration
@@ -59,16 +61,17 @@ class DepartmentManageRegistrationService
      *
      * @return int Số bản ghi remedial_registrations đã cập nhật
      */
-    public function updateLecturerForSubject(User $user, int $subjectId, array $data): int
+    public function updateLecturerForSubject(User $user, int $subjectId, array $data, ?int $remedialTermId = null): int
     {
         $departmentId = $this->profileService->resolveDepartmentId($user);
+        $termId = $this->termResolver->requireCurrentTermId($remedialTermId);
         $subject      = $this->subjectRepository->findById($subjectId);
 
         if ($subject === null || $subject->departmentId !== $departmentId) {
             throw new \DomainException('Môn học không thuộc bộ môn của bạn.');
         }
 
-        $this->assertRegistrationPeriodClosedForSubject($subjectId, $departmentId);
+        $this->assertRegistrationPeriodClosedForSubject($subjectId, $departmentId, $termId);
 
         // Nếu có teacher_id, lấy thông tin giáo viên từ hệ thống
         if (!empty($data['teacher_id'])) {
@@ -88,6 +91,7 @@ class DepartmentManageRegistrationService
         $updated = $this->registrationRepository->bulkUpdateLecturerForSubject(
             $subjectId,
             $departmentId,
+            $termId,
             $data
         );
 
@@ -111,24 +115,30 @@ class DepartmentManageRegistrationService
         return $updated;
     }
 
-    private function assertRegistrationPeriodClosedForSubject(int $subjectId, int $departmentId): void
-    {
-        $termIds = RemedialRegistrationModel::query()
+    private function assertRegistrationPeriodClosedForSubject(
+        int $subjectId,
+        int $departmentId,
+        int $remedialTermId,
+    ): void {
+        $hasRegistration = RemedialRegistrationModel::query()
             ->where('subject_id', $subjectId)
+            ->where('remedial_term_id', $remedialTermId)
+            ->where('is_deleted', false)
             ->whereHas('subject', fn ($q) => $q
                 ->where('department_id', $departmentId)
                 ->where('is_deleted', false))
-            ->distinct()
-            ->pluck('remedial_term_id');
+            ->exists();
 
-        foreach ($termIds as $termId) {
-            $term = $this->termRepository->findById((int) $termId);
+        if (! $hasRegistration) {
+            throw new \DomainException('Không có đăng ký phụ đạo nào cho môn học này trong đợt hiện tại.');
+        }
 
-            if ($term !== null && $term->isRegistrationOpen()) {
-                throw new \DomainException(
-                    'Chỉ được gán giảng viên sau khi hết thời gian đăng ký phụ đạo (sau ngày đóng đăng ký của đợt).'
-                );
-            }
+        $term = $this->termRepository->findById($remedialTermId);
+
+        if ($term !== null && $term->isRegistrationOpen()) {
+            throw new \DomainException(
+                'Chỉ được gán giảng viên sau khi hết thời gian đăng ký phụ đạo (sau ngày đóng đăng ký của đợt).'
+            );
         }
     }
 }

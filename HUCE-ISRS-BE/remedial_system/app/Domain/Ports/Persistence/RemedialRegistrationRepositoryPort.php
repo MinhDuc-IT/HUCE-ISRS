@@ -17,5 +17,10 @@ interface RemedialRegistrationRepositoryPort
     /** @return RemedialRegistration[] */
     public function findByUser(int $userId, ?int $remedialTermId = null): array;
 
-    public function bulkUpdateLecturerForSubject(int $subjectId, int $departmentId, array $data): int;
+    public function bulkUpdateLecturerForSubject(
+        int $subjectId,
+        int $departmentId,
+        int $remedialTermId,
+        array $data,
+    ): int;
 }

@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/shared/context/AuthContext";
 import { apiFetch } from "@/shared/utils/apiClient";
-import type { ApiDepartmentSubjectAssignment } from "@/shared/types/api";
+import type {
+  ApiDepartmentSubjectAssignment,
+  ApiRemedialTerm,
+} from "@/shared/types/api";
 
 interface Teacher {
   id: number;
@@ -11,8 +14,14 @@ interface Teacher {
   display: string;
 }
 
+function formatDateVi(d: string | null | undefined): string {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("vi-VN");
+}
+
 export function DepartmentAssignmentsPage() {
   const { user } = useAuth();
+  const [currentTerm, setCurrentTerm] = useState<ApiRemedialTerm | null>(null);
   const [rows, setRows] = useState<ApiDepartmentSubjectAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,12 +43,22 @@ export function DepartmentAssignmentsPage() {
   async function fetchRows() {
     try {
       setLoading(true);
+      setError(null);
+
+      const termRes = await apiFetch<{ data: ApiRemedialTerm }>(
+        "/department/remedial-terms/current",
+      );
+      const term = termRes.data;
+      setCurrentTerm(term);
+
       const res = await apiFetch<{ data: ApiDepartmentSubjectAssignment[] }>(
-        "/department/subject-assignments",
+        `/department/subject-assignments?remedial_term_id=${term.id}`,
       );
       setRows(res.data || []);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Lỗi không xác định";
+      setCurrentTerm(null);
+      setRows([]);
       setError("Lỗi tải danh sách: " + msg);
     } finally {
       setLoading(false);
@@ -76,7 +95,7 @@ export function DepartmentAssignmentsPage() {
   }
 
   async function saveEdit() {
-    if (editingSubjectId === null) return;
+    if (editingSubjectId === null || currentTerm === null) return;
     if (!form.teacher_id) {
       setError("Vui lòng chọn giáo viên");
       return;
@@ -90,7 +109,10 @@ export function DepartmentAssignmentsPage() {
         message: string;
       }>(`/department/subjects/${editingSubjectId}/lecturer`, {
         method: "PATCH",
-        data: { teacher_id: parseInt(form.teacher_id) },
+        data: {
+          teacher_id: parseInt(form.teacher_id),
+          remedial_term_id: currentTerm.id,
+        },
       });
       setMessage(
         res.message ??
@@ -128,7 +150,7 @@ export function DepartmentAssignmentsPage() {
         Phân công giảng viên phụ đạo theo môn học
       </h1>
       <p className="text-sm text-gray-600">
-        Hiệu lực sau thời gian sinh viên đăng ký
+        Phân công giảng viên hiệu lực sau thời gian sinh viên đăng ký
       </p>
 
       {error && (
@@ -168,13 +190,22 @@ export function DepartmentAssignmentsPage() {
                   Đang tải...
                 </td>
               </tr>
+            ) : !currentTerm ? (
+              <tr>
+                <td
+                  colSpan={10}
+                  className="px-3 py-6 text-center text-gray-500 italic"
+                >
+                  Không có đợt phụ đạo hiện tại để phân công giảng viên.
+                </td>
+              </tr>
             ) : rows.length === 0 ? (
               <tr>
                 <td
                   colSpan={10}
                   className="px-3 py-6 text-center text-gray-500 italic"
                 >
-                  Chưa có môn nào có đăng ký phụ đạo.
+                  Chưa có môn nào có đăng ký phụ đạo trong đợt hiện tại.
                 </td>
               </tr>
             ) : (
