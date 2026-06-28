@@ -16,8 +16,16 @@ export function DepartmentDashboardPage() {
   async function fetchData() {
     try {
       setLoading(true);
+      const termRes = await apiFetch<{ data: { id: number } }>(
+        "/department/remedial-terms/current",
+      );
+      const termId = termRes.data?.id;
+      if (termId == null) {
+        setRegCount(0);
+        return;
+      }
       const res = await apiFetch<{ data: unknown[] }>(
-        "/department/remedial-registrations",
+        `/department/remedial-registrations?remedial_term_id=${termId}`,
       );
       setRegCount(res.data?.length ?? 0);
     } catch {
@@ -54,7 +62,7 @@ export function DepartmentDashboardPage() {
 
       <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-theme-sm">
         <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-          Đăng ký phụ đạo thuộc bộ môn
+          Đăng ký phụ đạo thuộc bộ môn (đợt hiện tại)
         </p>
         <p className="mt-1 text-2xl font-semibold text-gray-800">
           {loading ? "—" : regCount}

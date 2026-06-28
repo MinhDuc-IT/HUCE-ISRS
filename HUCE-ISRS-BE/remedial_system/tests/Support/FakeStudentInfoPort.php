@@ -74,4 +74,9 @@ final class FakeStudentInfoPort implements StudentInfoPort
 
         return isset($this->credentials[$code]) && $this->credentials[$code] === $password;
     }
+
+    public function getLecturersForDepartment(int $departmentId): array
+    {
+        return [];
+    }
 }

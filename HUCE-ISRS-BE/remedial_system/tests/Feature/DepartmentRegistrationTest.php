@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Domain\Enums\RemedialTermStatus;
 use App\Models\Department;
 use App\Models\RemedialRegistration;
 use App\Models\RemedialTerm;
@@ -28,6 +29,7 @@ class DepartmentRegistrationTest extends TestCase
             'remedial_coefficient' => 1,
             'price_per_period'     => 150000,
             'price_coefficient'    => 1,
+            'status'               => RemedialTermStatus::REGISTRATION_OPEN,
             'is_current_term'      => $isCurrent,
             'is_deleted'           => false,
         ]);
@@ -123,5 +125,59 @@ class DepartmentRegistrationTest extends TestCase
 
         $this->assertNotEmpty($list);
         $this->assertFalse($list[0]['can_assign_lecturer']);
+    }
+
+    public function test_department_subject_assignments_only_shows_current_term(): void
+    {
+        $department = Department::where('department_code', '54')->firstOrFail();
+        $boMon = User::where('email', 'bokhoa.cntt@remedial.edu.vn')->firstOrFail();
+
+        [, $currentSubject] = $this->seedTermSubjectRegistration(
+            $department,
+            Carbon::now()->subDay()->endOfDay(),
+        );
+
+        $oldTerm = RemedialTerm::create([
+            'name'                 => 'Đợt cũ',
+            'year'                 => 2024,
+            'semester'             => 2,
+            'start_date'           => Carbon::now()->subMonths(6),
+            'end_date'             => Carbon::now()->subMonths(4),
+            'registration_start'   => Carbon::now()->subMonths(6)->startOfDay(),
+            'registration_end'     => Carbon::now()->subMonths(5)->endOfDay(),
+            'remedial_coefficient' => 1,
+            'price_per_period'     => 150000,
+            'price_coefficient'    => 1,
+            'status'               => RemedialTermStatus::COMPLETED,
+            'is_deleted'           => false,
+        ]);
+
+        $oldSubject = Subject::create([
+            'subject_code'  => 'BMOLD01',
+            'name'          => 'Môn đợt cũ',
+            'credits'       => 3,
+            'department_id' => $department->id,
+            'is_deleted'    => false,
+        ]);
+
+        $student = $this->createStudentUser('SVBMOLD', 'SVBMOLD');
+
+        RemedialRegistration::create([
+            'student_id'        => $student->id,
+            'subject_id'        => $oldSubject->id,
+            'remedial_term_id'  => $oldTerm->id,
+            'remedial_periods'  => 45,
+            'registration_date' => Carbon::now()->subMonths(5),
+            'is_deleted'        => false,
+        ]);
+
+        $response = $this->actingAs($boMon, 'sanctum')
+            ->apiJson('GET', '/department/subject-assignments')
+            ->assertOk()
+            ->json('data');
+
+        $this->assertCount(1, $response);
+        $this->assertSame('BMTEST01', $response[0]['subject_code']);
+        $this->assertSame($currentSubject->id, $response[0]['subject_id']);
     }
 }

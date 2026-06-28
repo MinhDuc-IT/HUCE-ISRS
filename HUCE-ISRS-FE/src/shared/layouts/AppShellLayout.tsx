@@ -62,6 +62,18 @@ function AppShellInner({ role }: { role: UserRole }) {
         )
         return
       }
+      if (r === 'department') {
+        const res = await apiFetch<{ data: ApiRemedialTerm | null }>(
+          '/department/remedial-terms/current',
+        )
+        const term = res.data
+        setBannerMsg(
+          term?.name
+            ? buildStudentTermBanner(term)
+            : 'Hiện chưa có đợt phụ đạo nào đang mở',
+        )
+        return
+      }
       setBannerMsg('Hệ thống đăng ký học phụ đạo — Bộ môn')
     } catch {
       setBannerMsg('Không tải được thông tin đợt phụ đạo')

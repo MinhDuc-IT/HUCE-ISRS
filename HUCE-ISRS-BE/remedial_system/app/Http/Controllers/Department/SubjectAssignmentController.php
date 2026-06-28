@@ -43,7 +43,8 @@ class SubjectAssignmentController extends BaseController
             $count = $this->manageService->updateLecturerForSubject(
                 $request->user(),
                 $subjectId,
-                $request->validated()
+                $request->validated(),
+                $request->filled('remedial_term_id') ? $request->integer('remedial_term_id') : null,
             );
 
             return $this->success(

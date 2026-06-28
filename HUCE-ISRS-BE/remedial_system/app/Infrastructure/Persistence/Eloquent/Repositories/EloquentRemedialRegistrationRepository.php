@@ -59,10 +59,16 @@ class EloquentRemedialRegistrationRepository implements RemedialRegistrationRepo
             ->all();
     }
 
-    public function bulkUpdateLecturerForSubject(int $subjectId, int $departmentId, array $data): int
-    {
+    public function bulkUpdateLecturerForSubject(
+        int $subjectId,
+        int $departmentId,
+        int $remedialTermId,
+        array $data,
+    ): int {
         $query = RemedialRegistrationModel::query()
             ->where('subject_id', $subjectId)
+            ->where('remedial_term_id', $remedialTermId)
+            ->where('is_deleted', false)
             ->whereHas('subject', fn ($q) => $q
                 ->where('department_id', $departmentId)
                 ->where('is_deleted', false));

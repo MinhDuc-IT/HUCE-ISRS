@@ -18,9 +18,9 @@ class FakeTodayMiddleware
 
     public function handle(Request $request, Closure $next): Response
     {
-        // if (! app()->environment(['local', 'testing'])) {
-        //     return $next($request);
-        // }
+        if (! app()->environment('local')) {
+            return $next($request);
+        }
 
         if (self::FAKE_TODAY !== null && preg_match('/^\d{4}-\d{2}-\d{2}$/', self::FAKE_TODAY) === 1) {
             Carbon::setTestNow(Carbon::parse(self::FAKE_TODAY)->startOfDay());

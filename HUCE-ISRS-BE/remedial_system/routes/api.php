@@ -104,6 +104,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:bo_mon')->prefix('department')->group(function () {
         Route::get('me', [DepartmentProfileController::class, 'show']);
         Route::patch('me', [DepartmentProfileController::class, 'update']);
+        Route::get('remedial-terms/current', [StudentRemedialTermController::class, 'current']);
         Route::get('remedial-registrations', [DepartmentRemedialRegistrationController::class, 'index']);
         Route::patch('remedial-registrations/{id}', [DepartmentRemedialRegistrationController::class, 'update']);
         Route::get('subject-assignments', [DepartmentSubjectAssignmentController::class, 'index']);
