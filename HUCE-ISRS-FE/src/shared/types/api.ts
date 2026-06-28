@@ -20,17 +20,17 @@ export type ApiRemedialTerm = {
 };
 
 export type ApiDepartmentSubjectAssignment = {
-  subject_id: number
-  subject_code: string
-  subject_name: string
-  department_name: string
-  credits: number
-  registration_count: number
-  lecture_name?: string | null
-  lecturer_phone?: string | null
-  lecturer_email?: string | null
-  can_assign_lecturer: boolean
-}
+  subject_id: number;
+  subject_code: string;
+  subject_name: string;
+  department_name: string;
+  credits: number;
+  registration_count: number;
+  lecture_name?: string | null;
+  lecturer_phone?: string | null;
+  lecturer_email?: string | null;
+  can_assign_lecturer: boolean;
+};
 
 export type ApiTermRegisteredSubject = {
   course_code: string;
@@ -44,6 +44,7 @@ export type ApiTermRegisteredSubject = {
   academic_year?: number;
   semester?: number;
   term_name?: string;
+  exam_date?: string | null;
 };
 
 export type ApiEligibleSubject = {

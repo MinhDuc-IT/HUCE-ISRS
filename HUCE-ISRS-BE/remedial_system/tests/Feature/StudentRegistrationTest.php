@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Domain\Entities\StudentInfo;
+use App\Domain\Entities\TermRegisteredCourse;
 use App\Models\Department;
 use App\Models\RemedialTerm;
 use App\Models\Subject;
@@ -137,6 +139,81 @@ class StudentRegistrationTest extends TestCase
             ->assertJsonFragment(['course_code' => 'CS101'])
             ->assertJsonFragment(['subject_name' => 'Lập trình căn bản'])
             ->assertJsonFragment(['lop_du_kien' => 'CNTT01']);
+    }
+
+    public function test_student_term_registered_subjects_excludes_courses_outside_exam_window(): void
+    {
+        $department = Department::where('department_code', '54')->firstOrFail();
+
+        RemedialTerm::create([
+            'name'                 => 'Đợt block 2',
+            'year'                 => 2025,
+            'semester'             => 1,
+            'start_date'           => Carbon::now()->subDays(10),
+            'end_date'             => Carbon::now()->addMonths(3),
+            'registration_start'   => Carbon::now()->subDays(2),
+            'registration_end'     => Carbon::now()->addDays(10),
+            'remedial_coefficient' => 1,
+            'price_per_period'     => 150000,
+            'price_coefficient'    => 1,
+            'status'               => RemedialTermStatus::REGISTRATION_OPEN,
+            'is_deleted'           => false,
+        ]);
+
+        Subject::create([
+            'subject_code'  => 'CS101',
+            'name'          => 'Lập trình căn bản',
+            'credits'       => 3,
+            'department_id' => $department->id,
+            'is_deleted'    => false,
+        ]);
+
+        $student = $this->createStudentUser('SVBLOCK', 'SVBLOCK');
+
+        $this->fakeStudentInfo->registerStudent(
+            'SVBLOCK',
+            'SVBLOCK',
+            new StudentInfo(
+                id: 'SVBLOCK',
+                fullName: 'Sinh viên Test',
+                gender: 'Nam',
+                dateOfBirth: '2000-01-01',
+                placeOfBirth: 'Huế',
+                personalEmail: 'svblock@test.edu.vn',
+                universityEmail: null,
+                gpaScale10: 5.0,
+                gpaScale4: 2.0,
+                gradeClassification: 'Trung bình',
+                totalCredits: 100,
+                failedCredits: 6,
+            ),
+            [],
+            [
+                new TermRegisteredCourse(
+                    subjectCode: 'CS101',
+                    subjectName: 'Lập trình căn bản',
+                    credits: 3,
+                    classSectionCode: 'CS101-01',
+                    plannedClass: 'CNTT01',
+                    registrationDate: '2025-09-01',
+                    registrationId: 1,
+                    registrationStatusId: 2,
+                    registrationStatusName: 'Đã duyệt',
+                    academicYearLabel: '2025-2026',
+                    academicYear: 2025,
+                    semesterOrder: 1,
+                    termName: 'Học kỳ 1',
+                    examDate: Carbon::now()->addMonths(4)->toDateString(),
+                ),
+            ],
+            2025,
+            1,
+        );
+
+        $this->actingAs($student, 'sanctum')
+            ->apiJson('GET', '/student/me/term-registered-subjects')
+            ->assertOk()
+            ->assertJsonPath('data', []);
     }
 
     public function test_student_eligible_subjects_returns_failed_courses(): void

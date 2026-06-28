@@ -273,13 +273,14 @@ export function StudentRegisterPage() {
                 </th>
                 <th className="px-4 py-3 border-l border-gray-200">Lớp HP</th>
                 <th className="px-4 py-3 border-l border-gray-200">STC</th>
+                <th className="px-4 py-3 border-l border-gray-200">Ngày thi</th>
               </tr>
             </thead>
             <tbody>
               {loadingData ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="px-4 py-6 text-center text-gray-500"
                   >
                     Đang tải dữ liệu...
@@ -288,11 +289,11 @@ export function StudentRegisterPage() {
               ) : registerableSubjects.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="px-4 py-6 text-center text-gray-500 italic"
                   >
-                    Không có môn học chính quy nào trong kỳ trùng với đợt phụ
-                    đạo hiện tại.
+                    Không có môn học chính quy nào thuộc block thi của đợt phụ đạo
+                    hiện tại (ngày thi trong vòng 60 ngày kể từ ngày mở đăng ký).
                   </td>
                 </tr>
               ) : (
@@ -302,12 +303,16 @@ export function StudentRegisterPage() {
                   );
                   const isNotEligible = subject.credits <= 1;
                   const disabled = isRegistered || isNotEligible;
-                  
+
                   return (
                     <tr
                       key={subject.course_code}
                       className={`border-b border-gray-100 hover:bg-gray-50 text-center ${isRegistered ? "bg-green-50/30" : ""} ${isNotEligible && !isRegistered ? "opacity-60 bg-gray-50" : ""}`}
-                      title={isNotEligible && !isRegistered ? "Môn học có số tín chỉ <= 1 không được đăng ký phụ đạo" : undefined}
+                      title={
+                        isNotEligible && !isRegistered
+                          ? "Môn học có số tín chỉ <= 1 không được đăng ký phụ đạo"
+                          : undefined
+                      }
                     >
                       <td className="px-4 py-2">
                         <input
@@ -316,7 +321,8 @@ export function StudentRegisterPage() {
                           disabled={disabled}
                           checked={
                             isRegistered ||
-                            (!isNotEligible && Boolean(selectedToRegister[subject.course_code]))
+                            (!isNotEligible &&
+                              Boolean(selectedToRegister[subject.course_code]))
                           }
                           onChange={(e) =>
                             handleToggleRegister(
@@ -334,6 +340,13 @@ export function StudentRegisterPage() {
                         {subject.lop_du_kien || "—"}
                       </td>
                       <td className="px-4 py-2">{subject.credits}</td>
+                      <td className="px-4 py-2">
+                        {subject.exam_date
+                          ? new Date(subject.exam_date).toLocaleDateString(
+                              "vi-VN",
+                            )
+                          : "—"}
+                      </td>
                     </tr>
                   );
                 })

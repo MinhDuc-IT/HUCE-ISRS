@@ -21,6 +21,7 @@ class TermRegisteredCourse
         public readonly int     $academicYear,
         public readonly int     $semesterOrder,
         public readonly string  $termName,
+        public readonly ?string $examDate = null,
     ) {}
 
     public function code(): string

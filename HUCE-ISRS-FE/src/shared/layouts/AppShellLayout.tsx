@@ -4,9 +4,27 @@ import { useAuth } from '@/shared/context/AuthContext'
 import { getNavItemsForRole } from '@/shared/layouts/navItems'
 import type { UserRole } from '@/shared/types/auth'
 import { apiFetch } from '@/shared/utils/apiClient'
+import type { ApiRemedialTerm } from '@/shared/types/api'
 
 function cn(...parts: (string | false | undefined)[]) {
   return parts.filter(Boolean).join(' ')
+}
+
+function formatDateVi(d: string | null | undefined): string {
+  if (!d) return '—'
+  return new Date(d).toLocaleDateString('vi-VN')
+}
+
+function formatRegistrationWindow(term: ApiRemedialTerm): string {
+  if (!term.registration_start && !term.registration_end) {
+    return ''
+  }
+
+  return ` — Mở đăng ký: ${formatDateVi(term.registration_start)} đến ${formatDateVi(term.registration_end)}`
+}
+
+function buildStudentTermBanner(term: ApiRemedialTerm): string {
+  return `Đợt đăng ký: ${term.name}${formatRegistrationWindow(term)}`
 }
 
 function AppShellInner({ role }: { role: UserRole }) {
@@ -21,13 +39,13 @@ function AppShellInner({ role }: { role: UserRole }) {
   async function loadBanner(r: UserRole) {
     try {
       if (r === 'student') {
-        const res = await apiFetch<{ data: { name?: string } | null }>(
+        const res = await apiFetch<{ data: ApiRemedialTerm | null }>(
           '/student/remedial-terms/current',
         )
         const term = res.data
         setBannerMsg(
           term?.name
-            ? `Đợt đăng ký: ${term.name}`
+            ? buildStudentTermBanner(term)
             : 'Hiện chưa có đợt đăng ký phụ đạo nào đang mở',
         )
         return

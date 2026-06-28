@@ -33,6 +33,7 @@ class TermRegisteredSubjectController extends BaseController
                 'academic_year'            => $c->academicYear,
                 'semester'                 => $c->semesterOrder,
                 'term_name'                => $c->termName,
+                'exam_date'                => $c->examDate,
             ], $courses);
 
             return $this->success($data, 'Danh sách môn đã đăng ký học chính quy theo đợt phụ đạo');

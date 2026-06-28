@@ -14,6 +14,8 @@ use Carbon\Carbon;
 
 class RemedialRegistrationService
 {
+    private const EXAM_DATE_WINDOW_DAYS = 60;
+
     public function __construct(
         private readonly StudentInfoPort $studentInfoPort,
         private readonly RemedialRegistrationRepositoryPort $registrationRepository,
@@ -36,11 +38,7 @@ class RemedialRegistrationService
             throw new \DomainException('Hiện không trong thời gian đăng ký phụ đạo của đợt này.');
         }
 
-        $termCourses = $this->studentInfoPort->getRegisteredCoursesForSemester(
-            $studentCode,
-            $currentTerm->year,
-            $currentTerm->semester
-        );
+        $termCourses = $this->getRegisteredCoursesForCurrentTerm($studentCode, $currentTerm);
 
         $targetCourse = collect($termCourses)->first(
             fn ($course) => strtoupper($course->code()) === strtoupper(trim($courseCode))
@@ -112,11 +110,55 @@ class RemedialRegistrationService
 
         $this->studentInfoPort->getStudent($studentCode);
 
-        return $this->studentInfoPort->getRegisteredCoursesForSemester(
+        return $this->getRegisteredCoursesForCurrentTerm($studentCode, $currentTerm);
+    }
+
+    /**
+     * @return \App\Domain\Entities\TermRegisteredCourse[]
+     */
+    private function getRegisteredCoursesForCurrentTerm(string $studentCode, \App\Domain\Entities\RemedialTerm $currentTerm): array
+    {
+        $courses = $this->studentInfoPort->getRegisteredCoursesForSemester(
             $studentCode,
             $currentTerm->year,
             $currentTerm->semester
         );
+
+        return $this->filterCoursesByExamWindow($courses, $currentTerm);
+    }
+
+    /**
+     * Mỗi đợt phụ đạo gắn với một block thi: chỉ lấy môn có ngày thi trong
+     * [registration_start, registration_start + 60 ngày] để loại môn block kia.
+     *
+     * @param  \App\Domain\Entities\TermRegisteredCourse[]  $courses
+     * @return \App\Domain\Entities\TermRegisteredCourse[]
+     */
+    private function filterCoursesByExamWindow(array $courses, \App\Domain\Entities\RemedialTerm $term): array
+    {
+        if ($term->registrationStart === null) {
+            return $courses;
+        }
+
+        $windowStart = $term->registrationStart->copy()->startOfDay();
+        $windowEnd = $windowStart->copy()->addDays(self::EXAM_DATE_WINDOW_DAYS)->endOfDay();
+
+        return array_values(array_filter(
+            $courses,
+            fn ($course) => $this->isExamDateWithinWindow($course->examDate, $windowStart, $windowEnd)
+        ));
+    }
+
+    private function isExamDateWithinWindow(?string $examDate, Carbon $windowStart, Carbon $windowEnd): bool
+    {
+        if ($examDate === null || trim($examDate) === '') {
+            return false;
+        }
+
+        $parsedExamDate = Carbon::parse($examDate);
+
+        return $parsedExamDate->greaterThanOrEqualTo($windowStart)
+            && $parsedExamDate->lessThanOrEqualTo($windowEnd);
     }
 
     /** @return \App\Domain\Entities\SubjectResult[] */
