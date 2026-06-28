@@ -45,8 +45,10 @@ use App\Infrastructure\Persistence\Eloquent\Repositories\EloquentSubjectReposito
 use App\Infrastructure\Persistence\Eloquent\Repositories\EloquentSystemConfigurationRepository;
 use App\Infrastructure\Persistence\Eloquent\Repositories\EloquentUserRepository;
 use App\Infrastructure\Persistence\Eloquent\Repositories\EloquentTeacherRepository;
+use App\Application\Notifications\LecturerAssignmentNotificationDispatcher;
 use App\Events\LecturerAssignedToSubject;
 use App\Listeners\SendLecturerAssignmentEmail;
+use App\Listeners\SendLecturerAssignmentSms;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Event;
 
@@ -104,6 +106,14 @@ class RemedialServiceProvider extends ServiceProvider
         $this->app->bind(RemedialTermRepositoryPort::class, EloquentRemedialTermRepository::class);
         $this->app->bind(SystemConfigurationRepositoryPort::class, EloquentSystemConfigurationRepository::class);
 
+        // Register observers for lecturer assignment notifications
+        $this->app->tag([SendLecturerAssignmentEmail::class, SendLecturerAssignmentSms::class], 'lecturer_assignment.observers');
+        $this->app->singleton(LecturerAssignmentNotificationDispatcher::class, function ($app) {
+            return new LecturerAssignmentNotificationDispatcher(
+                $app->tagged('lecturer_assignment.observers')
+            );
+        });
+
         $this->app->bind(StudentSyncService::class, function ($app) {
             return new StudentSyncService(
                 studentInfoPort:   $app->make(StudentInfoPort::class),
@@ -147,7 +157,7 @@ class RemedialServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        Event::listen(LecturerAssignedToSubject::class, SendLecturerAssignmentEmail::class);
+        Event::listen(LecturerAssignedToSubject::class, LecturerAssignmentNotificationDispatcher::class);
     }
 
     private function resolveSystemConfigValue(

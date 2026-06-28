@@ -2,6 +2,7 @@
 
 namespace App\Listeners;
 
+use App\Application\Notifications\LecturerAssignmentObserver;
 use App\Events\LecturerAssignedToSubject;
 use App\Infrastructure\Mail\LecturerAssignmentNotification;
 use App\Models\RemedialRegistration;
@@ -9,7 +10,7 @@ use App\Models\Subject;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
-class SendLecturerAssignmentEmail
+class SendLecturerAssignmentEmail implements LecturerAssignmentObserver
 {
     public function handle(LecturerAssignedToSubject $event): void
     {
