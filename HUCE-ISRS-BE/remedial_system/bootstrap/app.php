@@ -5,6 +5,7 @@ use App\Domain\Exceptions\ExternalSystemException;
 use App\Domain\Exceptions\InvalidCredentialsException;
 use App\Domain\Exceptions\StudentNotFoundException;
 use App\Http\Middleware\EnsureUserHasRole;
+use App\Http\Middleware\FakeTodayMiddleware;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->redirectTo(fn () => null);
+        $middleware->prepend(FakeTodayMiddleware::class);
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
         ]);

@@ -292,8 +292,8 @@ export function StudentRegisterPage() {
                     colSpan={6}
                     className="px-4 py-6 text-center text-gray-500 italic"
                   >
-                    Không có môn học chính quy nào trong kỳ trùng với đợt phụ
-                    đạo hiện tại.
+                    Không có môn học chính quy nào thuộc block thi của đợt phụ đạo
+                    hiện tại (ngày thi trong vòng 60 ngày kể từ ngày mở đăng ký).
                   </td>
                 </tr>
               ) : (

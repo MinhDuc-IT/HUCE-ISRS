@@ -9,6 +9,7 @@ use App\Domain\Ports\External\StudentInfoPort;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Tests\Support\FakeStudentInfoPort;
 
@@ -91,7 +92,7 @@ abstract class TestCase extends \Illuminate\Foundation\Testing\TestCase
                     academicYear: 2025,
                     semesterOrder: 1,
                     termName: 'Học kỳ 1',
-                    examDate: '2025-12-15',
+                    examDate: Carbon::now()->addWeeks(5)->toDateString(),
                 ),
             ],
             2025,
