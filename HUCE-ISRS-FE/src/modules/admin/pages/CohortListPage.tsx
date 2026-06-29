@@ -278,7 +278,7 @@ export function CohortListPage() {
                           disabled={updatingId === term.id}
                           onClick={() => void handleStatusUpdate(term.id, action as RemedialTermStatusCode)}
                         >
-                          Chuyển sang {formatRemedialTermStatus(statusNameByCode[action])}
+                          Chuyển sang {formatRemedialTermStatus(statusNameByCode[action as RemedialTermStatusCode])}
                         </button>
                       ))}
                     </>
