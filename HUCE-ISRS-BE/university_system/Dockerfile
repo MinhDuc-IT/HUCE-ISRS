@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && ACCEPT_EULA=Y apt-get install -y --no-install-recommends \
         msodbcsql18 \
         unixodbc-dev \
-    && pecl install sqlsrv pdo_sqlsrv \
+    && pecl install sqlsrv-5.11.1 pdo_sqlsrv-5.11.1 \
     && docker-php-ext-enable sqlsrv pdo_sqlsrv \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -48,7 +48,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && ACCEPT_EULA=Y apt-get install -y --no-install-recommends \
         msodbcsql18 \
         unixodbc-dev \
-    && pecl install sqlsrv pdo_sqlsrv \
+    && pecl install sqlsrv-5.11.1 pdo_sqlsrv-5.11.1 \
     && docker-php-ext-enable sqlsrv pdo_sqlsrv \
     && apt-get purge -y g++ make \
     && apt-get autoremove -y \
