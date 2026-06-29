@@ -30,7 +30,7 @@ WORKDIR /app
 
 COPY composer.json composer.lock ./
 # Production: no dev deps, optimize autoloader
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress --no-scripts
 
 # ────────────────────────────────────────────────────────────
 # Stage 2: PHP-FPM Production Image
@@ -84,6 +84,9 @@ COPY --from=composer-stage /app/vendor ./vendor
 
 # Copy toàn bộ application
 COPY . .
+
+# Khôi phục script autoload (package:discover) sau khi đã có đủ source code
+RUN php artisan package:discover --ansi
 
 # Permissions cho storage và cache
 RUN mkdir -p storage/framework/{cache,sessions,views} \

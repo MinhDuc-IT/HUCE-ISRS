@@ -27,7 +27,7 @@ COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress --no-scripts
 
 # ────────────────────────────────────────────────────────────
 # Stage 2: PHP-FPM Production (Debian – cần cho msodbcsql)
@@ -70,6 +70,9 @@ COPY --from=composer-stage /app/vendor ./vendor
 
 # Copy toàn bộ source
 COPY . .
+
+# Khôi phục script autoload (package:discover) sau khi đã có đủ source code
+RUN php artisan package:discover --ansi
 
 # Tạo SQLite database file cho api_clients
 RUN mkdir -p database \
