@@ -20,6 +20,10 @@ on:
       - ".github/workflows/deploy-remedial.yml"
   workflow_dispatch:
 
+permissions:
+  contents: read
+  packages: write
+
 env:
   IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/remedial-system
   COMPOSE_DIR: /home/${{ vars.REMEDIAL_EC2_USER || 'ubuntu' }}/remedial_system
@@ -41,7 +45,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_TOKEN }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata (tags, labels)
         id: meta
@@ -98,7 +102,7 @@ jobs:
             cd ~/remedial_system
 
             # Đăng nhập vào GHCR
-            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io \
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io \
               -u "${{ github.actor }}" --password-stdin
 
             # Cập nhật IMAGE_TAG trong file .env.production

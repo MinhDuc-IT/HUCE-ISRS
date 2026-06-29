@@ -24,6 +24,10 @@ on:
       - ".github/workflows/deploy-university.yml"
   workflow_dispatch:
 
+permissions:
+  contents: read
+  packages: write
+
 env:
   IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/university-system
 
@@ -44,7 +48,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_TOKEN }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata
         id: meta
@@ -102,7 +106,7 @@ jobs:
             set -e
             cd ~/university_system
 
-            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io \
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io \
               -u "${{ github.actor }}" --password-stdin
 
             export IMAGE_TAG="${{ needs.build.outputs.image_tag }}"
