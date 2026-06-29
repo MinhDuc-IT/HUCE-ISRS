@@ -1,10 +1,9 @@
 # ────────────────────────────────────────────────────────────
 # Stage 1: Composer install
 # ────────────────────────────────────────────────────────────
-# MS ODBC Driver cần glibc – dùng Debian cho stage này
 FROM php:8.2-cli-bookworm AS composer-stage
 
-# Cài ODBC + SQL Server driver (pdo_sqlsrv cần msodbcsql + build tools)
+# Cài ODBC + SQL Server driver (pdo_sqlsrv cần msodbcsql)
 RUN apt-get update && apt-get install -y --no-install-recommends \
         curl \
         gnupg \
@@ -12,15 +11,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         git \
         g++ \
         make \
-        autoconf \
-        pkg-config \
-        $PHPIZE_DEPS \
+        unixodbc-dev \
     && curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg \
     && curl -fsSL https://packages.microsoft.com/config/debian/12/prod.list > /etc/apt/sources.list.d/mssql-release.list \
     && apt-get update \
     && ACCEPT_EULA=Y apt-get install -y --no-install-recommends \
         msodbcsql18 \
-        unixodbc-dev \
     && pecl install sqlsrv-5.11.1 pdo_sqlsrv-5.11.1 \
     && docker-php-ext-enable sqlsrv pdo_sqlsrv \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -29,16 +25,17 @@ COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 COPY composer.json composer.lock ./
+# Chạy composer install mà không cần gán scripts lúc này
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress --no-scripts
 
 # ────────────────────────────────────────────────────────────
-# Stage 2: PHP-FPM Production (Debian – cần cho msodbcsql)
+# Stage 2: PHP-FPM Production
 # ────────────────────────────────────────────────────────────
 FROM php:8.2-fpm-bookworm AS production
 
 LABEL maintainer="HUCE-ISRS Team"
 
-# Cài MS ODBC 18, SQL Server driver và PHP extensions cơ bản
+# FIX LỖI: Thêm libonig-dev cho mbstring và giữ lại các package biên dịch cần thiết
 RUN apt-get update && apt-get install -y --no-install-recommends \
         curl \
         gnupg \
@@ -46,9 +43,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         unixodbc-dev \
         g++ \
         make \
-        autoconf \
-        pkg-config \
-        $PHPIZE_DEPS \
+        libonig-dev \
     && curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg \
     && curl -fsSL https://packages.microsoft.com/config/debian/12/prod.list > /etc/apt/sources.list.d/mssql-release.list \
     && apt-get update \
@@ -56,34 +51,36 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         msodbcsql18 \
     && pecl install sqlsrv-5.11.1 pdo_sqlsrv-5.11.1 \
     && docker-php-ext-enable sqlsrv pdo_sqlsrv \
-    && docker-php-ext-install -j$(nproc) mbstring opcache bcmath \
-    && apt-mark manual unixodbc msodbcsql18 \
-    && apt-get purge -y g++ make autoconf pkg-config unixodbc-dev $PHPIZE_DEPS \
+    && docker-php-ext-install -j$(nproc) pdo mbstring opcache bcmath \
+    # Clean up triệt để các package phục vụ compile để giảm dung lượng image
+    && apt-get purge -y g++ make libonig-dev unixodbc-dev \
     && apt-get autoremove -y \
-    && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/pear
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# OPcache & PHP-FPM config
+# OPcache config
 COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
 COPY docker/php/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
 
 WORKDIR /var/www/html
 
-# Copy vendor từ stage 1
+# Copy vendor từ stage 1 sang
 COPY --from=composer-stage /app/vendor ./vendor
 
-# Copy toàn bộ source (đảm bảo có .dockerignore loại trừ vendor/, .env, .git, node_modules...)
+# Copy toàn bộ mã nguồn vào trước khi chạy artisan command
 COPY . .
 
-# Khôi phục script autoload (package:discover) sau khi đã có đủ source code
+# Khôi phục script tự động nhận diện gói của Laravel
 RUN php artisan package:discover --ansi
 
-# Tạo SQLite database file cho api_clients + thư mục storage
+# Tạo cấu trúc thư mục, SQLite và phân quyền chuẩn xác cho www-data
 RUN mkdir -p database \
     && touch database/database.sqlite \
-    && mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views \
-        storage/logs \
-        bootstrap/cache \
-    && chown -R www-data:www-data database storage bootstrap/cache \
+    && mkdir -p storage/framework/cache \
+    && mkdir -p storage/framework/sessions \
+    && mkdir -p storage/framework/views \
+    && mkdir -p storage/logs \
+    && mkdir -p bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache database/database.sqlite \
     && chmod -R 775 storage bootstrap/cache database
 
 COPY docker/php/entrypoint.sh /entrypoint.sh
