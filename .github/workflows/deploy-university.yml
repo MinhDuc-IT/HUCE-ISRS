@@ -97,7 +97,8 @@ jobs:
           port: ${{ secrets.UNIVERSITY_EC2_PORT || 22 }}
           script: |
             sudo rm -rf ~/university_system/docker/nginx/nginx.conf
-            echo "Đã dọn dẹp nginx.conf cũ"
+            sudo rm -rf ~/university_system/docker/sqlserver/restore.sh
+            echo "Đã dọn dẹp các file/thư mục ảo"
 
       - name: Copy docker-compose to EC2
         uses: appleboy/scp-action@v0.1.7
@@ -106,7 +107,7 @@ jobs:
           username: ${{ secrets.UNIVERSITY_EC2_USER }}
           key: ${{ secrets.UNIVERSITY_EC2_SSH_KEY }}
           port: ${{ secrets.UNIVERSITY_EC2_PORT || 22 }}
-          source: "HUCE-ISRS-BE/university_system/docker-compose.yml,HUCE-ISRS-BE/university_system/docker/nginx/nginx.conf"
+          source: "HUCE-ISRS-BE/university_system/docker-compose.yml,HUCE-ISRS-BE/university_system/docker/nginx/nginx.conf,HUCE-ISRS-BE/university_system/docker/sqlserver/restore.sh"
           target: "~/university_system/"
           strip_components: 2
 
