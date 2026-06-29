@@ -1,7 +1,7 @@
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api'
 
 interface ApiOptions extends RequestInit {
-  data?: any
+  data?: Record<string, unknown>
 }
 
 export async function apiFetch<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {

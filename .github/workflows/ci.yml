@@ -47,7 +47,8 @@ jobs:
           restore-keys: composer-remedial-
 
       - name: Install Composer dependencies
-        run: composer install --no-dev --optimize-autoloader --no-interaction
+        # Cài kể cả dev deps để có PHPUnit (require-dev)
+        run: composer install --optimize-autoloader --no-interaction
 
       - name: Setup .env for testing
         run: |
@@ -62,7 +63,7 @@ jobs:
         run: php artisan migrate --force
 
       - name: Run PHPUnit tests
-        run: php artisan test --parallel
+        run: php artisan test
 
   # ── Test: university_system ──────────────────────────────
   test-university:
@@ -91,7 +92,8 @@ jobs:
           restore-keys: composer-university-
 
       - name: Install Composer dependencies
-        run: composer install --no-dev --optimize-autoloader --no-interaction
+        # Cài kể cả dev deps để có PHPUnit (require-dev)
+        run: composer install --optimize-autoloader --no-interaction
 
       - name: Setup .env for testing (SQLite only)
         run: |
