@@ -83,6 +83,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Pre-SCP Cleanup (Xóa thư mục nginx.conf ảo)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.REMEDIAL_EC2_HOST }}
+          username: ${{ secrets.REMEDIAL_EC2_USER }}
+          key: ${{ secrets.REMEDIAL_EC2_SSH_KEY }}
+          port: ${{ secrets.REMEDIAL_EC2_PORT || 22 }}
+          script: |
+            if [ -d ~/remedial_system/docker/nginx/nginx.conf ]; then
+              sudo rm -rf ~/remedial_system/docker/nginx/nginx.conf
+              echo "Đã xóa thư mục ảo nginx.conf"
+            fi
+
       - name: Copy docker-compose & env example to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
