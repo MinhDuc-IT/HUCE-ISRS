@@ -1,0 +1,110 @@
+# ════════════════════════════════════════════════════════════
+# Docker Compose – university_system (EC2 t3.large)
+# Deploy: docker compose --env-file .env.production up -d
+#
+# ⚠️  SQL Server cần >= 4GB RAM. t3.large (8GB) là minimum.
+# ⚠️  Lần đầu: chạy restore.sh để restore file .bak 50GB
+# ════════════════════════════════════════════════════════════
+services:
+
+  # ── Nginx (Reverse Proxy) ─────────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: university_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/app.conf:ro
+      - ./public:/var/www/html/public:ro
+    depends_on:
+      - app
+    networks:
+      - university_net
+
+  # ── PHP-FPM Application ───────────────────────────────────
+  app:
+    image: ghcr.io/${GITHUB_REPOSITORY}/university-system:${IMAGE_TAG:-latest}
+    container_name: university_app
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_URL: ${APP_URL}
+      APP_KEY: ${APP_KEY}
+      # SQLite (api_clients)
+      DB_CONNECTION: sqlite
+      DB_SQLITE_PATH: database/database.sqlite
+      # SQL Server (dữ liệu trường)
+      DB_SQLSRV_HOST: sqlserver
+      DB_SQLSRV_PORT: 1433
+      DB_SQLSRV_DATABASE: EDU_NUCE
+      DB_SQLSRV_USERNAME: ${DB_SQLSRV_USERNAME}
+      DB_SQLSRV_PASSWORD: ${DB_SQLSRV_PASSWORD}
+      CACHE_STORE: file
+      SESSION_DRIVER: file
+      UNIVERSITY_TOKEN_TTL: 3600
+      UNIVERSITY_BACKDOOR_PASS: ${UNIVERSITY_BACKDOOR_PASS}
+      L5_SWAGGER_GENERATE_ALWAYS: "false"
+      L5_SWAGGER_CONST_HOST: ${APP_URL}
+    volumes:
+      - app_storage:/var/www/html/storage
+      - sqlite_data:/var/www/html/database   # Persist SQLite file
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    networks:
+      - university_net
+
+  # ── SQL Server 2022 ───────────────────────────────────────
+  # ⚠️  Sau khi container start lần đầu, chạy:
+  #     docker exec university_sqlserver bash /restore.sh
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: university_sqlserver
+    restart: unless-stopped
+    # SQL Server cần tối thiểu 4GB RAM; giới hạn ở 6GB để OS còn 2GB
+    mem_limit: 6g
+    shm_size: 1g
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: ${SA_PASSWORD}
+      MSSQL_PID: Developer       # Free license; dùng Standard/Enterprise cho production thật
+      MSSQL_MEMORY_LIMIT_MB: 5000
+    ports:
+      - "127.0.0.1:1433:1433"   # Chỉ bind localhost, không expose ra ngoài
+    volumes:
+      - sqlserver_data:/var/opt/mssql/data   # DB data (persist qua restart)
+      - sqlserver_log:/var/opt/mssql/log
+      - sqlserver_backup:/var/opt/mssql/backup   # Đặt file .bak vào đây
+      - ./docker/sqlserver/restore.sh:/restore.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$${SA_PASSWORD}\" -C -Q 'SELECT 1' -b -o /dev/null"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 60s   # SQL Server cần thời gian khởi động
+    networks:
+      - university_net
+
+volumes:
+  sqlserver_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      # Gán EBS volume mount point để data SQL Server persist trên EBS
+      device: /mnt/ebs-sqlserver/data
+  sqlserver_log:
+  sqlserver_backup:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/ebs-sqlserver/backup
+  sqlite_data:
+  app_storage:
+
+networks:
+  university_net:
+    driver: bridge

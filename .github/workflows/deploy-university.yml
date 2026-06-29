@@ -1,0 +1,125 @@
+# ════════════════════════════════════════════════════════════
+# Deploy university_system → EC2 t3.large
+#
+# Trigger: push to main (chỉ khi có thay đổi ở university_system/)
+#
+# ⚠️  SQL Server KHÔNG restart tự động trong CI/CD.
+#     Nếu cần thay đổi SQL Server config, làm thủ công trên EC2.
+#
+# GitHub Secrets cần cấu hình:
+#   GHCR_TOKEN               - GitHub Personal Access Token (write:packages)
+#   UNIVERSITY_EC2_HOST      - IP hoặc Duck DNS hostname của EC2
+#   UNIVERSITY_EC2_USER      - SSH user (vd: ubuntu)
+#   UNIVERSITY_EC2_SSH_KEY   - Nội dung private key PEM
+#   UNIVERSITY_EC2_PORT      - SSH port (mặc định 22)
+# ════════════════════════════════════════════════════════════
+name: Deploy university_system (EC2)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "HUCE-ISRS-BE/university_system/**"
+      - "!HUCE-ISRS-BE/university_system/*.bak"   # Bỏ qua file .bak 50GB
+      - ".github/workflows/deploy-university.yml"
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/university-system
+
+jobs:
+  # ── Build & Push Docker Image ─────────────────────────────
+  build:
+    name: Build & Push Image
+    runs-on: ubuntu-latest
+
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=,format=short
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: HUCE-ISRS-BE/university_system
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # ⚠️ university_system/Dockerfile dùng Debian (msodbcsql18)
+          # Build lần đầu sẽ chậm ~10 phút do cài ODBC driver
+
+  # ── Deploy to EC2 via SSH ─────────────────────────────────
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    needs: build
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy docker-compose to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.UNIVERSITY_EC2_HOST }}
+          username: ${{ secrets.UNIVERSITY_EC2_USER }}
+          key: ${{ secrets.UNIVERSITY_EC2_SSH_KEY }}
+          port: ${{ secrets.UNIVERSITY_EC2_PORT || 22 }}
+          source: "HUCE-ISRS-BE/university_system/docker-compose.yml"
+          target: "~/university_system/"
+          strip_components: 2
+
+      - name: SSH Deploy (chỉ restart app + nginx, KHÔNG restart sqlserver)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.UNIVERSITY_EC2_HOST }}
+          username: ${{ secrets.UNIVERSITY_EC2_USER }}
+          key: ${{ secrets.UNIVERSITY_EC2_SSH_KEY }}
+          port: ${{ secrets.UNIVERSITY_EC2_PORT || 22 }}
+          script: |
+            set -e
+            cd ~/university_system
+
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io \
+              -u "${{ github.actor }}" --password-stdin
+
+            export IMAGE_TAG="${{ needs.build.outputs.image_tag }}"
+            export GITHUB_REPOSITORY="${{ github.repository }}"
+
+            # Pull chỉ app image (KHÔNG pull sqlserver image)
+            IMAGE_TAG=$IMAGE_TAG \
+            GITHUB_REPOSITORY=$GITHUB_REPOSITORY \
+            docker compose --env-file .env.production pull app
+
+            # Restart chỉ app + nginx, KHÔNG restart sqlserver (tránh downtime DB)
+            IMAGE_TAG=$IMAGE_TAG \
+            GITHUB_REPOSITORY=$GITHUB_REPOSITORY \
+            docker compose --env-file .env.production up -d \
+              --no-deps app nginx
+
+            docker image prune -f
+
+            echo "✅ university_system deployed. Image: $IMAGE_TAG"
+            echo "ℹ️  SQL Server vẫn đang chạy bình thường (không bị restart)"
