@@ -50,6 +50,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Lowercase image name
+        run: |
+          echo "IMAGE_NAME=$(echo ghcr.io/${{ github.repository_owner }}/university-system | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -110,7 +114,7 @@ jobs:
               -u "${{ github.actor }}" --password-stdin
 
             export IMAGE_TAG="${{ needs.build.outputs.image_tag }}"
-            export GITHUB_REPOSITORY="${{ github.repository }}"
+            export GITHUB_REPOSITORY=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
 
             # Pull chỉ app image (KHÔNG pull sqlserver image)
             IMAGE_TAG=$IMAGE_TAG \
