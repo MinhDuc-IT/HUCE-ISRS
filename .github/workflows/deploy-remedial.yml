@@ -14,7 +14,7 @@ name: Deploy remedial_system (EC2)
 
 on:
   push:
-    branches: [main]
+    branches: [main, thanhld/dev]
     paths:
       - "HUCE-ISRS-BE/remedial_system/**"
       - ".github/workflows/deploy-remedial.yml"

@@ -6,7 +6,7 @@ name: Deploy Frontend (Cloudflare Pages)
 
 on:
   push:
-    branches: [main]
+    branches: [main, thanhld/dev]
     paths:
       - "HUCE-ISRS-FE/**"
       - ".github/workflows/deploy-fe.yml"
