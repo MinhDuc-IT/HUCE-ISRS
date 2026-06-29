@@ -63,7 +63,7 @@ jobs:
         run: php artisan migrate --force
 
       - name: Run PHPUnit tests
-        run: php artisan test
+        run: ./vendor/bin/phpunit
 
   # ── Test: university_system ──────────────────────────────
   test-university:
@@ -104,7 +104,7 @@ jobs:
           php artisan key:generate
 
       - name: Run PHPUnit tests
-        run: php artisan test
+        run: ./vendor/bin/phpunit
 
   # ── Lint: Frontend ────────────────────────────────────────
   lint-fe:
