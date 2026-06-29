@@ -32,10 +32,6 @@ function AppShellInner({ role }: { role: UserRole }) {
   const nav = getNavItemsForRole(role)
   const [bannerMsg, setBannerMsg] = useState('Đang tải thông tin đợt phụ đạo...')
 
-  useEffect(() => {
-    loadBanner(role)
-  }, [role])
-
   async function loadBanner(r: UserRole) {
     try {
       if (r === 'student') {
@@ -79,6 +75,10 @@ function AppShellInner({ role }: { role: UserRole }) {
       setBannerMsg('Không tải được thông tin đợt phụ đạo')
     }
   }
+
+  useEffect(() => {
+    loadBanner(role)
+  }, [role])
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-800 flex flex-col">

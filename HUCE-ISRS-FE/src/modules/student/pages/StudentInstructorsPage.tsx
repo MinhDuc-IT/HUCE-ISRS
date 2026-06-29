@@ -9,11 +9,6 @@ export function StudentInstructorsPage() {
   const [regs, setRegs] = useState<ApiStudentRegistration[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (!user) return
-    fetchRegs()
-  }, [user])
-
   async function fetchRegs() {
     try {
       setLoading(true)
@@ -42,6 +37,11 @@ export function StudentInstructorsPage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (!user) return
+    fetchRegs()
+  }, [user])
 
   if (!user) return null
 

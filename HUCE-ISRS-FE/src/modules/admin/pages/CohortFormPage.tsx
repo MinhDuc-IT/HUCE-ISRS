@@ -41,10 +41,6 @@ export function CohortFormPage() {
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
-  useEffect(() => {
-    if (isEdit && id) fetchTerm(id)
-  }, [id, isEdit])
-
   async function fetchTerm(termId: string) {
     try {
       setLoading(true)
@@ -67,6 +63,10 @@ export function CohortFormPage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (isEdit && id) fetchTerm(id)
+  }, [id, isEdit])
 
   function syncRegistrationEndFromStart(openDate: string) {
     if (openDate) {

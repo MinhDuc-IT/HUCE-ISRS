@@ -14,10 +14,7 @@ interface Teacher {
   display: string;
 }
 
-function formatDateVi(d: string | null | undefined): string {
-  if (!d) return "—";
-  return new Date(d).toLocaleDateString("vi-VN");
-}
+
 
 export function DepartmentAssignmentsPage() {
   const { user } = useAuth();

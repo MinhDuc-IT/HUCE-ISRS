@@ -19,11 +19,6 @@ export function UserFormPage() {
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
-  useEffect(() => {
-    fetchDepartments()
-    if (isEdit && id) fetchUser(id)
-  }, [id])
-
   async function fetchDepartments() {
     try {
       const res = await apiFetch<{ data: ApiDepartment[] }>('/admin/departments')
@@ -36,18 +31,25 @@ export function UserFormPage() {
   async function fetchUser(userId: string) {
     try {
       setLoading(true)
-      const res = await apiFetch<{ data: any }>(`/admin/users/${userId}`)
+      const res = await apiFetch<{ data: { name?: string, email?: string, role?: string, department_id?: string | number } }>(`/admin/users/${userId}`)
       const u = res.data
       setName(u.name ?? '')
       setEmail(u.email ?? '')
       setRole(u.role ?? 'admin')
       setDepartmentId(u.department_id?.toString() ?? '')
-    } catch (err: any) {
+    } catch {
       setError('Không tải được thông tin người dùng.')
     } finally {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    fetchDepartments()
+    if (isEdit && id) fetchUser(id)
+  }, [id, isEdit])
+
+
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -84,8 +86,9 @@ export function UserFormPage() {
         await apiFetch('/admin/users', { method: 'POST', data: payload })
       }
       navigate('/admin/users')
-    } catch (err: any) {
-      setError(err.message || 'Lưu thất bại. Vui lòng thử lại.')
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Lưu thất bại. Vui lòng thử lại.'
+      setError(message)
     } finally {
       setSubmitting(false)
     }

@@ -4,7 +4,8 @@ import { Link } from 'react-router-dom'
 import { apiFetch } from '@/shared/utils/apiClient'
 import { useToast } from '@/shared/context/ToastContext'
 import type { ApiRemedialTerm } from '@/shared/types/api'
-import { formatRemedialTermStatus, RemedialTermStatusBadge } from '@/modules/admin/components/RemedialTermStatusBadge'
+import { RemedialTermStatusBadge } from '@/modules/admin/components/RemedialTermStatusBadge'
+import { formatRemedialTermStatus, type RemedialTermStatus } from '@/shared/constants/term'
 
 type RemedialTermStatusCode = 0 | 1 | 2 | 3 | 4
 
@@ -180,7 +181,7 @@ export function CohortListPage() {
                 terms.map((term, index) => {
                   const currentStatus = (term.status ?? 0) as RemedialTermStatusCode
                   const isMenuOpen = openMenuId === term.id
-                  const actions = nextStatusByCurrent[currentStatus] ?? []
+
 
                   return (
                     <tr key={term.id} className="hover:bg-gray-50/80">
@@ -192,7 +193,7 @@ export function CohortListPage() {
                       <td className="px-4 py-3 text-gray-600">{formatDate(term.registration_end)}</td>
                       <td className="px-4 py-3 text-gray-700">
                         {term.status_logic != null ? (
-                          <RemedialTermStatusBadge status={term.status_logic as any} label={term.status_logic_name} />
+                          <RemedialTermStatusBadge status={term.status_logic as RemedialTermStatus} label={term.status_logic_name} />
                         ) : (
                           term.status_name ?? formatRemedialTermStatus(term.status == null ? undefined : statusNameByCode[currentStatus])
                         )}

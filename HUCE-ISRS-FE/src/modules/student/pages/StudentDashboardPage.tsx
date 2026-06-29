@@ -10,11 +10,6 @@ export function StudentDashboardPage() {
   const [hasCurrentTerm, setHasCurrentTerm] = useState<boolean | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (!user) return
-    fetchData()
-  }, [user])
-
   async function fetchData() {
     try {
       setLoading(true)
@@ -46,6 +41,11 @@ export function StudentDashboardPage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (!user) return
+    fetchData()
+  }, [user])
 
   if (!user) return null
 

@@ -11,10 +11,6 @@ export function StatisticsCohortPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    void fetchSummaries()
-  }, [])
-
   async function fetchSummaries() {
     try {
       setLoading(true)
@@ -31,6 +27,10 @@ export function StatisticsCohortPage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    void fetchSummaries()
+  }, [])
 
   return (
     <div className="space-y-4">

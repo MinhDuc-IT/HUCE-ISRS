@@ -25,8 +25,9 @@ export function LoginPage() {
     try {
       const ok = await login(username, password)
       navigate(resolveRedirectPath(ok), { replace: true })
-    } catch (err: any) {
-      setError(err.message || 'Đăng nhập thất bại. Vui lòng thử lại.')
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Đăng nhập thất bại. Vui lòng thử lại.'
+      setError(message)
     } finally {
       setLoading(false)
     }
