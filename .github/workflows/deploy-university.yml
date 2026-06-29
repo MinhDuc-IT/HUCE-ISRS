@@ -88,7 +88,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Pre-SCP Cleanup (Xóa thư mục nginx.conf ảo)
+      - name: Pre-SCP Cleanup (Xóa file/thư mục nginx.conf cũ để SCP không bị lỗi quyền)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.UNIVERSITY_EC2_HOST }}
@@ -96,10 +96,8 @@ jobs:
           key: ${{ secrets.UNIVERSITY_EC2_SSH_KEY }}
           port: ${{ secrets.UNIVERSITY_EC2_PORT || 22 }}
           script: |
-            if [ -d ~/university_system/docker/nginx/nginx.conf ]; then
-              sudo rm -rf ~/university_system/docker/nginx/nginx.conf
-              echo "Đã xóa thư mục ảo nginx.conf"
-            fi
+            sudo rm -rf ~/university_system/docker/nginx/nginx.conf
+            echo "Đã dọn dẹp nginx.conf cũ"
 
       - name: Copy docker-compose to EC2
         uses: appleboy/scp-action@v0.1.7

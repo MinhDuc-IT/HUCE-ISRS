@@ -1,8 +1,6 @@
 # ────────────────────────────────────────────────────────────
 # Stage 1: Composer install
 # ────────────────────────────────────────────────────────────
-FROM php:8.2-cli-alpine AS composer-stage
-
 # MS ODBC Driver cần glibc – dùng Debian cho stage này
 FROM php:8.2-cli-bookworm AS composer-stage
 
@@ -12,6 +10,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         gnupg \
         unzip \
         git \
+        g++ \
+        make \
     && curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg \
     && curl -fsSL https://packages.microsoft.com/config/debian/12/prod.list > /etc/apt/sources.list.d/mssql-release.list \
     && apt-get update \
@@ -40,6 +40,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         curl \
         gnupg \
         unixodbc \
+        g++ \
+        make \
     && curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg \
     && curl -fsSL https://packages.microsoft.com/config/debian/12/prod.list > /etc/apt/sources.list.d/mssql-release.list \
     && apt-get update \
@@ -48,6 +50,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         unixodbc-dev \
     && pecl install sqlsrv pdo_sqlsrv \
     && docker-php-ext-enable sqlsrv pdo_sqlsrv \
+    && apt-get purge -y g++ make \
+    && apt-get autoremove -y \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Thêm PHP extensions cơ bản
