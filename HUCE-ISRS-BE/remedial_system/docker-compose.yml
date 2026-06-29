@@ -15,7 +15,7 @@ services:
     volumes:
       - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/app.conf:ro
       - ./public:/var/www/html/public:ro   # Serve static assets trực tiếp
-      - certbot_data:/etc/letsencrypt:ro   # Let's Encrypt certs (tuỳ chọn)
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - app
     networks:
