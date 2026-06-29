@@ -95,7 +95,7 @@ jobs:
           username: ${{ secrets.UNIVERSITY_EC2_USER }}
           key: ${{ secrets.UNIVERSITY_EC2_SSH_KEY }}
           port: ${{ secrets.UNIVERSITY_EC2_PORT || 22 }}
-          source: "HUCE-ISRS-BE/university_system/docker-compose.yml"
+          source: "HUCE-ISRS-BE/university_system/docker-compose.yml,HUCE-ISRS-BE/university_system/docker/nginx/nginx.conf"
           target: "~/university_system/"
           strip_components: 2
 

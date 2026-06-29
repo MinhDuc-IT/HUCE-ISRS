@@ -90,7 +90,7 @@ jobs:
           username: ${{ secrets.REMEDIAL_EC2_USER }}
           key: ${{ secrets.REMEDIAL_EC2_SSH_KEY }}
           port: ${{ secrets.REMEDIAL_EC2_PORT || 22 }}
-          source: "HUCE-ISRS-BE/remedial_system/docker-compose.yml"
+          source: "HUCE-ISRS-BE/remedial_system/docker-compose.yml,HUCE-ISRS-BE/remedial_system/docker/nginx/nginx.conf"
           target: "~/remedial_system/"
           strip_components: 2
 
