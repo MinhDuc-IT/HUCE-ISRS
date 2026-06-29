@@ -35,7 +35,7 @@ FROM php:8.2-fpm-bookworm AS production
 
 LABEL maintainer="HUCE-ISRS Team"
 
-# Cài MS ODBC 18 + SQL Server driver
+# Cài MS ODBC 18, SQL Server driver và PHP extensions cơ bản
 RUN apt-get update && apt-get install -y --no-install-recommends \
         curl \
         gnupg \
@@ -50,16 +50,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         unixodbc-dev \
     && pecl install sqlsrv-5.11.1 pdo_sqlsrv-5.11.1 \
     && docker-php-ext-enable sqlsrv pdo_sqlsrv \
+    && docker-php-ext-install -j$(nproc) pdo mbstring opcache bcmath \
     && apt-get purge -y g++ make \
     && apt-get autoremove -y \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Thêm PHP extensions cơ bản
-RUN docker-php-ext-install -j$(nproc) \
-        pdo \
-        mbstring \
-        opcache \
-        bcmath
 
 # OPcache config
 COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
