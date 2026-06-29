@@ -29,7 +29,7 @@ permissions:
   packages: write
 
 env:
-  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/university-system
+  IMAGE_NAME: ghcr.io/${{ github.repository }}/university-system
 
 jobs:
   # ── Build & Push Docker Image ─────────────────────────────
@@ -52,7 +52,7 @@ jobs:
 
       - name: Lowercase image name
         run: |
-          echo "IMAGE_NAME=$(echo ghcr.io/${{ github.repository_owner }}/university-system | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          echo "IMAGE_NAME=$(echo ghcr.io/${{ github.repository }}/university-system | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Extract metadata
         id: meta
