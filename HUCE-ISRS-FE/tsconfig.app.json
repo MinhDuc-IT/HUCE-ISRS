@@ -30,7 +30,6 @@
     "src/shared/components/LecturerAssignmentTable.tsx",
     "src/modules/admin/mockData/**",
     "src/modules/admin/pages/DepartmentFormPage.tsx",
-    "src/modules/admin/pages/PaymentsPage.tsx",
-    "src/modules/admin/pages/AdminAssignmentsPage.tsx"
+    "src/modules/admin/pages/PaymentsPage.tsx"
   ]
 }

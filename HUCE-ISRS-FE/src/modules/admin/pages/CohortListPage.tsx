@@ -37,6 +37,7 @@ export function CohortListPage() {
 
   useEffect(() => {
     void fetchTerms()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -275,7 +276,7 @@ export function CohortListPage() {
                           type="button"
                           className="flex w-full items-center rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-60"
                           disabled={updatingId === term.id}
-                          onClick={() => void handleStatusUpdate(term.id, action)}
+                          onClick={() => void handleStatusUpdate(term.id, action as RemedialTermStatusCode)}
                         >
                           Chuyển sang {formatRemedialTermStatus(statusNameByCode[action])}
                         </button>

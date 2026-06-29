@@ -55,7 +55,6 @@ export function AdminDashboardPage() {
 
   useEffect(() => {
     fetchStats()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const navLinks = [
