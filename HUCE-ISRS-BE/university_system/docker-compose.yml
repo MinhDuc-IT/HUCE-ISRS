@@ -96,6 +96,11 @@ volumes:
       # Gán EBS volume mount point để data SQL Server persist trên EBS
       device: /mnt/ebs-sqlserver/data
   sqlserver_log:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/ebs-sqlserver/log
   sqlserver_backup:
     driver: local
     driver_opts:
