@@ -66,11 +66,13 @@ export function UserFormPage() {
       return
     }
 
-    const payload: any = {
+    const payload: Record<string, unknown> = {
       name: name.trim(),
       email: email.trim(),
-      role,
       department_id: role === 'bo_mon' ? (departmentId || null) : null,
+    }
+    if (!isEdit) {
+      payload.role = role
     }
     if (password.trim()) payload.password = password.trim()
 
@@ -90,6 +92,12 @@ export function UserFormPage() {
   }
 
   const inputClass = "w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-500/10"
+
+  const roleLabels: Record<string, string> = {
+    admin: 'Quản trị',
+    bo_mon: 'Bộ môn',
+    sinh_vien: 'Sinh viên',
+  }
 
   if (loading) {
     return <p className="text-center text-gray-500 py-10">Đang tải...</p>
@@ -139,11 +147,19 @@ export function UserFormPage() {
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700">Vai trò</label>
-          <select className={inputClass} value={role} onChange={(e) => setRole(e.target.value)}>
-            <option value="admin">Quản trị</option>
-            <option value="bo_mon">Bộ môn</option>
-            <option value="sinh_vien">Sinh viên</option>
-          </select>
+          {isEdit ? (
+            <input
+              className={`${inputClass} cursor-not-allowed bg-gray-100 text-gray-600`}
+              value={roleLabels[role] ?? role}
+              readOnly
+            />
+          ) : (
+            <select className={inputClass} value={role} onChange={(e) => setRole(e.target.value)}>
+              <option value="admin">Quản trị</option>
+              <option value="bo_mon">Bộ môn</option>
+              <option value="sinh_vien">Sinh viên</option>
+            </select>
+          )}
         </div>
 
         {role === 'bo_mon' && (
