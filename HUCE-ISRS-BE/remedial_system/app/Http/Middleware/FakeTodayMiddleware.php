@@ -24,7 +24,7 @@ class FakeTodayMiddleware
         $this->fakeToday = is_string($value) && trim($value) !== '' ? trim($value) : null;
 
         Log::info('[FakeTodayMiddleware] Cấu hình khởi tạo', [
-            'real_now' => Carbon::now()->toDateTimeString(),
+            'real_now' => Carbon::getRealNow()->toDateTimeString(),
             'fake_today' => $this->fakeToday,
             'environment' => app()->environment(),
         ]);
@@ -43,7 +43,7 @@ class FakeTodayMiddleware
         // }
 
         if ($this->fakeToday !== null && preg_match('/^\d{4}-\d{2}-\d{2}$/', $this->fakeToday) === 1) {
-            $realNow = Carbon::now()->toDateTimeString();
+            $realNow = Carbon::getRealNow()->toDateTimeString();
             Carbon::setTestNow(Carbon::parse($this->fakeToday)->startOfDay());
 
             Log::info('[FakeTodayMiddleware] Đã giả lập ngày hiện tại', [
