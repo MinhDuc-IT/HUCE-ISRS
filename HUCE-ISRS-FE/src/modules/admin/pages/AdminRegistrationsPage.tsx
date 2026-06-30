@@ -32,30 +32,30 @@ export function AdminRegistrationsPage() {
     }
   }
 
-  async function fetchRows() {
-    try {
-      setLoading(true)
-      setError(null)
-      const query = termId ? `?remedial_term_id=${termId}` : ''
-      const res = await apiFetch<{ data: ApiAdminRegistrationSummary[] }>(
-        `/admin/remedial-registrations${query}`,
-      )
-      setRows(res.data || [])
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Lỗi không xác định'
-      setError('Lỗi tải danh sách: ' + msg)
-      setRows([])
-    } finally {
-      setLoading(false)
-    }
-  }
-
   useEffect(() => {
     fetchTerms()
   }, [])
 
   useEffect(() => {
-    fetchRows()
+    async function fetchRows() {
+      try {
+        setLoading(true)
+        setError(null)
+        const query = termId ? `?remedial_term_id=${termId}` : ''
+        const res = await apiFetch<{ data: ApiAdminRegistrationSummary[] }>(
+          `/admin/remedial-registrations${query}`,
+        )
+        setRows(res.data || [])
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Lỗi không xác định'
+        setError('Lỗi tải danh sách: ' + msg)
+        setRows([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    void fetchRows()
   }, [termId])
 
   async function openDetailModal(row: ApiAdminRegistrationSummary) {
