@@ -1,0 +1,56 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      - source_labels: [__meta_docker_container_name]
+        regex: '/(remedial_.*|university_.*|isrs_.*)'
+        action: keep
+      - source_labels: [__meta_docker_container_id]
+        target_label: __path__
+        replacement: /var/lib/docker/containers/$1/*-json.log
+      - source_labels: [__meta_docker_container_name]
+        target_label: container
+      - source_labels: [__meta_docker_container_image]
+        target_label: image
+      - source_labels: [__meta_docker_container_log_stream]
+        target_label: stream
+      - source_labels: [__meta_docker_container_name]
+        regex: '/(remedial_.*)'
+        target_label: app
+        replacement: remedial
+      - source_labels: [__meta_docker_container_name]
+        regex: '/(university_.*)'
+        target_label: app
+        replacement: university
+      - source_labels: [__meta_docker_container_name]
+        regex: '/(isrs_.*)'
+        target_label: app
+        replacement: monitoring
+    pipeline_stages:
+      - docker: {}
+      - json:
+          expressions:
+            request_id: request_id
+            level: level
+            message: message
+            user_id: user_id
+            user_role: user_role
+            path: path
+      - labels:
+          request_id:
+          level:
+          user_id:
+          user_role:
+          path:

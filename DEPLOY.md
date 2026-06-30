@@ -415,3 +415,107 @@ docker compose --env-file .env.production up --no-deps -d app
 - [ ] Restore SQL Server (chạy `restore.sh`)
 - [ ] Seed database remedial (`php artisan db:seed`)
 - [ ] Kiểm tra end-to-end: FE login → API remedial → API university → SQL Server
+
+---
+
+## Phần 7 - Thiết kế log tập trung
+
+### 7.1 Mô hình đúng theo production
+
+Vì `remedial_system` và `university_system` chạy trên **2 EC2 riêng**, log production nên đi theo mô hình:
+
+```text
+remedial EC2      ──┐
+university EC2    ──┼──> Loki tập trung ──> Grafana
+                  ──┘
+```
+
+- Mỗi Laravel app log ra `stdout/stderr`
+- Promtail chạy **trên từng EC2**
+- Loki và Grafana chạy ở một nơi tập trung
+- Grafana dùng Loki làm datasource để search log theo `request_id`
+
+### 7.2 Vì sao không chỉ chạy 1 Promtail
+
+Promtail chỉ đọc được log local trên host nó đang chạy.  
+Nên:
+
+- Promtail trên EC2 remedial chỉ thấy log remedial
+- Promtail trên EC2 university chỉ thấy log university
+
+Muốn gom cả hai thì phải có:
+
+- 1 Loki chung
+- 2 Promtail riêng, mỗi EC2 1 cái
+
+### 7.3 Field log nên có
+
+Nên chuẩn hóa mỗi log record với các trường:
+
+- `request_id`
+- `service`
+- `env`
+- `method`
+- `path`
+- `status_code`
+- `user_id`
+- `user_role`
+- `message`
+- `external_service`
+
+### 7.4 Luồng debug cho student login
+
+Khi sinh viên đăng nhập:
+
+1. Backend remedial tự sinh `request_id`
+2. Remedial log request nhận từ FE
+3. Remedial gọi sang University
+4. University log cùng `request_id` đó
+5. Nếu lỗi, Grafana search theo `request_id` sẽ thấy toàn bộ chuỗi xử lý
+
+### 7.5 Gợi ý triển khai
+
+- Deploy `Loki + Grafana` trên một monitoring host riêng
+- Deploy `Promtail` trên EC2 remedial
+- Deploy `Promtail` trên EC2 university
+- App Laravel chỉ cần log ra `stderr`
+### 7.6 Biến môi trường cho monitoring
+
+Promtail ở mỗi EC2 cần biết URL đẩy log về Loki tập trung:
+
+```env
+LOKI_PUSH_URL=http://<monitoring-host>:3100/loki/api/v1/push
+```
+
+Thứ tự triển khai:
+
+1. Start host monitoring trước với `Loki + Grafana`
+2. Trên EC2 remedial, start `promtail-remedial`
+3. Trên EC2 university, start `promtail-university`
+4. Kiểm tra Grafana datasource trỏ về Loki
+
+### 7.7 Cách chạy monitoring stack
+
+Trên host monitoring:
+
+```bash
+docker compose -f monitoring/docker-compose.yml up -d
+```
+
+Trên EC2 remedial:
+
+```bash
+docker compose -f monitoring/promtail-remedial/docker-compose.yml up -d
+```
+
+Trên EC2 university:
+
+```bash
+docker compose -f monitoring/promtail-university/docker-compose.yml up -d
+```
+
+### 7.8 Kiểm tra nhanh
+
+- Loki: `http://<monitoring-host>:3100/ready`
+- Grafana: `http://<monitoring-host>:3000`
+- Trong Grafana Explore, lọc theo `request_id`, `service`, `path`

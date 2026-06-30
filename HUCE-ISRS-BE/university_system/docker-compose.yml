@@ -34,6 +34,9 @@ services:
       APP_DEBUG: "false"
       APP_URL: ${APP_URL}
       APP_KEY: ${APP_KEY}
+      SERVICE_NAME: university
+      LOG_CHANNEL: stderr
+      LOG_LEVEL: info
       # SQLite (api_clients)
       DB_CONNECTION: sqlite
       DB_SQLITE_PATH: database/database.sqlite
