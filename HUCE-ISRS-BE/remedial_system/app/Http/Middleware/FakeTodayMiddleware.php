@@ -18,7 +18,8 @@ class FakeTodayMiddleware
 
     public function __construct()
     {
-        $value = env('FAKE_TODAY');
+        // $value = env('FAKE_TODAY');
+        $value = '2024-04-20';
         $this->fakeToday = is_string($value) && trim($value) !== '' ? trim($value) : null;
     }
 
