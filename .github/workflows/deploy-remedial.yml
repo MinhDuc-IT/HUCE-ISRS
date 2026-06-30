@@ -135,6 +135,9 @@ jobs:
             docker compose --env-file .env.production up -d \
               --no-deps app queue scheduler nginx
 
+            echo "🔄 Reloading Nginx configuration..."
+            docker exec remedial_nginx nginx -s reload || true
+
             # Dọn images cũ
             docker image prune -f
 

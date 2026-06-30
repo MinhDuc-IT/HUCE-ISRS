@@ -141,6 +141,9 @@ jobs:
             docker compose --env-file .env.production up -d \
               --no-deps app nginx
 
+            echo "🔄 Reloading Nginx configuration..."
+            docker exec university_nginx nginx -s reload || true
+
             docker image prune -f
 
             echo "✅ university_system deployed. Image: $IMAGE_TAG"
