@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Application\Services\Admin\ManageSystemConfigurationService;
 use App\Http\Controllers\BaseController;
+use App\Http\Middleware\FakeTodayMiddleware;
 use App\Http\Requests\Admin\StoreSystemConfigurationRequest;
 use App\Http\Requests\Admin\UpdateSettingsRequest;
 use App\Http\Requests\Admin\UpdateSystemConfigurationItemRequest;
@@ -73,6 +74,8 @@ class SystemConfigurationController extends BaseController
                 value: $request->input('value'),
                 description: $request->has('description') ? $request->input('description') : null
             );
+
+            FakeTodayMiddleware::clearCacheForKey($key);
 
             return $this->success(
                 (new SystemConfigurationResource($config))->resolve(),

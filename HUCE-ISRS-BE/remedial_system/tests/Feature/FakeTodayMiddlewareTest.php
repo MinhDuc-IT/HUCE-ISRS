@@ -3,27 +3,32 @@
 namespace Tests\Feature;
 
 use App\Http\Middleware\FakeTodayMiddleware;
-use Carbon\Carbon;
 use Tests\TestCase;
 
 class FakeTodayMiddlewareTest extends TestCase
 {
-    protected function tearDown(): void
+    public function test_fake_today_config_key_is_expected_key(): void
     {
-        Carbon::setTestNow();
-        parent::tearDown();
+        $this->assertSame('FAKE_DAY', FakeTodayMiddleware::CONFIG_KEY);
     }
 
-    public function test_fake_today_constant_is_valid_date_format(): void
+    public function test_clear_cache_only_resets_fake_day_cache_for_matching_key(): void
     {
-        $fakeToday = (new \ReflectionClass(FakeTodayMiddleware::class))->getConstant('FAKE_TODAY');
+        $reflection = new \ReflectionClass(FakeTodayMiddleware::class);
+        $cachedFakeDay = $reflection->getProperty('cachedFakeDay');
+        $isLoaded = $reflection->getProperty('isLoaded');
 
-        if ($fakeToday === null) {
-            $this->markTestSkipped('FAKE_TODAY is null');
-        }
+        $cachedFakeDay->setValue(null, '2026-07-01');
+        $isLoaded->setValue(null, true);
 
-        $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', $fakeToday);
-        Carbon::setTestNow(Carbon::parse($fakeToday)->startOfDay());
-        $this->assertSame($fakeToday, Carbon::now()->toDateString());
+        FakeTodayMiddleware::clearCacheForKey('OTHER_KEY');
+
+        $this->assertSame('2026-07-01', $cachedFakeDay->getValue());
+        $this->assertTrue($isLoaded->getValue());
+
+        FakeTodayMiddleware::clearCacheForKey(FakeTodayMiddleware::CONFIG_KEY);
+
+        $this->assertNull($cachedFakeDay->getValue());
+        $this->assertFalse($isLoaded->getValue());
     }
 }
