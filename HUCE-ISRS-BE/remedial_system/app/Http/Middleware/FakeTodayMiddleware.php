@@ -32,15 +32,15 @@ class FakeTodayMiddleware
 
     public function handle(Request $request, Closure $next): Response
     {
-        if (! app()->environment('local')) {
-            Log::info('[FakeTodayMiddleware] Bỏ qua fake today (production/staging)', [
-                'real_now' => Carbon::now()->toDateTimeString(),
-                'fake_today' => $this->fakeToday,
-                'environment' => app()->environment(),
-            ]);
+        // if (! app()->environment('local')) {
+        //     Log::info('[FakeTodayMiddleware] Bỏ qua fake today (production/staging)', [
+        //         'real_now' => Carbon::now()->toDateTimeString(),
+        //         'fake_today' => $this->fakeToday,
+        //         'environment' => app()->environment(),
+        //     ]);
 
-            return $next($request);
-        }
+        //     return $next($request);
+        // }
 
         if ($this->fakeToday !== null && preg_match('/^\d{4}-\d{2}-\d{2}$/', $this->fakeToday) === 1) {
             $realNow = Carbon::now()->toDateTimeString();
