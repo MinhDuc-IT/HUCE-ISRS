@@ -32,7 +32,7 @@ export function CohortFormPage() {
   const [endDate, setEndDate] = useState('')
   const [registrationStart, setRegistrationStart] = useState('')
   const [registrationEnd, setRegistrationEnd] = useState('')
-  const [isCurrentTerm, setIsCurrentTerm] = useState(!isEdit)
+  // const [isCurrentTerm, setIsCurrentTerm] = useState(!isEdit) // legacy: đợt hiện tại theo status, không còn set qua form
   const [donGia, setDonGia] = useState('150000')
   const [heSoPD, setHeSoPD] = useState('1')
   const [heSoDonGia, setHeSoDonGia] = useState('1')
@@ -57,7 +57,7 @@ export function CohortFormPage() {
       setEndDate(dateInputValue(t.end_date))
       setRegistrationStart(dateInputValue(t.registration_start))
       setRegistrationEnd(dateInputValue(t.registration_end))
-      setIsCurrentTerm(Boolean(t.is_current_term))
+      // setIsCurrentTerm(Boolean(t.is_current_term))
       setDonGia(String(t.price_per_period ?? '150000'))
       setHeSoPD(String(t.remedial_coefficient ?? '1'))
       setHeSoDonGia(String(t.price_coefficient ?? '1'))
@@ -129,7 +129,7 @@ export function CohortFormPage() {
       price_per_period: parseInt(donGia, 10),
       remedial_coefficient: parseInt(heSoPD, 10),
       price_coefficient: parseFloat(heSoDonGia),
-      is_current_term: isCurrentTerm,
+      // is_current_term: isCurrentTerm, // legacy — BE xác định đợt hiện tại qua status
     }
 
     try {
@@ -262,6 +262,7 @@ export function CohortFormPage() {
           </div>
         </div>
 
+        {/* legacy: đợt hiện tại được xác định qua trạng thái (status), không còn bật từ form tạo/sửa
         <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
           <input
             type="checkbox"
@@ -276,6 +277,7 @@ export function CohortFormPage() {
             </span>
           </span>
         </label>
+        */}
 
         <div className="grid gap-4 sm:grid-cols-3">
           <div>

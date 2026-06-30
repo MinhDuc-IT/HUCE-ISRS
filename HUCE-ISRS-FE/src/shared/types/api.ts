@@ -68,18 +68,22 @@ export type ApiStudentRegistration = {
   lecturer_email?: string | null;
 };
 
-export type ApiAdminRegistration = {
+export type ApiAdminRegistrationSummary = {
+  remedial_term_id: number;
+  remedial_term_name: string;
+  subject_id: number;
+  subject_code: string;
+  subject_name: string;
+  student_count: number;
+  lecture_name?: string | null;
+};
+
+export type ApiAdminRegistrationStudent = {
   id: number;
   student_code?: string;
   student_name?: string;
-  subject_code?: string;
-  subject_name?: string;
-  remedial_term_id?: number;
-  remedial_term_name?: string;
+  class_name?: string | null;
   registration_date?: string;
-  lecture_name?: string | null;
-  lecturer_phone?: string | null;
-  lecturer_email?: string | null;
 };
 
 export type ApiDepartmentLoginUser = {

@@ -95,6 +95,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::delete('/{id}', [SubjectController::class, 'destroy']);
         });
 
+        Route::get('admin/remedial-registrations/students', [AdminRemedialRegistrationController::class, 'students']);
         Route::get('admin/remedial-registrations', [AdminRemedialRegistrationController::class, 'index']);
     });
 

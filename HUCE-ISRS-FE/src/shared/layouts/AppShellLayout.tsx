@@ -86,9 +86,7 @@ function AppShellInner({ role }: { role: UserRole }) {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-white flex items-center justify-center rounded text-[#0f3460] font-bold text-xs text-center leading-none">
-              HUCE
-              <br />
-              LOGO
+              <img src="/huce_logo.jpg" alt="HUCE Logo" className="w-full h-full object-contain" />
             </div>
             <div>
               <h1 className="text-xl md:text-2xl font-bold uppercase tracking-wide">
