@@ -23,14 +23,6 @@ export function AdminRegistrationsPage() {
   const [detailLoading, setDetailLoading] = useState(false)
   const [detailError, setDetailError] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchTerms()
-  }, [])
-
-  useEffect(() => {
-    fetchRows()
-  }, [termId])
-
   async function fetchTerms() {
     try {
       const res = await apiFetch<{ data: ApiRemedialTerm[] }>('/admin/remedial-terms')
@@ -57,6 +49,14 @@ export function AdminRegistrationsPage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    fetchTerms()
+  }, [])
+
+  useEffect(() => {
+    fetchRows()
+  }, [termId])
 
   async function openDetailModal(row: ApiAdminRegistrationSummary) {
     setSelectedRow(row)
