@@ -53,7 +53,7 @@ Sau đăng nhập, FE redirect theo `home_url`: `/admin`, `/department`, `/stude
 - **Regression thủ công (3 role):** xem [REGRESSION.md](./REGRESSION.md)
 - **Kiến trúc & API:** [HUCE-ISRS-BE/remedial_system/ARCHITECTURE.md](./HUCE-ISRS-BE/remedial_system/ARCHITECTURE.md)
 
-## Fake data đợt block
+## Fake data đợt block (faketoday khoảng 3 ngày sau ngày bắt đầu đợt)
 
 Năm 2022 (2022-2023):
 - HK 1 block 2: ngày thi 3-14/1/2023
