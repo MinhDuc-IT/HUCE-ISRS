@@ -16,11 +16,13 @@ class FakeTodayMiddlewareTest extends TestCase
 
     public function test_fake_today_constant_is_valid_date_format(): void
     {
-        $fakeToday = (new \ReflectionClass(FakeTodayMiddleware::class))->getConstant('FAKE_TODAY');
+        $fakeToday = env('FAKE_TODAY');
 
-        if ($fakeToday === null) {
-            $this->markTestSkipped('FAKE_TODAY is null');
+        if (! is_string($fakeToday) || trim($fakeToday) === '') {
+            $this->markTestSkipped('FAKE_TODAY is empty');
         }
+
+        $fakeToday = trim($fakeToday);
 
         $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', $fakeToday);
         Carbon::setTestNow(Carbon::parse($fakeToday)->startOfDay());
