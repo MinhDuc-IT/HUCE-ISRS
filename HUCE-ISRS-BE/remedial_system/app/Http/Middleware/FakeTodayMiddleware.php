@@ -14,7 +14,13 @@ use Symfony\Component\HttpFoundation\Response;
 class FakeTodayMiddleware
 {
     /** null = không fake; YYYY-MM-DD khi cần test local với DB quá khứ */
-    private const FAKE_TODAY = '2024-04-20';
+    private ?string $fakeToday;
+
+    public function __construct()
+    {
+        $value = env('FAKE_TODAY');
+        $this->fakeToday = is_string($value) && trim($value) !== '' ? trim($value) : null;
+    }
 
     public function handle(Request $request, Closure $next): Response
     {
@@ -22,8 +28,8 @@ class FakeTodayMiddleware
             return $next($request);
         }
 
-        if (self::FAKE_TODAY !== null && preg_match('/^\d{4}-\d{2}-\d{2}$/', self::FAKE_TODAY) === 1) {
-            Carbon::setTestNow(Carbon::parse(self::FAKE_TODAY)->startOfDay());
+        if ($this->fakeToday !== null && preg_match('/^\d{4}-\d{2}-\d{2}$/', $this->fakeToday) === 1) {
+            Carbon::setTestNow(Carbon::parse($this->fakeToday)->startOfDay());
         }
 
         return $next($request);
