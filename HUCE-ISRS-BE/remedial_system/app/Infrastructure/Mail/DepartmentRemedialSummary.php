@@ -13,27 +13,23 @@ class DepartmentRemedialSummary extends Mailable
     use Queueable, SerializesModels;
 
     public function __construct(
-        public $department,
-        public $registrations,
-        public $emailSubject,
-        public $emailBody,
+        public string $emailSubject,
+        public string $emailBody,
     ) {}
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: $this->emailSubject ?: "Danh sách đăng ký phụ đạo - {$this->department->name}",
+            subject: $this->emailSubject,
         );
     }
 
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.departments.remedial_summary',
+            view: 'emails.departments.remedial_summary',
             with: [
-                'department'    => $this->department,
-                'registrations' => $this->registrations,
-                'body'          => $this->emailBody,
+                'body' => $this->emailBody,
             ],
         );
     }
