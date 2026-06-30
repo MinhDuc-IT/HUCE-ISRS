@@ -55,6 +55,91 @@ class EloquentRemedialRegistrationQueryRepository implements RemedialRegistratio
         ])->all();
     }
 
+    public function listGroupedForAdmin(
+        ?int $remedialTermId = null,
+        ?int $departmentId = null,
+        ?int $subjectId = null,
+        ?string $studentCode = null,
+    ): array {
+        $query = DB::table('remedial_registrations as rr')
+            ->join('subjects as s', 'rr.subject_id', '=', 's.id')
+            ->join('remedial_terms as rt', 'rr.remedial_term_id', '=', 'rt.id')
+            ->where('rr.is_deleted', false)
+            ->where('s.is_deleted', false)
+            ->where('rt.is_deleted', false);
+
+        if ($remedialTermId !== null) {
+            $query->where('rr.remedial_term_id', $remedialTermId);
+        }
+
+        if ($subjectId !== null) {
+            $query->where('rr.subject_id', $subjectId);
+        }
+
+        if ($departmentId !== null) {
+            $query->where('s.department_id', $departmentId);
+        }
+
+        if ($studentCode !== null && $studentCode !== '') {
+            $code = strtoupper(trim($studentCode));
+            $query->join('users as u', 'rr.student_id', '=', 'u.id')
+                ->where('u.student_code', $code);
+        }
+
+        return $query
+            ->selectRaw('
+                rr.remedial_term_id,
+                rt.name as remedial_term_name,
+                s.id as subject_id,
+                s.subject_code,
+                s.name as subject_name,
+                COUNT(rr.id) as student_count,
+                MAX(rr.lecture_name) as lecture_name
+            ')
+            ->groupBy(
+                'rr.remedial_term_id',
+                'rt.name',
+                's.id',
+                's.subject_code',
+                's.name',
+            )
+            ->orderByDesc('rr.remedial_term_id')
+            ->orderBy('s.subject_code')
+            ->get()
+            ->map(fn ($row) => [
+                'remedial_term_id'   => (int) $row->remedial_term_id,
+                'remedial_term_name' => $row->remedial_term_name,
+                'subject_id'         => (int) $row->subject_id,
+                'subject_code'       => $row->subject_code,
+                'subject_name'       => $row->subject_name,
+                'student_count'      => (int) $row->student_count,
+                'lecture_name'       => $row->lecture_name,
+            ])
+            ->all();
+    }
+
+    public function listStudentsForAdminGroup(int $remedialTermId, int $subjectId): array
+    {
+        return RemedialRegistrationModel::query()
+            ->with(['user', 'subject', 'remedialTerm'])
+            ->where('remedial_term_id', $remedialTermId)
+            ->where('subject_id', $subjectId)
+            ->orderBy('registration_date')
+            ->get()
+            ->map(fn ($reg) => [
+                'id'                => $reg->id,
+                'student_code'      => $reg->user?->student_code,
+                'student_name'      => $reg->user?->name,
+                'registration_date' => $reg->registration_date?->toIso8601String(),
+                'remedial_term_id'  => $reg->remedial_term_id,
+                'remedial_term_name'=> $reg->remedialTerm?->name,
+                'subject_id'        => $reg->subject_id,
+                'subject_code'      => $reg->subject?->subject_code,
+                'subject_name'      => $reg->subject?->name,
+            ])
+            ->all();
+    }
+
     public function listSubjectAssignmentSummaries(int $departmentId, ?int $remedialTermId = null): array
     {
         $query = DB::table('remedial_registrations')

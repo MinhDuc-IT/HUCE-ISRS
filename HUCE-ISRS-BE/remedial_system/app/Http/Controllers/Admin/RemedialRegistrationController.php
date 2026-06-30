@@ -26,4 +26,23 @@ class RemedialRegistrationController extends BaseController
 
         return $this->success($items);
     }
+
+    public function students(Request $request): JsonResponse
+    {
+        $request->validate([
+            'remedial_term_id' => ['required', 'integer'],
+            'subject_id'       => ['required', 'integer'],
+        ]);
+
+        try {
+            $items = $this->queryService->listStudentsForGroup(
+                $request->integer('remedial_term_id'),
+                $request->integer('subject_id'),
+            );
+
+            return $this->success($items);
+        } catch (\DomainException $e) {
+            return $this->error($e->getMessage(), null, 404);
+        }
+    }
 }

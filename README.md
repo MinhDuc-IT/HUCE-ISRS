@@ -52,3 +52,29 @@ Sau đăng nhập, FE redirect theo `home_url`: `/admin`, `/department`, `/stude
 - **PHPUnit (BE):** `cd HUCE-ISRS-BE/remedial_system && php artisan test`
 - **Regression thủ công (3 role):** xem [REGRESSION.md](./REGRESSION.md)
 - **Kiến trúc & API:** [HUCE-ISRS-BE/remedial_system/ARCHITECTURE.md](./HUCE-ISRS-BE/remedial_system/ARCHITECTURE.md)
+
+## Fake data đợt block
+
+Năm 2022 (2022-2023):
+- HK 1 block 2: ngày thi 3-14/1/2023
+                thời gian đợt phụ đạo (3/12/2022-3/1/2023)
+- HK 2 block 1: ngày thi 13-27/4/2023
+                thời gian đợt phụ đạo (13/3/2023-13/4/2023)
+- HK 2 block 2: ngày thi 21/6-1/7/2023
+                thời gian đợt phụ đạo (21/5/2023-21/6/2023)
+
+Năm 2023 (2023-2024):
+- HK 1 block 1: ngày thi 28/9-6/10/2023
+                thời gian đợt phụ đạo (28/8/2023-28/9/2023)
+- HK 1 block 2: ngày thi 4-18/12/2023
+                thời gian đợt phụ đạo (4/11/2023-4/12/2023)
+- HK 2 block 1: ngày thi 4-6/3/2024
+                thời gian đợt phụ đạo (4/2/2024-4/3/2024)
+- HK 2 block 2: ngày thi 14-29/5/2024
+                thời gian đợt phụ đạo (14/4/2024-14/5/2024)
+
+Năm 2024 (2024-2025):
+- HK 1 block 1: ngày thi 30/9-2/10-2024
+                thời gian đợt phụ đạo (30/8/2024-30/9/2024)
+- HK 1 block 2: ngày thi 2-20/12/2024
+                thời gian đợt phụ đạo (2/11/2024-2/12/2024)
