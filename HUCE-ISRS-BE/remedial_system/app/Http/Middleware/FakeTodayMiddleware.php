@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Domain\Ports\Persistence\SystemConfigurationRepositoryPort;
 use Carbon\Carbon;
 use Closure;
 use Illuminate\Http\Request;
@@ -10,46 +11,49 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Giả lập "hôm nay" khi chạy local/testing (DB university test chỉ có data quá khứ).
- * Đặt null để dùng ngày thật.
+ * Đọc cấu hình từ DB: key = 'FAKE_DAY', value = 'YYYY-MM-DD'
+ * Nếu không có hoặc null → dùng ngày thật.
  */
 class FakeTodayMiddleware
 {
-    /** null = không fake; YYYY-MM-DD khi cần test local với DB quá khứ */
-    private ?string $fakeToday;
+    public const CONFIG_KEY = 'FAKE_DAY';
 
-    public function __construct()
+    /** Cache static để tránh query DB mỗi request */
+    private static ?string $cachedFakeDay = null;
+    private static bool $isLoaded = false;
+
+    public function __construct(
+        private readonly SystemConfigurationRepositoryPort $configRepository,
+    ) {}
+
+    public static function clearCacheForKey(string $key): void
     {
-        // $value = env('FAKE_TODAY');
-        $value = '2024-04-20';
-        $this->fakeToday = is_string($value) && trim($value) !== '' ? trim($value) : null;
+        if ($key !== self::CONFIG_KEY) {
+            return;
+        }
 
-        Log::info('[FakeTodayMiddleware] Cấu hình khởi tạo', [
-            'real_now' => Carbon::now()->toDateTimeString(),
-            'fake_today' => $this->fakeToday,
-            'environment' => app()->environment(),
-        ]);
+        self::$cachedFakeDay = null;
+        self::$isLoaded = false;
     }
 
     public function handle(Request $request, Closure $next): Response
     {
-        // if (! app()->environment('local')) {
-        //     Log::info('[FakeTodayMiddleware] Bỏ qua fake today (production/staging)', [
-        //         'real_now' => Carbon::now()->toDateTimeString(),
-        //         'fake_today' => $this->fakeToday,
-        //         'environment' => app()->environment(),
-        //     ]);
+        // Load cache nếu chưa có (chỉ query 1 lần)
+        if (! self::$isLoaded) {
+            self::$cachedFakeDay = $this->configRepository->get(self::CONFIG_KEY);
+            self::$isLoaded = true;
+        }
 
-        //     return $next($request);
-        // }
-
-        if ($this->fakeToday !== null && preg_match('/^\d{4}-\d{2}-\d{2}$/', $this->fakeToday) === 1) {
+        // Nếu có giá trị hợp lệ → set fake time
+        if (self::$cachedFakeDay !== null && preg_match('/^\d{4}-\d{2}-\d{2}$/', self::$cachedFakeDay) === 1) {
             $realNow = Carbon::now()->toDateTimeString();
-            Carbon::setTestNow(Carbon::parse($this->fakeToday)->startOfDay());
+            
+            Carbon::setTestNow(Carbon::parse(self::$cachedFakeDay)->startOfDay());
 
             Log::info('[FakeTodayMiddleware] Đã giả lập ngày hiện tại', [
                 'real_now' => $realNow,
                 'effective_now' => Carbon::now()->toDateTimeString(),
-                'fake_today' => $this->fakeToday,
+                'fake_today' => self::$cachedFakeDay,
                 'environment' => app()->environment(),
             ]);
         }

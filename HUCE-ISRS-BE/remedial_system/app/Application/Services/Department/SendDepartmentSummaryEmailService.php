@@ -6,8 +6,7 @@ use App\Domain\Enums\SystemConfigKey;
 use App\Domain\Ports\Persistence\DepartmentRepositoryPort;
 use App\Domain\Ports\Persistence\SystemConfigurationRepositoryPort;
 use App\Infrastructure\Mail\DepartmentRemedialSummary;
-use App\Models\Department as DepartmentModel;
-use App\Models\RemedialRegistration as RemedialRegistrationModel;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class SendDepartmentSummaryEmailService
@@ -29,6 +28,10 @@ class SendDepartmentSummaryEmailService
             throw new \DomainException('Bộ môn chưa được cấu hình địa chỉ Email.');
         }
 
+        if (filter_var($dept->email, FILTER_VALIDATE_EMAIL) === false) {
+            throw new \DomainException('Email của bộ môn không hợp lệ.');
+        }
+
         $defaultSubject = $this->configRepository->get(
             SystemConfigKey::MAIL_SUMMARY_SUBJECT->value,
             'Danh sách sinh viên học phụ đạo'
@@ -38,23 +41,27 @@ class SendDepartmentSummaryEmailService
             'Gửi Bộ môn danh sách chi tiết các môn học và sinh viên đăng ký phụ đạo.'
         );
 
-        $registrations = RemedialRegistrationModel::query()
-            ->whereHas('subject', fn ($q) => $q->where('department_id', $departmentId))
-            ->with(['subject', 'user'])
-            ->orderBy('subject_id')
-            ->get();
+        $emailSubject = $subject ?: $defaultSubject;
+        $emailBody = $body ?: $defaultBody;
 
-        if ($registrations->isEmpty()) {
-            throw new \DomainException('Hiện không có đăng ký phụ đạo nào thuộc bộ môn này.');
-        }
+        Log::info('[DepartmentSummaryEmail] Sending summary email.', [
+            'department_id' => $departmentId,
+            'to' => $dept->email,
+            'mailer' => config('mail.default'),
+            'smtp_host' => config('mail.mailers.smtp.host'),
+            'from' => config('mail.from.address'),
+        ]);
 
-        $deptModel = DepartmentModel::find($departmentId);
+        Mail::mailer(config('mail.default'))
+            ->to($dept->email)
+            ->send(new DepartmentRemedialSummary(
+                emailSubject: $emailSubject,
+                emailBody: $emailBody,
+            ));
 
-        Mail::to($dept->email)->send(new DepartmentRemedialSummary(
-            department: $deptModel,
-            registrations: $registrations,
-            emailSubject: $subject ?: $defaultSubject,
-            emailBody: $body ?: $defaultBody,
-        ));
+        Log::info('[DepartmentSummaryEmail] Summary email sent.', [
+            'department_id' => $departmentId,
+            'to' => $dept->email,
+        ]);
     }
 }
