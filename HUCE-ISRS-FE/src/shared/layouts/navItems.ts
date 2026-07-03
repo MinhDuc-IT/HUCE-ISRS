@@ -11,6 +11,7 @@ const adminNav: NavItem[] = [
   { to: '/admin/cohorts', label: 'Đợt phụ đạo' },
   { to: '/admin/users', label: 'Người dùng' },
   { to: '/admin/departments', label: 'Bộ môn' },
+  { to: '/admin/subjects', label: 'Môn học' },
   { to: '/admin/registrations', label: 'Tra cứu đăng ký' },
   { to: '/admin/email-department', label: 'Gửi email BM' },
   { to: '/admin/settings', label: 'Cài đặt' },

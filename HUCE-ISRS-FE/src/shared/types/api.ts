@@ -104,6 +104,14 @@ export type ApiDepartment = {
   login_user?: ApiDepartmentLoginUser | null;
 };
 
+export type ApiSubject = {
+  id: number;
+  subject_code: string;
+  name: string;
+  credits: number | null;
+  department_id: number;
+};
+
 export type ApiTermStatisticsSummary = {
   remedial_term_id: number;
   remedial_term_name: string;

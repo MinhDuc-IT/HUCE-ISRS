@@ -9,6 +9,7 @@ import { SystemSettingsPage } from '@/modules/admin/pages/SystemSettingsPage'
 import { CohortFormPage } from '@/modules/admin/pages/CohortFormPage'
 import { CohortListPage } from '@/modules/admin/pages/CohortListPage'
 import { DepartmentListPage } from '@/modules/admin/pages/DepartmentListPage'
+import { SubjectListPage } from '@/modules/admin/pages/SubjectListPage'
 import { UserFormPage } from '@/modules/admin/pages/UserFormPage'
 import { UserListPage } from '@/modules/admin/pages/UserListPage'
 import { DepartmentAssignmentsPage } from '@/modules/department/pages/DepartmentAssignmentsPage'
@@ -38,6 +39,7 @@ export function AppRoutes() {
           <Route path="users/new" element={<UserFormPage />} />
           <Route path="users/:id/edit" element={<UserFormPage />} />
           <Route path="departments" element={<DepartmentListPage />} />
+          <Route path="subjects" element={<SubjectListPage />} />
           <Route path="registrations" element={<AdminRegistrationsPage />} />
           <Route path="email-department" element={<AdminSendEmailPage />} />
           <Route path="settings" element={<SystemSettingsPage />} />
