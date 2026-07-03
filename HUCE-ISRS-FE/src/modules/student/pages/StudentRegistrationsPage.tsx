@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/shared/context/AuthContext'
 import { useConfirm } from '@/shared/context/ConfirmContext'
@@ -14,12 +14,7 @@ export function StudentRegistrationsPage() {
   const [list, setList] = useState<ApiStudentRegistration[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (!user) return
-    fetchList()
-  }, [user])
-
-  async function fetchList() {
+  const fetchList = useCallback(async () => {
     try {
       setLoading(true)
       let termId: number | null = null
@@ -48,7 +43,12 @@ export function StudentRegistrationsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [showError])
+
+  useEffect(() => {
+    if (!user) return
+    void fetchList()
+  }, [user, fetchList])
 
   async function handleRemove(regId: number) {
     const ok = await confirm({
