@@ -13,7 +13,7 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class FakeTodayMiddleware
 {
-    /** null = không fake; YYYY-MM-DD khi cần test local với DB quá khứ */
+    /** null = không fake (dùng ngày thật hôm nay); YYYY-MM-DD khi cần test local với DB quá khứ */
     private const FAKE_TODAY = '2024-02-07';
 
     public function handle(Request $request, Closure $next): Response
