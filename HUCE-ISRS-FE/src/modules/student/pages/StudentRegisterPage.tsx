@@ -63,8 +63,8 @@ export function StudentRegisterPage() {
       setRegistrations(regsResponse.data || []);
       setRegisterableSubjects(subjectsResponse.data || []);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Lỗi không xác định";
-      setError("Lỗi khi tải dữ liệu từ máy chủ: " + msg);
+      // const msg = err instanceof Error ? err.message : "Lỗi không xác định";
+      // setError("Lỗi khi tải dữ liệu từ máy chủ: " + msg);
     } finally {
       setLoadingData(false);
     }

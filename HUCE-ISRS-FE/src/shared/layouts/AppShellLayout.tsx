@@ -47,13 +47,13 @@ function AppShellInner({ role }: { role: UserRole }) {
         return
       }
       if (r === 'admin') {
-        const res = await apiFetch<{ data: { name: string; is_current_term?: boolean }[] }>(
+        const res = await apiFetch<{ data: ApiRemedialTerm[] }>(
           '/admin/remedial-terms',
         )
-        const current = (res.data || []).find((t) => t.is_current_term) ?? res.data?.[0]
+        const current = (res.data || []).find((t) => t.is_current_term)
         setBannerMsg(
           current?.name
-            ? `Đợt phụ đạo: ${current.name}`
+            ? buildStudentTermBanner(current)
             : 'Chưa có đợt phụ đạo trong hệ thống',
         )
         return
@@ -72,7 +72,7 @@ function AppShellInner({ role }: { role: UserRole }) {
       }
       setBannerMsg('Hệ thống đăng ký học phụ đạo — Bộ môn')
     } catch {
-      setBannerMsg('Không tải được thông tin đợt phụ đạo')
+      setBannerMsg('Không có đợt phụ đạo đang mở')
     }
   }
 

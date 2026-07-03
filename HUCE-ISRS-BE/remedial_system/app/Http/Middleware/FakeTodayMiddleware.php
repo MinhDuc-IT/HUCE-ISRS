@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Http\Middleware;
 
@@ -12,7 +12,7 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Giả lập "hôm nay" khi chạy local/testing (DB university test chỉ có data quá khứ).
  * Đọc cấu hình từ DB: key = 'FAKE_DAY', value = 'YYYY-MM-DD'
- * Nếu không có hoặc null → dùng ngày thật.
+ * Nếu không có, null, hoặc parse lỗi -> dùng ngày hiện tại.
  */
 class FakeTodayMiddleware
 {
@@ -44,18 +44,27 @@ class FakeTodayMiddleware
             self::$isLoaded = true;
         }
 
-        // Nếu có giá trị hợp lệ → set fake time
-        if (self::$cachedFakeDay !== null && preg_match('/^\d{4}-\d{2}-\d{2}$/', self::$cachedFakeDay) === 1) {
-            $realNow = Carbon::now()->toDateTimeString();
-            
-            Carbon::setTestNow(Carbon::parse(self::$cachedFakeDay)->startOfDay());
+        // Nếu parse được FAKE_DAY thì set fake time, còn không thì giữ ngày hiện tại
+        if (self::$cachedFakeDay !== null) {
+            try {
+                $realNow = Carbon::now()->toDateTimeString();
+                $fakeToday = Carbon::parse(self::$cachedFakeDay)->startOfDay();
 
-            Log::info('[FakeTodayMiddleware] Đã giả lập ngày hiện tại', [
-                'real_now' => $realNow,
-                'effective_now' => Carbon::now()->toDateTimeString(),
-                'fake_today' => self::$cachedFakeDay,
-                'environment' => app()->environment(),
-            ]);
+                Carbon::setTestNow($fakeToday);
+
+                Log::info('[FakeTodayMiddleware] Đã giả lập ngày hiện tại', [
+                    'real_now' => $realNow,
+                    'effective_now' => Carbon::now()->toDateTimeString(),
+                    'fake_today' => self::$cachedFakeDay,
+                    'environment' => app()->environment(),
+                ]);
+            } catch (\Throwable $e) {
+                Log::warning('[FakeTodayMiddleware] FAKE_DAY không hợp lệ, dùng ngày hiện tại', [
+                    'fake_today' => self::$cachedFakeDay,
+                    'error' => $e->getMessage(),
+                    'environment' => app()->environment(),
+                ]);
+            }
         }
 
         return $next($request);
