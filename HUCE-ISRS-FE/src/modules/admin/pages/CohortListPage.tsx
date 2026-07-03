@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
+import { useConfirm } from '@/shared/context/ConfirmContext'
 import { apiFetch } from '@/shared/utils/apiClient'
 import { useToast } from '@/shared/context/ToastContext'
 import type { ApiRemedialTerm } from '@/shared/types/api'
@@ -19,7 +20,7 @@ const statusNameByCode: Record<RemedialTermStatusCode, string> = {
 
 const nextStatusByCurrent: Partial<Record<RemedialTermStatusCode, number[]>> = {
   0: [1, 4],
-  1: [4],
+  1: [2,3,4],
   2: [3, 4],
 }
 
@@ -33,6 +34,7 @@ export function CohortListPage() {
   const [menuPosition, setMenuPosition] = useState<MenuPosition | null>(null)
   const menuButtonRefs = useRef<Record<number, HTMLButtonElement | null>>({})
   const menuPanelRef = useRef<HTMLDivElement | null>(null)
+  const { confirm } = useConfirm()
   const { success, error: showError } = useToast()
 
   useEffect(() => {
@@ -97,6 +99,14 @@ export function CohortListPage() {
   }
 
   async function handleStatusUpdate(id: number, nextStatus: RemedialTermStatusCode) {
+    const label = statusNameByCode[nextStatus]
+    const ok = await confirm({
+      title: 'Xác nhận chuyển trạng thái',
+      message: `Chuyển đợt phụ đạo sang "${formatRemedialTermStatus(label)}"?`,
+      confirmLabel: 'Chuyển trạng thái',
+      cancelLabel: 'Hủy',
+    })
+    if (!ok) return
     try {
       setUpdatingId(id)
       await apiFetch(`/admin/remedial-terms/${id}/status`, {
