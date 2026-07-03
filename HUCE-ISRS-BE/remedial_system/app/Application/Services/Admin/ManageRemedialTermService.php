@@ -88,28 +88,33 @@ class ManageRemedialTermService
     private function buildEntity(?int $id, array $data, ?RemedialTerm $existing = null): RemedialTerm
     {
         $status = $existing?->status ?? \App\Domain\Enums\RemedialTermStatus::DRAFT;
-        $allowPriceUpdate = in_array($status, [
-            \App\Domain\Enums\RemedialTermStatus::DRAFT,
-            \App\Domain\Enums\RemedialTermStatus::REGISTRATION_OPEN,
-        ], true);
-        $allowRegDateUpdate = $status !== \App\Domain\Enums\RemedialTermStatus::ACTIVE && $status !== \App\Domain\Enums\RemedialTermStatus::COMPLETED && $status !== \App\Domain\Enums\RemedialTermStatus::CANCELLED;
+        $allowAllUpdate = $status === \App\Domain\Enums\RemedialTermStatus::DRAFT;
+        $allowPriceAndNameUpdate = $status === \App\Domain\Enums\RemedialTermStatus::REGISTRATION_OPEN;
 
         return new RemedialTerm(
             id:                  $id,
-            year:                (int) ($data['year'] ?? $existing?->year),
-            semester:            (int) ($data['semester'] ?? $existing?->semester),
-            name:                (string) ($data['name'] ?? $existing?->name),
-            startDate:           $this->parseDate($data, 'start_date', $existing?->startDate),
-            endDate:             $this->parseDate($data, 'end_date', $existing?->endDate),
-            remedialCoefficient: $allowPriceUpdate ? (int) ($data['remedial_coefficient'] ?? $existing?->remedialCoefficient ?? 1) : ($existing?->remedialCoefficient ?? 1),
-            pricePerPeriod:      $allowPriceUpdate ? (int) ($data['price_per_period'] ?? $existing?->pricePerPeriod ?? 150000) : ($existing?->pricePerPeriod ?? 150000),
-            priceCoefficient:    $allowPriceUpdate ? (float) ($data['price_coefficient'] ?? $existing?->priceCoefficient ?? 1) : ($existing?->priceCoefficient ?? 1),
+            year:                $allowAllUpdate ? (int) ($data['year'] ?? $existing?->year) : $existing?->year,
+            semester:            $allowAllUpdate ? (int) ($data['semester'] ?? $existing?->semester) : $existing?->semester,
+            name:                ($allowAllUpdate || $allowPriceAndNameUpdate)
+                ? (string) ($data['name'] ?? $existing?->name)
+                : $existing?->name,
+            startDate:           $allowAllUpdate ? $this->parseDate($data, 'start_date', $existing?->startDate) : $existing?->startDate,
+            endDate:             $allowAllUpdate ? $this->parseDate($data, 'end_date', $existing?->endDate) : $existing?->endDate,
+            remedialCoefficient: ($allowAllUpdate || $allowPriceAndNameUpdate)
+                ? (int) ($data['remedial_coefficient'] ?? $existing?->remedialCoefficient ?? 1)
+                : ($existing?->remedialCoefficient ?? 1),
+            pricePerPeriod:      ($allowAllUpdate || $allowPriceAndNameUpdate)
+                ? (int) ($data['price_per_period'] ?? $existing?->pricePerPeriod ?? 150000)
+                : ($existing?->pricePerPeriod ?? 150000),
+            priceCoefficient:    ($allowAllUpdate || $allowPriceAndNameUpdate)
+                ? (float) ($data['price_coefficient'] ?? $existing?->priceCoefficient ?? 1)
+                : ($existing?->priceCoefficient ?? 1),
 //             isCurrentTerm:       array_key_exists('is_current_term', $data)
 //                 ? $this->toBool($data['is_current_term'])
 //                 : ($existing?->isCurrentTerm ?? false),
             isCurrentTerm:       $status->isCurrent(),
-            registrationStart:   $allowRegDateUpdate ? $this->parseDate($data, 'registration_start', $existing?->registrationStart) : $existing?->registrationStart,
-            registrationEnd:     $allowRegDateUpdate ? $this->parseDate($data, 'registration_end', $existing?->registrationEnd) : $existing?->registrationEnd,
+            registrationStart:   $allowAllUpdate ? $this->parseDate($data, 'registration_start', $existing?->registrationStart) : $existing?->registrationStart,
+            registrationEnd:     $allowAllUpdate ? $this->parseDate($data, 'registration_end', $existing?->registrationEnd) : $existing?->registrationEnd,
             status:              $existing?->status ?? \App\Domain\Enums\RemedialTermStatus::DRAFT,
         );
     }
@@ -117,9 +122,21 @@ class ManageRemedialTermService
     private function assertUpdateFieldsAllowed(\App\Domain\Enums\RemedialTermStatus $status, array $data): void
     {
         $forbiddenFields = match ($status) {
-            \App\Domain\Enums\RemedialTermStatus::DRAFT,
-            \App\Domain\Enums\RemedialTermStatus::REGISTRATION_OPEN => [],
+            \App\Domain\Enums\RemedialTermStatus::DRAFT => [],
+            \App\Domain\Enums\RemedialTermStatus::REGISTRATION_OPEN => [
+                'year',
+                'semester',
+                'start_date',
+                'end_date',
+                'registration_start',
+                'registration_end',
+            ],
             \App\Domain\Enums\RemedialTermStatus::ACTIVE => [
+                'year',
+                'semester',
+                'name',
+                'start_date',
+                'end_date',
                 'remedial_coefficient',
                 'price_per_period',
                 'price_coefficient',
