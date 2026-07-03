@@ -121,10 +121,6 @@ class RemedialTerm
             return \App\Domain\Enums\RemedialTermLogicStatus::CANCELLED;
         }
 
-        if ($this->endDate && $now->gt($this->endDate->copy()->endOfDay())) {
-            return \App\Domain\Enums\RemedialTermLogicStatus::ACTIVE_ENDED;
-        }
-
         if ($this->registrationStart && $this->registrationEnd) {
             if ($now->lessThan($this->registrationStart)) {
                 return \App\Domain\Enums\RemedialTermLogicStatus::ACTIVE_PENDING_REGISTRATION;
@@ -139,7 +135,14 @@ class RemedialTerm
             if ($this->startDate && $now->lt($this->startDate->copy()->startOfDay())) {
                 return \App\Domain\Enums\RemedialTermLogicStatus::ACTIVE_PENDING_CLASS;
             }
+            if ($this->endDate && $now->gt($this->endDate->copy()->endOfDay())) {
+                return \App\Domain\Enums\RemedialTermLogicStatus::COMPLETED;
+            }
             return \App\Domain\Enums\RemedialTermLogicStatus::ACTIVE_IN_PROGRESS;
+        }
+
+        if ($this->endDate && $now->gt($this->endDate->copy()->endOfDay())) {
+            return \App\Domain\Enums\RemedialTermLogicStatus::COMPLETED;
         }
 
         return \App\Domain\Enums\RemedialTermLogicStatus::ACTIVE_IN_PROGRESS;
