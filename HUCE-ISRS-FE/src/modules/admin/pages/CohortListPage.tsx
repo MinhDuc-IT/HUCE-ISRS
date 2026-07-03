@@ -8,9 +8,9 @@ import type { ApiRemedialTerm } from '@/shared/types/api'
 import { RemedialTermStatusBadge } from '@/modules/admin/components/RemedialTermStatusBadge'
 import { formatRemedialTermStatus, type RemedialTermStatus } from '@/shared/constants/term'
 
-type RemedialTermStatusCode = 0 | 1 | 2 | 3 | 4
+type RemedialTermLogicStatusCode = 0 | 10 | 11 | 12 | 13 | 14 | 30 | 40
 
-const statusNameByCode: Record<RemedialTermStatusCode, string> = {
+const statusNameByCode: Record<0 | 1 | 2 | 3 | 4, string> = {
   0: 'DRAFT',
   1: 'REGISTRATION_OPEN',
   2: 'ACTIVE',
@@ -18,10 +18,13 @@ const statusNameByCode: Record<RemedialTermStatusCode, string> = {
   4: 'CANCELLED',
 }
 
-const nextStatusByCurrent: Partial<Record<RemedialTermStatusCode, number[]>> = {
+const nextStatusByCurrent: Partial<Record<RemedialTermLogicStatusCode, number[]>> = {
   0: [1, 4],
-  1: [2,3,4],
-  2: [3, 4],
+  10: [1, 4],
+  11: [2, 3, 4],
+  12: [2, 3, 4],
+  13: [3, 4],
+  14: [3, 4],
 }
 
 type MenuPosition = { top: number; left: number }
@@ -98,7 +101,7 @@ export function CohortListPage() {
     }
   }
 
-  async function handleStatusUpdate(id: number, nextStatus: RemedialTermStatusCode) {
+  async function handleStatusUpdate(id: number, nextStatus: 0 | 1 | 2 | 3 | 4) {
     const label = statusNameByCode[nextStatus]
     const ok = await confirm({
       title: 'Xác nhận chuyển trạng thái',
@@ -190,7 +193,6 @@ export function CohortListPage() {
                 </tr>
               ) : (
                 terms.map((term, index) => {
-                  const currentStatus = (term.status ?? 0) as RemedialTermStatusCode
                   const isMenuOpen = openMenuId === term.id
 
 
@@ -206,7 +208,7 @@ export function CohortListPage() {
                         {term.status_logic != null ? (
                           <RemedialTermStatusBadge status={term.status_logic as RemedialTermStatus} label={term.status_logic_name} />
                         ) : (
-                          term.status_name ?? formatRemedialTermStatus(term.status == null ? undefined : statusNameByCode[currentStatus])
+                          term.status_logic_name ?? 'Nháp'
                         )}
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -256,7 +258,7 @@ export function CohortListPage() {
                 {(() => {
                   const term = terms.find((item) => item.id === openMenuId)
                   if (!term) return null
-                  const currentStatus = (term.status ?? 0) as RemedialTermStatusCode
+                  const currentStatus = (term.status_logic ?? 0) as RemedialTermLogicStatusCode
                   const actions = nextStatusByCurrent[currentStatus] ?? []
 
                   return (
@@ -286,9 +288,9 @@ export function CohortListPage() {
                           type="button"
                           className="flex w-full items-center rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-60"
                           disabled={updatingId === term.id}
-                          onClick={() => void handleStatusUpdate(term.id, action as RemedialTermStatusCode)}
+                          onClick={() => void handleStatusUpdate(term.id, action as 0 | 1 | 2 | 3 | 4)}
                         >
-                          Chuyển sang {formatRemedialTermStatus(statusNameByCode[action as RemedialTermStatusCode])}
+                          Chuyển sang {formatRemedialTermStatus(statusNameByCode[action as 0 | 1 | 2 | 3 | 4])}
                         </button>
                       ))}
                     </>

@@ -20,14 +20,17 @@ function addDays(dateStr: string, days: number): string {
 }
 
 const REGISTRATION_WINDOW_DAYS = 14
-type RemedialTermStatusCode = 0 | 1 | 2 | 3 | 4
+type RemedialTermLogicStatusCode = 0 | 10 | 11 | 12 | 13 | 14 | 30 | 40
 
-const statusLabelByCode: Record<RemedialTermStatusCode, string> = {
+const statusLabelByCode: Record<RemedialTermLogicStatusCode, string> = {
   0: 'Nháp',
-  1: 'Mở đăng ký',
-  2: 'Đang học',
-  3: 'Hoàn thành',
-  4: 'Đã hủy',
+  10: 'Sắp mở đăng ký',
+  11: 'Mở đăng ký',
+  12: 'Đã đóng đăng ký',
+  13: 'Đang học',
+  14: 'Chờ hoàn thành',
+  30: 'Hoàn thành',
+  40: 'Đã hủy',
 }
 
 export function CohortFormPage() {
@@ -36,7 +39,7 @@ export function CohortFormPage() {
   const isEdit = Boolean(id)
   const { error: showError } = useToast()
 
-  const [status, setStatus] = useState<RemedialTermStatusCode>(0)
+  const [statusLogic, setStatusLogic] = useState<RemedialTermLogicStatusCode>(0)
   const [year, setYear] = useState(new Date().getFullYear().toString())
   const [semester, setSemester] = useState('1')
   const [name, setName] = useState('')
@@ -58,7 +61,7 @@ export function CohortFormPage() {
       setLoading(true)
       const res = await apiFetch<{ data: ApiRemedialTerm }>(`/admin/remedial-terms/${termId}`)
       const t = res.data
-      setStatus((t.status ?? 0) as RemedialTermStatusCode)
+      setStatusLogic((t.status_logic ?? 0) as RemedialTermLogicStatusCode)
       setYear(String(t.year ?? new Date().getFullYear()))
       setSemester(String(t.semester ?? 1))
       setName(t.name ?? '')
@@ -166,8 +169,8 @@ export function CohortFormPage() {
     'w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-500/10'
 
   const dateInputClass = `${inputClass} cursor-pointer min-h-[2.5rem]`
-  const canEditMeta = !isEdit || status === 0
-  const canEditPricing = !isEdit || status === 0 || status === 1
+  const canEditAll = !isEdit || statusLogic === 0
+  const canEditPricing = !isEdit || statusLogic === 0 || statusLogic === 11
   const disabledClass = 'disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 disabled:opacity-100'
 
   if (loading) return <p className="text-center text-gray-500 py-10">Đang tải...</p>
@@ -183,7 +186,7 @@ export function CohortFormPage() {
         </h1>
         {isEdit ? (
           <p className="mt-1 text-sm text-gray-500">
-            Trạng thái hiện tại: <span className="font-medium text-gray-700">{statusLabelByCode[status]}</span>
+            Trạng thái hiện tại: <span className="font-medium text-gray-700">{statusLabelByCode[statusLogic]}</span>
           </p>
         ) : null}
       </div>
@@ -202,7 +205,7 @@ export function CohortFormPage() {
               min="2000"
               max="2100"
               required
-              disabled={!canEditMeta}
+              disabled={!canEditAll}
             />
           </div>
           <div>
@@ -214,7 +217,7 @@ export function CohortFormPage() {
               value={semester}
               onChange={(e) => setSemester(e.target.value)}
               required
-              disabled={!canEditMeta}
+              disabled={!canEditAll}
             >
               <option value="1">Học kỳ 1</option>
               <option value="2">Học kỳ 2</option>
@@ -248,7 +251,7 @@ export function CohortFormPage() {
                 className={`${dateInputClass} ${disabledClass}`}
                 value={startDate}
                 onChange={(e) => handleStartDateChange(e.target.value)}
-                disabled={!canEditMeta}
+                disabled={!canEditAll}
               />
             </div>
             <div>
@@ -260,7 +263,7 @@ export function CohortFormPage() {
                 className={`${dateInputClass} ${disabledClass}`}
                 value={endDate}
                 onChange={(e) => handleEndDateChange(e.target.value)}
-                disabled={!canEditMeta}
+                disabled={!canEditAll}
               />
             </div>
           </div>
@@ -278,7 +281,7 @@ export function CohortFormPage() {
                 className={`${dateInputClass} ${disabledClass}`}
                 value={registrationStart}
                 onChange={(e) => handleRegistrationStartChange(e.target.value)}
-                disabled={!canEditMeta}
+                disabled={!canEditAll}
               />
             </div>
             <div>
@@ -290,7 +293,7 @@ export function CohortFormPage() {
                 className={`${dateInputClass} ${disabledClass}`}
                 value={registrationEnd}
                 onChange={(e) => setRegistrationEnd(e.target.value)}
-                disabled={!canEditMeta}
+                disabled={!canEditAll}
               />
             </div>
           </div>
