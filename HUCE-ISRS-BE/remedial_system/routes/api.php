@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\RemedialTermController;
 use App\Http\Controllers\Admin\StatisticsController;
 use App\Http\Controllers\Admin\SubjectController;
 use App\Http\Controllers\Admin\SystemConfigurationController;
+use App\Http\Controllers\Admin\TeacherController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Department\ProfileController as DepartmentProfileController;
@@ -93,6 +94,14 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/{id}', [SubjectController::class, 'show']);
             Route::patch('/{id}', [SubjectController::class, 'update']);
             Route::delete('/{id}', [SubjectController::class, 'destroy']);
+        });
+
+        Route::prefix('admin/teachers')->group(function () {
+            Route::get('/', [TeacherController::class, 'index']);
+            Route::post('/', [TeacherController::class, 'store']);
+            Route::get('/{id}', [TeacherController::class, 'show']);
+            Route::patch('/{id}', [TeacherController::class, 'update']);
+            Route::delete('/{id}', [TeacherController::class, 'destroy']);
         });
 
         Route::get('admin/remedial-registrations/students', [AdminRemedialRegistrationController::class, 'students']);
