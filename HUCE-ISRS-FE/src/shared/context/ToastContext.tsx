@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
@@ -86,10 +87,27 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 export function useToast() {
   const ctx = useContext(ToastContext)
   if (!ctx) throw new Error('useToast must be used within ToastProvider')
-  return {
-    toast: ctx.push,
-    success: (message: string) => ctx.push(message, 'success'),
-    error: (message: string) => ctx.push(message, 'error'),
-    info: (message: string) => ctx.push(message, 'info'),
-  }
+
+  const success = useCallback(
+    (message: string) => ctx.push(message, 'success'),
+    [ctx.push],
+  )
+  const error = useCallback(
+    (message: string) => ctx.push(message, 'error'),
+    [ctx.push],
+  )
+  const info = useCallback(
+    (message: string) => ctx.push(message, 'info'),
+    [ctx.push],
+  )
+
+  return useMemo(
+    () => ({
+      toast: ctx.push,
+      success,
+      error,
+      info,
+    }),
+    [ctx.push, success, error, info],
+  )
 }

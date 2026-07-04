@@ -91,7 +91,7 @@ export function StudentRegisterPage() {
       .map(([k]) => k);
 
     if (courseCodes.length === 0) {
-      setError("Vui lÃ²ng chá»n Ã­t nháº¥t 1 mÃ´n Ä‘á»ƒ Ä‘Äƒng kÃ½.");
+      setError("Vui lòng chọn ít nhất 1 môn để đăng ký.");
       return;
     }
 
@@ -103,12 +103,12 @@ export function StudentRegisterPage() {
         data: { course_codes: courseCodes },
       });
 
-      setMessage(`ÄÃ£ Ä‘Äƒng kÃ½ thÃ nh cÃ´ng ${courseCodes.length} mÃ´n há»c.`);
+      setMessage(`Đã đăng ký thành công ${courseCodes.length} môn học.`);
       setSelectedToRegister({});
       await fetchData();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Lá»—i khÃ´ng xÃ¡c Ä‘á»‹nh";
-      setError("Lá»—i khi lÆ°u Ä‘Äƒng kÃ½: " + msg);
+      const msg = err instanceof Error ? err.message : "Lỗi không xác định";
+      setError("Lỗi khi lưu đăng ký: " + msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -123,7 +123,7 @@ export function StudentRegisterPage() {
       .map(([k]) => Number(k));
 
     if (regIds.length === 0) {
-      setError("Vui lÃ²ng chá»n Ã­t nháº¥t 1 mÃ´n Ä‘á»ƒ há»§y Ä‘Äƒng kÃ½.");
+      setError("Vui lòng chọn ít nhất 1 môn để hủy đăng ký.");
       return;
     }
 
@@ -139,12 +139,12 @@ export function StudentRegisterPage() {
         });
       }
 
-      setMessage("ÄÃ£ há»§y Ä‘Äƒng kÃ½ thÃ nh cÃ´ng.");
+      setMessage("Đã hủy đăng ký thành công.");
       setSelectedToCancel({});
       await fetchData();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Lá»—i khÃ´ng xÃ¡c Ä‘á»‹nh";
-      setError("Lá»—i khi há»§y Ä‘Äƒng kÃ½: " + msg);
+      const msg = err instanceof Error ? err.message : "Lỗi không xác định";
+      setError("Lỗi khi hủy đăng ký: " + msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -168,7 +168,7 @@ export function StudentRegisterPage() {
       <div className="bg-white rounded border border-gray-200 shadow-sm">
         <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t">
           <h2 className="text-lg font-medium text-gray-800">
-            Danh sÃ¡ch mÃ´n há»c Ä‘Ã£ Ä‘Äƒng kÃ½
+            Danh sách môn học đã đăng ký
           </h2>
           <button
             type="button"
@@ -176,20 +176,20 @@ export function StudentRegisterPage() {
             disabled={isSubmitting || loadingData}
             className="bg-[#1976d2] hover:bg-[#1565c0] text-white px-4 py-1.5 rounded text-sm font-medium transition-colors disabled:opacity-70"
           >
-            {isSubmitting ? "Äang xÃ³a..." : "XÃ³a Ä‘Äƒng kÃ½"}
+            {isSubmitting ? "Đang xóa..." : "Xóa đăng ký"}
           </button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left text-gray-700">
             <thead className="text-xs text-gray-700 bg-gray-100 border-b border-gray-200 text-center">
               <tr>
-                <th className="px-4 py-3 w-12">Chá»n</th>
-                <th className="px-4 py-3 border-l border-gray-200">MÃ£ MH</th>
+                <th className="px-4 py-3 w-12">Chọn</th>
+                <th className="px-4 py-3 border-l border-gray-200">Mã MH</th>
                 <th className="px-4 py-3 border-l border-gray-200">
-                  TÃªn mÃ´n há»c
+                  Tên môn học
                 </th>
                 <th className="px-4 py-3 border-l border-gray-200">
-                  NgÃ y Ä‘Äƒng kÃ½
+                  Ngày đăng ký
                 </th>
               </tr>
             </thead>
@@ -200,7 +200,7 @@ export function StudentRegisterPage() {
                     colSpan={5}
                     className="px-4 py-6 text-center text-gray-500"
                   >
-                    Äang táº£i dá»¯ liá»‡u...
+                    Đang tải dữ liệu...
                   </td>
                 </tr>
               ) : registrations.length === 0 ? (
@@ -209,7 +209,7 @@ export function StudentRegisterPage() {
                     colSpan={4}
                     className="px-4 py-6 text-center text-gray-500 italic"
                   >
-                    ChÆ°a Ä‘Äƒng kÃ½ mÃ´n há»c nÃ o.
+                    Chưa đăng ký môn học nào.
                   </td>
                 </tr>
               ) : (
@@ -230,14 +230,14 @@ export function StudentRegisterPage() {
                     </td>
                     <td className="px-4 py-2">{reg.course_code}</td>
                     <td className="px-4 py-2 text-left">
-                      {reg.course_name ?? "â€”"}
+                      {reg.course_name ?? "—"}
                     </td>
                     <td className="px-4 py-2">
                       {reg.registration_date
                         ? new Date(reg.registration_date).toLocaleDateString(
                             "vi-VN",
                           )
-                        : "â€”"}
+                        : "—"}
                     </td>
                   </tr>
                 ))
@@ -250,7 +250,7 @@ export function StudentRegisterPage() {
       <div className="bg-white rounded border border-gray-200 shadow-sm">
         <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t">
           <h2 className="text-lg font-medium text-gray-800">
-            Danh sÃ¡ch mÃ´n há»c chÃ­nh quy (ká»³ Ä‘á»£t phá»¥ Ä‘áº¡o hiá»‡n táº¡i)
+            Danh sách môn học chính quy (kỳ đợt phụ đạo hiện tại)
           </h2>
           <button
             type="button"
@@ -258,21 +258,21 @@ export function StudentRegisterPage() {
             disabled={isSubmitting || loadingData}
             className="bg-[#1976d2] hover:bg-[#1565c0] text-white px-4 py-1.5 rounded text-sm font-medium transition-colors disabled:opacity-70"
           >
-            {isSubmitting ? "Äang lÆ°u..." : "LÆ°u Ä‘Äƒng kÃ½"}
+            {isSubmitting ? "Đang lưu..." : "Lưu đăng ký"}
           </button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left text-gray-700">
             <thead className="text-xs text-gray-700 bg-gray-100 border-b border-gray-200 text-center">
               <tr>
-                <th className="px-4 py-3 w-12">Chá»n</th>
-                <th className="px-4 py-3 border-l border-gray-200">MÃ£ MH</th>
+                <th className="px-4 py-3 w-12">Chọn</th>
+                <th className="px-4 py-3 border-l border-gray-200">Mã MH</th>
                 <th className="px-4 py-3 border-l border-gray-200">
-                  TÃªn mÃ´n há»c
+                  Tên môn học
                 </th>
-                <th className="px-4 py-3 border-l border-gray-200">Lá»›p HP</th>
+                <th className="px-4 py-3 border-l border-gray-200">Lớp HP</th>
                 <th className="px-4 py-3 border-l border-gray-200">STC</th>
-                <th className="px-4 py-3 border-l border-gray-200">NgÃ y thi</th>
+                <th className="px-4 py-3 border-l border-gray-200">Ngày thi</th>
               </tr>
             </thead>
             <tbody>
@@ -282,7 +282,7 @@ export function StudentRegisterPage() {
                     colSpan={6}
                     className="px-4 py-6 text-center text-gray-500"
                   >
-                    Äang táº£i dá»¯ liá»‡u...
+                    Đang tải dữ liệu...
                   </td>
                 </tr>
               ) : registerableSubjects.length === 0 ? (
@@ -291,8 +291,8 @@ export function StudentRegisterPage() {
                     colSpan={6}
                     className="px-4 py-6 text-center text-gray-500 italic"
                   >
-                    KhÃ´ng cÃ³ mÃ´n há»c chÃ­nh quy nÃ o thuá»™c block thi cá»§a Ä‘á»£t phá»¥ Ä‘áº¡o
-                    hiá»‡n táº¡i (ngÃ y thi trong vÃ²ng 60 ngÃ y ká»ƒ tá»« ngÃ y má»Ÿ Ä‘Äƒng kÃ½).
+                    Không có môn học chính quy nào thuộc block thi của đợt phụ đạo
+                    hiện tại (ngày thi trong vòng 60 ngày kể từ ngày mở đăng ký).
                   </td>
                 </tr>
               ) : (
@@ -309,7 +309,7 @@ export function StudentRegisterPage() {
                       className={`border-b border-gray-100 hover:bg-gray-50 text-center ${isRegistered ? "bg-green-50/30" : ""} ${isNotEligible && !isRegistered ? "opacity-60 bg-gray-50" : ""}`}
                       title={
                         isNotEligible && !isRegistered
-                          ? "MÃ´n há»c cÃ³ sá»‘ tÃ­n chá»‰ <= 1 khÃ´ng Ä‘Æ°á»£c Ä‘Äƒng kÃ½ phá»¥ Ä‘áº¡o"
+                          ? "Môn học có số tín chỉ <= 1 không được đăng ký phụ đạo"
                           : undefined
                       }
                     >
@@ -336,7 +336,7 @@ export function StudentRegisterPage() {
                         {subject.subject_name}
                       </td>
                       <td className="px-4 py-2">
-                        {subject.lop_du_kien || "â€”"}
+                        {subject.lop_du_kien || "—"}
                       </td>
                       <td className="px-4 py-2">{subject.credits}</td>
                       <td className="px-4 py-2">
@@ -344,7 +344,7 @@ export function StudentRegisterPage() {
                           ? new Date(subject.exam_date).toLocaleDateString(
                               "vi-VN",
                             )
-                          : "â€”"}
+                          : "—"}
                       </td>
                     </tr>
                   );
@@ -357,5 +357,3 @@ export function StudentRegisterPage() {
     </div>
   );
 }
-
-

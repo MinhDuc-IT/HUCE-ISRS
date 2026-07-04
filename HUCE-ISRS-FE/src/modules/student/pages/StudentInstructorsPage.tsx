@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/shared/context/AuthContext'
 import { apiFetch } from '@/shared/utils/apiClient'
@@ -7,20 +7,20 @@ import type { ApiRemedialTerm, ApiStudentRegistration } from '@/shared/types/api
 export function StudentInstructorsPage() {
   const { user } = useAuth()
   const [regs, setRegs] = useState<ApiStudentRegistration[]>([])
+  const [hasCurrentTerm, setHasCurrentTerm] = useState(false)
   const [loading, setLoading] = useState(true)
 
-  async function fetchRegs() {
+  const fetchRegs = useCallback(async () => {
+    if (!user) return
+
     try {
       setLoading(true)
-      let termId: number | null = null
-      try {
-        const termRes = await apiFetch<{ data: ApiRemedialTerm }>(
-          '/student/remedial-terms/current',
-        )
-        termId = termRes.data?.id ?? null
-      } catch {
-        termId = null
-      }
+
+      const termRes = await apiFetch<{ data: ApiRemedialTerm | null }>(
+        '/student/remedial-terms/current',
+      )
+      const termId = termRes.data?.id ?? null
+      setHasCurrentTerm(termId != null)
 
       if (termId == null) {
         setRegs([])
@@ -33,15 +33,16 @@ export function StudentInstructorsPage() {
       setRegs(res.data || [])
     } catch {
       setRegs([])
+      setHasCurrentTerm(false)
     } finally {
       setLoading(false)
     }
-  }
+  }, [user])
 
   useEffect(() => {
     if (!user) return
-    fetchRegs()
-  }, [user])
+    void fetchRegs()
+  }, [user, fetchRegs])
 
   if (!user) return null
 
@@ -73,6 +74,12 @@ export function StudentInstructorsPage() {
                 <tr>
                   <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
                     Đang tải...
+                  </td>
+                </tr>
+              ) : !hasCurrentTerm ? (
+                <tr>
+                  <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
+                    Hiện chưa có đợt phụ đạo đang mở.
                   </td>
                 </tr>
               ) : regs.length === 0 ? (

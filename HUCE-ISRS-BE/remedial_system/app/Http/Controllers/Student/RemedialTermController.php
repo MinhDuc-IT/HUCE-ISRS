@@ -20,7 +20,7 @@ class RemedialTermController extends BaseController
         $term = $this->termRepository->findCurrent();
 
         if ($term === null) {
-            return $this->error('Hiện không có đợt phụ đạo nào.', null, 404);
+            return $this->success(null, 'Hiện không có đợt phụ đạo nào.');
         }
 
         return $this->success((new RemedialTermResource($term))->resolve());
