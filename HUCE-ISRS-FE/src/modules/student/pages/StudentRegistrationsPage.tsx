@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/shared/context/AuthContext'
 import { useConfirm } from '@/shared/context/ConfirmContext'
@@ -11,27 +11,22 @@ export function StudentRegistrationsPage() {
   const { confirm } = useConfirm()
   const { success, error: showError } = useToast()
   const [currentTermId, setCurrentTermId] = useState<number | null>(null)
+  const [hasCurrentTerm, setHasCurrentTerm] = useState(false)
   const [list, setList] = useState<ApiStudentRegistration[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  const fetchList = useCallback(async () => {
     if (!user) return
-    fetchList()
-  }, [user])
 
-  async function fetchList() {
     try {
       setLoading(true)
-      let termId: number | null = null
-      try {
-        const termRes = await apiFetch<{ data: ApiRemedialTerm }>(
-          '/student/remedial-terms/current',
-        )
-        termId = termRes.data?.id ?? null
-      } catch {
-        termId = null
-      }
+
+      const termRes = await apiFetch<{ data: ApiRemedialTerm | null }>(
+        '/student/remedial-terms/current',
+      )
+      const termId = termRes.data?.id ?? null
       setCurrentTermId(termId)
+      setHasCurrentTerm(termId != null)
 
       if (termId == null) {
         setList([])
@@ -43,12 +38,20 @@ export function StudentRegistrationsPage() {
       )
       setList(res.data || [])
     } catch (err: unknown) {
+      setList([])
+      setHasCurrentTerm(false)
+      setCurrentTermId(null)
       const msg = err instanceof Error ? err.message : 'Lỗi không xác định'
       showError('Lỗi tải danh sách: ' + msg)
     } finally {
       setLoading(false)
     }
-  }
+  }, [user, showError])
+
+  useEffect(() => {
+    if (!user) return
+    void fetchList()
+  }, [user, fetchList])
 
   async function handleRemove(regId: number) {
     const ok = await confirm({
@@ -102,6 +105,12 @@ export function StudentRegistrationsPage() {
                 <tr>
                   <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
                     Đang tải...
+                  </td>
+                </tr>
+              ) : !hasCurrentTerm ? (
+                <tr>
+                  <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
+                    Hiện chưa có đợt phụ đạo đang mở.
                   </td>
                 </tr>
               ) : list.length === 0 ? (

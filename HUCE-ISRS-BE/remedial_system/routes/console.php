@@ -17,7 +17,7 @@ Artisan::command('inspire', function () {
 | - registration_end -> ACTIVE
 | - end_date -> COMPLETED
 */
-Schedule::command('remedial-term:update-status')
-    ->hourly()
-    ->withoutOverlapping()
-    ->appendOutputTo(storage_path('logs/remedial-term-update-status.log'));
+// Schedule::command('remedial-term:update-status')
+//     ->hourly()
+//     ->withoutOverlapping()
+//     ->appendOutputTo(storage_path('logs/remedial-term-update-status.log'));

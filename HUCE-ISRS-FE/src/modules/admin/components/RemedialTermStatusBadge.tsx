@@ -1,4 +1,4 @@
-type RemedialTermStatus = 0 | 1 | 2 | 3 | 4 | 10 | 11 | 12 | 13 | 14 | 30 | 40
+import type { RemedialTermStatus } from '@/shared/constants/term'
 
 const styles: Record<RemedialTermStatus, string> = {
   0: 'bg-gray-100 text-gray-700 border-gray-200',
@@ -38,16 +38,4 @@ export function RemedialTermStatusBadge({ status, label }: { status: RemedialTer
       {label || labels[status]}
     </span>
   )
-}
-
-export function formatRemedialTermStatus(status?: string | null): string {
-  const labels: Record<string, string> = {
-    DRAFT: 'Nháp',
-    REGISTRATION_OPEN: 'Mở đăng ký',
-    ACTIVE: 'Đang học',
-    COMPLETED: 'Hoàn thành',
-    CANCELLED: 'Đã hủy',
-  }
-
-  return status ? labels[status] ?? status : 'Nháp'
 }

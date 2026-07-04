@@ -14,10 +14,6 @@ export function AdminSendEmailPage() {
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
 
-  useEffect(() => {
-    fetchDepartments()
-  }, [])
-
   async function fetchDepartments() {
     try {
       setLoading(true)
@@ -34,6 +30,10 @@ export function AdminSendEmailPage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    fetchDepartments()
+  }, [])
 
   const selectedDept = departments.find((d) => String(d.id) === departmentId)
 

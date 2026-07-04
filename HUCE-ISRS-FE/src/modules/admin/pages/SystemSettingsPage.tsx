@@ -21,22 +21,23 @@ export function SystemSettingsPage() {
   const [deletingKey, setDeletingKey] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
 
-  useEffect(() => {
-    fetchSettings()
-  }, [])
-
   async function fetchSettings() {
     try {
       setLoading(true)
       const res = await apiFetch<{ data: ApiSetting[] }>('/admin/system-configurations')
       const list = res.data || []
       setSettings(list.sort((a, b) => a.key.localeCompare(b.key)))
-    } catch (err: any) {
-      setError('Lỗi khi tải cấu hình: ' + err.message)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      setError('Lỗi khi tải cấu hình: ' + msg)
     } finally {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    fetchSettings()
+  }, [])
 
   async function handleCreate(e: FormEvent) {
     e.preventDefault()
@@ -63,8 +64,9 @@ export function SystemSettingsPage() {
       setNewSetting({ key: '', value: '', description: '' })
       setMessage('Đã thêm cấu hình mới.')
       setTimeout(() => setMessage(null), 3000)
-    } catch (err: any) {
-      setError('Lỗi khi thêm cấu hình: ' + err.message)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      setError('Lỗi khi thêm cấu hình: ' + msg)
     } finally {
       setIsCreating(false)
     }
@@ -92,8 +94,9 @@ export function SystemSettingsPage() {
       )
       setMessage('Đã cập nhật cấu hình.')
       setTimeout(() => setMessage(null), 3000)
-    } catch (err: any) {
-      setError('Lỗi khi cập nhật cấu hình: ' + err.message)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      setError('Lỗi khi cập nhật cấu hình: ' + msg)
     } finally {
       setSavingKey(null)
     }
@@ -115,8 +118,9 @@ export function SystemSettingsPage() {
       setSettings(prev => prev.filter(item => item.key !== settingKey))
       setMessage('Đã xóa cấu hình.')
       setTimeout(() => setMessage(null), 3000)
-    } catch (err: any) {
-      setError('Lỗi khi xóa cấu hình: ' + err.message)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      setError('Lỗi khi xóa cấu hình: ' + msg)
     } finally {
       setDeletingKey(null)
     }

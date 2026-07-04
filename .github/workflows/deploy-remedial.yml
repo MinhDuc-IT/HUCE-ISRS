@@ -1,0 +1,144 @@
+# ════════════════════════════════════════════════════════════
+# Deploy remedial_system → EC2 t3.small
+#
+# Trigger: push to main (chỉ khi có thay đổi ở remedial_system/)
+#
+# GitHub Secrets cần cấu hình:
+#   GHCR_TOKEN             - GitHub Personal Access Token (write:packages)
+#   REMEDIAL_EC2_HOST      - IP hoặc Duck DNS hostname của EC2
+#   REMEDIAL_EC2_USER      - SSH user (vd: ubuntu hoặc ec2-user)
+#   REMEDIAL_EC2_SSH_KEY   - Nội dung private key PEM
+#   REMEDIAL_EC2_PORT      - SSH port (mặc định 22)
+# ════════════════════════════════════════════════════════════
+name: Deploy remedial_system (EC2)
+
+on:
+  push:
+    branches: [main, thanhld/dev]
+    paths:
+      - "HUCE-ISRS-BE/remedial_system/**"
+      - ".github/workflows/deploy-remedial.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository }}/remedial-system
+  COMPOSE_DIR: /home/${{ vars.REMEDIAL_EC2_USER || 'ubuntu' }}/remedial_system
+
+jobs:
+  # ── Build & Push Docker Image ─────────────────────────────
+  build:
+    name: Build & Push Image
+    runs-on: ubuntu-latest
+
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Lowercase image name
+        run: |
+          echo "IMAGE_NAME=$(echo ghcr.io/${{ github.repository }}/remedial-system | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=,format=short
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: HUCE-ISRS-BE/remedial_system
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ── Deploy to EC2 via SSH ─────────────────────────────────
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    needs: build
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pre-SCP Cleanup (Xóa file/thư mục nginx.conf cũ để SCP không bị lỗi quyền)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.REMEDIAL_EC2_HOST }}
+          username: ${{ secrets.REMEDIAL_EC2_USER }}
+          key: ${{ secrets.REMEDIAL_EC2_SSH_KEY }}
+          port: ${{ secrets.REMEDIAL_EC2_PORT || 22 }}
+          script: |
+            sudo rm -rf ~/remedial_system/docker/nginx/nginx.conf
+            echo "Đã dọn dẹp nginx.conf cũ"
+
+      - name: Copy docker-compose & env example to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.REMEDIAL_EC2_HOST }}
+          username: ${{ secrets.REMEDIAL_EC2_USER }}
+          key: ${{ secrets.REMEDIAL_EC2_SSH_KEY }}
+          port: ${{ secrets.REMEDIAL_EC2_PORT || 22 }}
+          source: "HUCE-ISRS-BE/remedial_system/docker-compose.yml,HUCE-ISRS-BE/remedial_system/docker/nginx/nginx.conf"
+          target: "~/remedial_system/"
+          strip_components: 2
+
+      - name: SSH Deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.REMEDIAL_EC2_HOST }}
+          username: ${{ secrets.REMEDIAL_EC2_USER }}
+          key: ${{ secrets.REMEDIAL_EC2_SSH_KEY }}
+          port: ${{ secrets.REMEDIAL_EC2_PORT || 22 }}
+          script: |
+            set -e
+            cd ~/remedial_system
+
+            # Đăng nhập vào GHCR
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io \
+              -u "${{ github.actor }}" --password-stdin
+
+            # Cập nhật IMAGE_TAG trong file .env.production
+            export IMAGE_TAG="${{ needs.build.outputs.image_tag }}"
+            export GITHUB_REPOSITORY=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+
+            # Pull image mới
+            IMAGE_TAG=$IMAGE_TAG \
+            GITHUB_REPOSITORY=$GITHUB_REPOSITORY \
+            docker compose --env-file .env.production pull app queue scheduler
+
+            # Restart chỉ app services (không restart mysql/redis trừ khi cần)
+            IMAGE_TAG=$IMAGE_TAG \
+            GITHUB_REPOSITORY=$GITHUB_REPOSITORY \
+            docker compose --env-file .env.production up -d \
+              --no-deps app queue scheduler nginx
+
+            echo "🔄 Reloading Nginx configuration..."
+            docker exec remedial_nginx nginx -s reload || true
+
+            # Dọn images cũ
+            docker image prune -f
+
+            echo "✅ remedial_system deployed. Image: $IMAGE_TAG"

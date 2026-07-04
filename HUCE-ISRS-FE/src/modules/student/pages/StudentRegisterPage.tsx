@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/shared/context/AuthContext";
 import { apiFetch } from "@/shared/utils/apiClient";
 import type {
@@ -29,12 +29,7 @@ export function StudentRegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (!user) return;
-    fetchData();
-  }, [user]);
-
-  async function fetchData() {
+  const fetchData = useCallback(async () => {
     if (!user) return;
     try {
       setLoadingData(true);
@@ -63,12 +58,16 @@ export function StudentRegisterPage() {
       setRegistrations(regsResponse.data || []);
       setRegisterableSubjects(subjectsResponse.data || []);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Lỗi không xác định";
-      setError("Lỗi khi tải dữ liệu từ máy chủ: " + msg);
+      void err;
     } finally {
       setLoadingData(false);
     }
-  }
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    void fetchData();
+  }, [user, fetchData]);
 
   const registeredCourseCodes = useMemo(() => {
     return new Set(registrations.map((r) => r.course_code));

@@ -63,8 +63,9 @@ export function AdminAssignmentsPage() {
       setTutoringClasses(classesRes.data || [])
       // Lọc các user là giảng viên (role_id = ...) - Tạm lấy toàn bộ để demo mapping
       setTeachers(usersRes.data || [])
-    } catch (err: any) {
-      setError('Lỗi tải dữ liệu: ' + err.message)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      setError('Lỗi tải dữ liệu: ' + msg)
     } finally {
       setLoading(false)
     }
@@ -108,8 +109,9 @@ export function AdminAssignmentsPage() {
       setTimeout(() => setMessage(null), 3000)
       setEditingRow(null)
       fetchData()
-    } catch (err: any) {
-      setError('Lỗi phân công giảng viên: ' + err.message)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      setError('Lỗi phân công giảng viên: ' + msg)
     } finally {
       setIsSubmitting(false)
     }

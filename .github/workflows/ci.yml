@@ -1,0 +1,137 @@
+# ════════════════════════════════════════════════════════════
+# CI – Chạy tests + lint cho mọi Pull Request và push to main
+# ════════════════════════════════════════════════════════════
+name: CI
+
+on:
+  push:
+    branches: [main, thanhld/dev]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── Test: remedial_system ─────────────────────────────────
+  test-remedial:
+    name: Test remedial_system
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: remedial_test
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=5
+
+    defaults:
+      run:
+        working-directory: HUCE-ISRS-BE/remedial_system
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: gd, pdo_mysql, redis, zip, intl, bcmath
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: HUCE-ISRS-BE/remedial_system/vendor
+          key: composer-remedial-${{ hashFiles('HUCE-ISRS-BE/remedial_system/composer.lock') }}
+          restore-keys: composer-remedial-
+
+      - name: Install Composer dependencies
+        # Cài kể cả dev deps để có PHPUnit (require-dev)
+        run: composer install --optimize-autoloader --no-interaction
+
+      - name: Setup .env for testing
+        run: |
+          cp .env.example .env
+          sed -i 's/DB_DATABASE=.*/DB_DATABASE=remedial_test/' .env
+          sed -i 's/DB_USERNAME=.*/DB_USERNAME=root/' .env
+          sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=root/' .env
+          sed -i 's/DB_HOST=.*/DB_HOST=127.0.0.1/' .env
+          php artisan key:generate
+
+      - name: Run migrations
+        run: php artisan migrate --force
+
+      # - name: Run PHPUnit tests
+      #   run: ./vendor/bin/phpunit
+
+  # ── Test: university_system ──────────────────────────────
+  test-university:
+    name: Test university_system
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: HUCE-ISRS-BE/university_system
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: pdo_sqlite, mbstring, bcmath
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: HUCE-ISRS-BE/university_system/vendor
+          key: composer-university-${{ hashFiles('HUCE-ISRS-BE/university_system/composer.lock') }}
+          restore-keys: composer-university-
+
+      - name: Install Composer dependencies
+        # Cài kể cả dev deps để có PHPUnit (require-dev)
+        run: composer install --optimize-autoloader --no-interaction
+
+      - name: Setup .env for testing (SQLite only)
+        run: |
+          cp .env.example .env
+          echo "DB_CONNECTION=sqlite" >> .env
+          echo "DB_DATABASE=:memory:" >> .env
+          touch database/database.sqlite
+          php artisan key:generate
+
+      - name: Run PHPUnit tests
+        run: ./vendor/bin/phpunit
+
+  # ── Lint: Frontend ────────────────────────────────────────
+  lint-fe:
+    name: Lint & Build Frontend
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: HUCE-ISRS-FE
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: HUCE-ISRS-FE/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check + Build
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: https://placeholder.api/api

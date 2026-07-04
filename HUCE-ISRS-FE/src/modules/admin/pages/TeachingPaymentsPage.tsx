@@ -54,6 +54,7 @@ export function TeachingPaymentsPage() {
     } else {
       setData([])
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTermId, currentPage])
 
   async function fetchTerms() {

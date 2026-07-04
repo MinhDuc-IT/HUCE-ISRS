@@ -1,0 +1,44 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/promtail-positions.yaml
+
+clients:
+  - url: ${LOKI_PUSH_URL:-http://loki:3100/loki/api/v1/push}
+
+scrape_configs:
+  - job_name: remedial_docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      - source_labels: [__meta_docker_container_name]
+        regex: '/(remedial_.*|isrs_.*)'
+        action: keep
+      - source_labels: [__meta_docker_container_name]
+        target_label: container
+      - source_labels: [__meta_docker_container_image]
+        target_label: image
+      - source_labels: [__meta_docker_container_log_stream]
+        target_label: stream
+    pipeline_stages:
+      - docker: {}
+      - json:
+          expressions:
+            ts: datetime
+            level: level_name
+            message: message
+            request_id: context.request_id
+            service: context.service
+            path: context.path
+            user_id: context.user_id
+            user_role: context.user_role
+      - labels:
+          level:
+          request_id:
+          service:
+          path:
+          user_id:
+          user_role:

@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
+import { useConfirm } from '@/shared/context/ConfirmContext'
 import { apiFetch } from '@/shared/utils/apiClient'
 import { useToast } from '@/shared/context/ToastContext'
 import type { ApiRemedialTerm } from '@/shared/types/api'
-import { formatRemedialTermStatus, RemedialTermStatusBadge } from '@/modules/admin/components/RemedialTermStatusBadge'
+import { RemedialTermStatusBadge } from '@/modules/admin/components/RemedialTermStatusBadge'
+import { formatRemedialTermStatus, type RemedialTermStatus } from '@/shared/constants/term'
 
-type RemedialTermStatusCode = 0 | 1 | 2 | 3 | 4
+type RemedialTermLogicStatusCode = 0 | 10 | 11 | 12 | 13 | 14 | 30 | 40
 
-const statusNameByCode: Record<RemedialTermStatusCode, string> = {
+const statusNameByCode: Record<0 | 1 | 2 | 3 | 4, string> = {
   0: 'DRAFT',
   1: 'REGISTRATION_OPEN',
   2: 'ACTIVE',
@@ -16,10 +18,13 @@ const statusNameByCode: Record<RemedialTermStatusCode, string> = {
   4: 'CANCELLED',
 }
 
-const nextStatusByCurrent: Partial<Record<RemedialTermStatusCode, number[]>> = {
+const nextStatusByCurrent: Partial<Record<RemedialTermLogicStatusCode, number[]>> = {
   0: [1, 4],
-  1: [4],
-  2: [3, 4],
+  10: [1, 4],
+  11: [2, 3, 4],
+  12: [2, 3, 4],
+  13: [3, 4],
+  14: [3, 4],
 }
 
 type MenuPosition = { top: number; left: number }
@@ -32,10 +37,12 @@ export function CohortListPage() {
   const [menuPosition, setMenuPosition] = useState<MenuPosition | null>(null)
   const menuButtonRefs = useRef<Record<number, HTMLButtonElement | null>>({})
   const menuPanelRef = useRef<HTMLDivElement | null>(null)
+  const { confirm } = useConfirm()
   const { success, error: showError } = useToast()
 
   useEffect(() => {
     void fetchTerms()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -94,7 +101,15 @@ export function CohortListPage() {
     }
   }
 
-  async function handleStatusUpdate(id: number, nextStatus: RemedialTermStatusCode) {
+  async function handleStatusUpdate(id: number, nextStatus: 0 | 1 | 2 | 3 | 4) {
+    const label = statusNameByCode[nextStatus]
+    const ok = await confirm({
+      title: 'Xác nhận chuyển trạng thái',
+      message: `Chuyển đợt phụ đạo sang "${formatRemedialTermStatus(label)}"?`,
+      confirmLabel: 'Chuyển trạng thái',
+      cancelLabel: 'Hủy',
+    })
+    if (!ok) return
     try {
       setUpdatingId(id)
       await apiFetch(`/admin/remedial-terms/${id}/status`, {
@@ -178,9 +193,8 @@ export function CohortListPage() {
                 </tr>
               ) : (
                 terms.map((term, index) => {
-                  const currentStatus = (term.status ?? 0) as RemedialTermStatusCode
                   const isMenuOpen = openMenuId === term.id
-                  const actions = nextStatusByCurrent[currentStatus] ?? []
+
 
                   return (
                     <tr key={term.id} className="hover:bg-gray-50/80">
@@ -192,9 +206,9 @@ export function CohortListPage() {
                       <td className="px-4 py-3 text-gray-600">{formatDate(term.registration_end)}</td>
                       <td className="px-4 py-3 text-gray-700">
                         {term.status_logic != null ? (
-                          <RemedialTermStatusBadge status={term.status_logic as any} label={term.status_logic_name} />
+                          <RemedialTermStatusBadge status={term.status_logic as RemedialTermStatus} label={term.status_logic_name} />
                         ) : (
-                          term.status_name ?? formatRemedialTermStatus(term.status == null ? undefined : statusNameByCode[currentStatus])
+                          term.status_logic_name ?? 'Nháp'
                         )}
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -244,7 +258,7 @@ export function CohortListPage() {
                 {(() => {
                   const term = terms.find((item) => item.id === openMenuId)
                   if (!term) return null
-                  const currentStatus = (term.status ?? 0) as RemedialTermStatusCode
+                  const currentStatus = (term.status_logic ?? 0) as RemedialTermLogicStatusCode
                   const actions = nextStatusByCurrent[currentStatus] ?? []
 
                   return (
@@ -274,9 +288,9 @@ export function CohortListPage() {
                           type="button"
                           className="flex w-full items-center rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-60"
                           disabled={updatingId === term.id}
-                          onClick={() => void handleStatusUpdate(term.id, action)}
+                          onClick={() => void handleStatusUpdate(term.id, action as 0 | 1 | 2 | 3 | 4)}
                         >
-                          Chuyển sang {formatRemedialTermStatus(statusNameByCode[action])}
+                          Chuyển sang {formatRemedialTermStatus(statusNameByCode[action as 0 | 1 | 2 | 3 | 4])}
                         </button>
                       ))}
                     </>

@@ -24,21 +24,24 @@ export function UserListPage() {
   const [loading, setLoading] = useState(true)
   const { success, error: showError } = useToast()
 
-  useEffect(() => {
-    fetchUsers()
-  }, [])
-
   async function fetchUsers() {
     try {
       setLoading(true)
       const res = await apiFetch<{ data: SystemUser[] }>('/admin/users')
       setUsers(res.data || [])
-    } catch (err: any) {
-      showError('Lỗi tải danh sách người dùng: ' + err.message)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      showError('Lỗi tải danh sách người dùng: ' + msg)
     } finally {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    fetchUsers()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
 
   async function handleDelete(id: number, label: string) {
     if (!window.confirm(`Xóa tài khoản "${label}"? Thao tác không thể hoàn tác.`)) return
@@ -46,8 +49,9 @@ export function UserListPage() {
       await apiFetch(`/admin/users/${id}`, { method: 'DELETE' })
       success('Đã xóa người dùng.')
       fetchUsers()
-    } catch (err: any) {
-      showError(err.message || 'Không thể xóa người dùng.')
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      showError(msg || 'Không thể xóa người dùng.')
     }
   }
 

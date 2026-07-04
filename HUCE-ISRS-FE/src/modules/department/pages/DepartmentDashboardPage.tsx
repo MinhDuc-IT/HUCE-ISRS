@@ -8,11 +8,6 @@ export function DepartmentDashboardPage() {
   const [regCount, setRegCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!user?.departmentId) return;
-    fetchData();
-  }, [user?.departmentId]);
-
   async function fetchData() {
     try {
       setLoading(true);
@@ -34,6 +29,11 @@ export function DepartmentDashboardPage() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (!user?.departmentId) return;
+    fetchData();
+  }, [user?.departmentId]);
 
   return (
     <div className="space-y-4">

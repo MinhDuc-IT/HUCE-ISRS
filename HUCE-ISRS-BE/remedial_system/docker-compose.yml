@@ -1,0 +1,172 @@
+# ════════════════════════════════════════════════════════════
+# Docker Compose – remedial_system (EC2 t3.small)
+# Deploy: docker compose --env-file .env.production up -d
+# ════════════════════════════════════════════════════════════
+services:
+
+  # ── Nginx (Reverse Proxy) ─────────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: remedial_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"   # SSL terminate tại Nginx nếu cần
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/app.conf:ro
+      - ./public:/var/www/html/public:ro   # Serve static assets trực tiếp
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - app
+    networks:
+      - remedial_net
+
+  # ── PHP-FPM Application ───────────────────────────────────
+  app:
+    image: ghcr.io/${GITHUB_REPOSITORY}/remedial-system:${IMAGE_TAG:-latest}
+    container_name: remedial_app
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_URL: ${APP_URL}
+      APP_KEY: ${APP_KEY}
+      SERVICE_NAME: remedial
+      LOG_CHANNEL: stderr
+      LOG_LEVEL: info
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CACHE_STORE: redis
+      SESSION_DRIVER: redis
+      QUEUE_CONNECTION: database
+      MAIL_MAILER: smtp
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_ENCRYPTION: tls
+      MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS}
+      UNIVERSITY_BASE_URL: ${UNIVERSITY_BASE_URL}
+      UNIVERSITY_CLIENT_ID: ${UNIVERSITY_CLIENT_ID}
+      UNIVERSITY_CLIENT_SECRET: ${UNIVERSITY_CLIENT_SECRET}
+    volumes:
+      - app_storage:/var/www/html/storage
+      - app_cache:/var/www/html/bootstrap/cache
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - remedial_net
+
+  # ── Queue Worker ──────────────────────────────────────────
+  queue:
+    image: ghcr.io/${GITHUB_REPOSITORY}/remedial-system:${IMAGE_TAG:-latest}
+    container_name: remedial_queue
+    restart: unless-stopped
+    command: php artisan queue:work --sleep=3 --tries=3 --max-time=3600 --timeout=300
+    environment:
+      APP_ENV: production
+      APP_KEY: ${APP_KEY}
+      SERVICE_NAME: remedial
+      LOG_CHANNEL: stderr
+      LOG_LEVEL: info
+      DB_HOST: mysql
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      QUEUE_CONNECTION: database
+      MAIL_MAILER: smtp
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_ENCRYPTION: tls
+      UNIVERSITY_BASE_URL: ${UNIVERSITY_BASE_URL}
+      UNIVERSITY_CLIENT_ID: ${UNIVERSITY_CLIENT_ID}
+      UNIVERSITY_CLIENT_SECRET: ${UNIVERSITY_CLIENT_SECRET}
+    volumes:
+      - app_storage:/var/www/html/storage
+    depends_on:
+      - app
+    networks:
+      - remedial_net
+
+  # ── Scheduler (cron) ─────────────────────────────────────
+  scheduler:
+    image: ghcr.io/${GITHUB_REPOSITORY}/remedial-system:${IMAGE_TAG:-latest}
+    container_name: remedial_scheduler
+    restart: unless-stopped
+    command: php artisan schedule:work
+    environment:
+      APP_ENV: production
+      APP_KEY: ${APP_KEY}
+      SERVICE_NAME: remedial
+      LOG_CHANNEL: stderr
+      LOG_LEVEL: info
+      DB_HOST: mysql
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      UNIVERSITY_BASE_URL: ${UNIVERSITY_BASE_URL}
+      UNIVERSITY_CLIENT_ID: ${UNIVERSITY_CLIENT_ID}
+      UNIVERSITY_CLIENT_SECRET: ${UNIVERSITY_CLIENT_SECRET}
+    volumes:
+      - app_storage:/var/www/html/storage
+    depends_on:
+      - app
+    networks:
+      - remedial_net
+
+  # ── MySQL 8 ──────────────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: remedial_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "127.0.0.1:3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - remedial_net
+
+  # ── Redis 7 ──────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: remedial_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - remedial_net
+
+volumes:
+  mysql_data:
+  redis_data:
+  app_storage:
+  app_cache:
+  certbot_data:
+
+networks:
+  remedial_net:
+    driver: bridge

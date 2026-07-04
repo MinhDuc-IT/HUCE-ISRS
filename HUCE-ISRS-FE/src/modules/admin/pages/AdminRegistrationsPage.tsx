@@ -23,14 +23,6 @@ export function AdminRegistrationsPage() {
   const [detailLoading, setDetailLoading] = useState(false)
   const [detailError, setDetailError] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchTerms()
-  }, [])
-
-  useEffect(() => {
-    fetchRows()
-  }, [termId])
-
   async function fetchTerms() {
     try {
       const res = await apiFetch<{ data: ApiRemedialTerm[] }>('/admin/remedial-terms')
@@ -40,23 +32,31 @@ export function AdminRegistrationsPage() {
     }
   }
 
-  async function fetchRows() {
-    try {
-      setLoading(true)
-      setError(null)
-      const query = termId ? `?remedial_term_id=${termId}` : ''
-      const res = await apiFetch<{ data: ApiAdminRegistrationSummary[] }>(
-        `/admin/remedial-registrations${query}`,
-      )
-      setRows(res.data || [])
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Lỗi không xác định'
-      setError('Lỗi tải danh sách: ' + msg)
-      setRows([])
-    } finally {
-      setLoading(false)
+  useEffect(() => {
+    fetchTerms()
+  }, [])
+
+  useEffect(() => {
+    async function fetchRows() {
+      try {
+        setLoading(true)
+        setError(null)
+        const query = termId ? `?remedial_term_id=${termId}` : ''
+        const res = await apiFetch<{ data: ApiAdminRegistrationSummary[] }>(
+          `/admin/remedial-registrations${query}`,
+        )
+        setRows(res.data || [])
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Lỗi không xác định'
+        setError('Lỗi tải danh sách: ' + msg)
+        setRows([])
+      } finally {
+        setLoading(false)
+      }
     }
-  }
+
+    void fetchRows()
+  }, [termId])
 
   async function openDetailModal(row: ApiAdminRegistrationSummary) {
     setSelectedRow(row)

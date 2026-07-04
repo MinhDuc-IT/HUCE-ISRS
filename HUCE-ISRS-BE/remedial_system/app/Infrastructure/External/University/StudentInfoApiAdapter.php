@@ -189,7 +189,7 @@ class StudentInfoApiAdapter implements StudentInfoPort
                 Log::info("Gửi request {$method} đến University System: {$url}\n");
 
                 $response = Http::timeout($this->timeoutSeconds)
-                    ->retry(2, 300)
+                    ->retry(2, 300, fn ($exception, $request) => ! ($exception instanceof \Illuminate\Http\Client\RequestException && $exception->response->status() === 401))
                     ->withToken($token)
                     ->send($method, $url);
 

@@ -1,0 +1,52 @@
+# ════════════════════════════════════════════════════════════
+# Deploy Frontend → Cloudflare Pages
+# Trigger: push to main (chỉ khi có thay đổi ở HUCE-ISRS-FE/)
+# ════════════════════════════════════════════════════════════
+name: Deploy Frontend (Cloudflare Pages)
+
+on:
+  push:
+    branches: [main, thanhld/dev]
+    paths:
+      - "HUCE-ISRS-FE/**"
+      - ".github/workflows/deploy-fe.yml"
+  workflow_dispatch:   # Cho phép chạy thủ công
+
+jobs:
+  deploy:
+    name: Build & Deploy to Cloudflare Pages
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: HUCE-ISRS-FE
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: HUCE-ISRS-FE/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production
+        run: npm run build
+        env:
+          # Trỏ đến remedial_system trên EC2 (Duck DNS)
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy HUCE-ISRS-FE/dist --project-name=huce-isrs-fe --commit-dirty=true
+
+      - name: Notify success
+        if: success()
+        run: echo "✅ Frontend deployed to Cloudflare Pages"

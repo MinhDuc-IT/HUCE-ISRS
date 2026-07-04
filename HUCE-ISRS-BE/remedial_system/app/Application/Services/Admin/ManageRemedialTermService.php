@@ -40,6 +40,7 @@ class ManageRemedialTermService
 //             $this->termRepository->clearCurrentTermExcept($id);
 //         }
         $existing->validateUpdate($data);
+        $this->assertUpdateFieldsAllowed($existing->status, $data);
 
         return $this->termRepository->save($this->buildEntity($id, $data, $existing));
     }
@@ -87,26 +88,85 @@ class ManageRemedialTermService
     private function buildEntity(?int $id, array $data, ?RemedialTerm $existing = null): RemedialTerm
     {
         $status = $existing?->status ?? \App\Domain\Enums\RemedialTermStatus::DRAFT;
-        $allowPriceUpdate = $status === \App\Domain\Enums\RemedialTermStatus::DRAFT;
-        $allowRegDateUpdate = $status !== \App\Domain\Enums\RemedialTermStatus::ACTIVE && $status !== \App\Domain\Enums\RemedialTermStatus::COMPLETED && $status !== \App\Domain\Enums\RemedialTermStatus::CANCELLED;
+        $allowAllUpdate = $status === \App\Domain\Enums\RemedialTermStatus::DRAFT;
+        $allowPriceAndNameUpdate = $status === \App\Domain\Enums\RemedialTermStatus::REGISTRATION_OPEN;
 
         return new RemedialTerm(
             id:                  $id,
-            year:                (int) ($data['year'] ?? $existing?->year),
-            semester:            (int) ($data['semester'] ?? $existing?->semester),
-            name:                (string) ($data['name'] ?? $existing?->name),
-            startDate:           $this->parseDate($data, 'start_date', $existing?->startDate),
-            endDate:             $this->parseDate($data, 'end_date', $existing?->endDate),
-            remedialCoefficient: $allowPriceUpdate ? (int) ($data['remedial_coefficient'] ?? $existing?->remedialCoefficient ?? 1) : ($existing?->remedialCoefficient ?? 1),
-            pricePerPeriod:      $allowPriceUpdate ? (int) ($data['price_per_period'] ?? $existing?->pricePerPeriod ?? 150000) : ($existing?->pricePerPeriod ?? 150000),
-            priceCoefficient:    $allowPriceUpdate ? (float) ($data['price_coefficient'] ?? $existing?->priceCoefficient ?? 1) : ($existing?->priceCoefficient ?? 1),
+            year:                $allowAllUpdate ? (int) ($data['year'] ?? $existing?->year) : $existing?->year,
+            semester:            $allowAllUpdate ? (int) ($data['semester'] ?? $existing?->semester) : $existing?->semester,
+            name:                ($allowAllUpdate || $allowPriceAndNameUpdate)
+                ? (string) ($data['name'] ?? $existing?->name)
+                : $existing?->name,
+            startDate:           $allowAllUpdate ? $this->parseDate($data, 'start_date', $existing?->startDate) : $existing?->startDate,
+            endDate:             $allowAllUpdate ? $this->parseDate($data, 'end_date', $existing?->endDate) : $existing?->endDate,
+            remedialCoefficient: ($allowAllUpdate || $allowPriceAndNameUpdate)
+                ? (int) ($data['remedial_coefficient'] ?? $existing?->remedialCoefficient ?? 1)
+                : ($existing?->remedialCoefficient ?? 1),
+            pricePerPeriod:      ($allowAllUpdate || $allowPriceAndNameUpdate)
+                ? (int) ($data['price_per_period'] ?? $existing?->pricePerPeriod ?? 150000)
+                : ($existing?->pricePerPeriod ?? 150000),
+            priceCoefficient:    ($allowAllUpdate || $allowPriceAndNameUpdate)
+                ? (float) ($data['price_coefficient'] ?? $existing?->priceCoefficient ?? 1)
+                : ($existing?->priceCoefficient ?? 1),
 //             isCurrentTerm:       array_key_exists('is_current_term', $data)
 //                 ? $this->toBool($data['is_current_term'])
 //                 : ($existing?->isCurrentTerm ?? false),
             isCurrentTerm:       $status->isCurrent(),
-            registrationStart:   $allowRegDateUpdate ? $this->parseDate($data, 'registration_start', $existing?->registrationStart) : $existing?->registrationStart,
-            registrationEnd:     $allowRegDateUpdate ? $this->parseDate($data, 'registration_end', $existing?->registrationEnd) : $existing?->registrationEnd,
+            registrationStart:   $allowAllUpdate ? $this->parseDate($data, 'registration_start', $existing?->registrationStart) : $existing?->registrationStart,
+            registrationEnd:     $allowAllUpdate ? $this->parseDate($data, 'registration_end', $existing?->registrationEnd) : $existing?->registrationEnd,
+            status:              $existing?->status ?? \App\Domain\Enums\RemedialTermStatus::DRAFT,
         );
+    }
+
+    private function assertUpdateFieldsAllowed(\App\Domain\Enums\RemedialTermStatus $status, array $data): void
+    {
+        $forbiddenFields = match ($status) {
+            \App\Domain\Enums\RemedialTermStatus::DRAFT => [],
+            \App\Domain\Enums\RemedialTermStatus::REGISTRATION_OPEN => [
+                'year',
+                'semester',
+                'start_date',
+                'end_date',
+                'registration_start',
+                'registration_end',
+            ],
+            \App\Domain\Enums\RemedialTermStatus::ACTIVE => [
+                'year',
+                'semester',
+                'name',
+                'start_date',
+                'end_date',
+                'remedial_coefficient',
+                'price_per_period',
+                'price_coefficient',
+                'registration_start',
+                'registration_end',
+            ],
+            \App\Domain\Enums\RemedialTermStatus::COMPLETED => array_keys($data),
+            \App\Domain\Enums\RemedialTermStatus::CANCELLED => array_keys($data),
+        };
+
+        $disallowed = array_values(array_intersect(array_keys($data), $forbiddenFields));
+
+        if ($disallowed !== []) {
+            $labels = [
+                'remedial_coefficient' => 'Hệ số PD',
+                'price_per_period' => 'Đơn giá 1 tiết',
+                'price_coefficient' => 'Hệ số đơn giá',
+                'registration_start' => 'Ngày bắt đầu đăng ký',
+                'registration_end' => 'Ngày kết thúc đăng ký',
+            ];
+
+            $friendlyFields = array_map(
+                fn (string $field) => $labels[$field] ?? $field,
+                $disallowed
+            );
+
+            throw new \DomainException(
+                'Trạng thái hiện tại không cho phép cập nhật: ' . implode(', ', $friendlyFields)
+            );
+        }
     }
 
     private function parseDate(array $data, string $key, ?Carbon $fallback): ?Carbon

@@ -33,8 +33,9 @@ export function DepartmentListPage() {
       setLoading(true)
       const res = await apiFetch<{ data: ApiDepartment[] }>('/admin/departments')
       setDepartments(res.data || [])
-    } catch (err: any) {
-      setError('Lỗi tải danh sách bộ môn: ' + err.message)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      setError('Lỗi tải danh sách bộ môn: ' + msg)
     } finally {
       setLoading(false)
     }
@@ -81,8 +82,9 @@ export function DepartmentListPage() {
       setMessage('Xóa bộ môn thành công.')
       setTimeout(() => setMessage(null), 3000)
       fetchDepartments()
-    } catch (err: any) {
-      setError('Lỗi khi xóa bộ môn: ' + err.message)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      setError('Lỗi khi xóa bộ môn: ' + msg)
       setTimeout(() => setError(null), 3000)
     } finally {
       setLoading(false)
@@ -135,8 +137,9 @@ export function DepartmentListPage() {
       setTimeout(() => setMessage(null), 3000)
       handleCloseModal()
       fetchDepartments()
-    } catch (err: any) {
-      setError('Lỗi khi lưu bộ môn: ' + err.message)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      setError('Lỗi khi lưu bộ môn: ' + msg)
       setTimeout(() => setError(null), 3000)
     } finally {
       setIsSubmitting(false)

@@ -14,10 +14,6 @@ export function AdminDashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchStats()
-  }, [])
-
   async function fetchStats() {
     try {
       setLoading(true)
@@ -56,6 +52,10 @@ export function AdminDashboardPage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    fetchStats()
+  }, [])
 
   const navLinks = [
     { to: '/admin/cohorts', label: 'Đợt phụ đạo', primary: true },
